@@ -1,10 +1,13 @@
 package envconf
 
 import (
-	"fmt"
+	"bytes"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/maps"
 )
 
 func NewVar(name, value string) *Var {
@@ -34,6 +37,22 @@ func NewGroup(name string) *Group {
 	}
 }
 
+func ParseGroupFromEnv(prefix string) *Group {
+	g := NewGroup(prefix)
+	for _, environ := range os.Environ() {
+		kv := strings.SplitN(environ, "=", 2)
+		if len(kv) == 2 {
+			if strings.HasPrefix(kv[0], prefix) {
+				g.Add(&Var{
+					Name:  strings.TrimPrefix(kv[0], prefix+"__"),
+					Value: kv[1],
+				})
+			}
+		}
+	}
+	return g
+}
+
 type Group struct {
 	Name   string
 	Values map[string]*Var
@@ -41,7 +60,7 @@ type Group struct {
 
 func (g *Group) MapEntries(k string) (entries []string) {
 	for _, v := range g.Values {
-		if !strings.HasPrefix(v.Name, k) {
+		if !strings.HasPrefix(v.Name, k+"_") {
 			continue
 		}
 
@@ -49,9 +68,6 @@ func (g *Group) MapEntries(k string) (entries []string) {
 			entries = append(entries, entry)
 		}
 	}
-	sort.SliceStable(entries, func(i, j int) bool {
-		return entries[i] < entries[j]
-	})
 	return
 }
 
@@ -59,7 +75,7 @@ func (g *Group) SliceLength(k string) int {
 	size := -1
 
 	for _, v := range g.Values {
-		if !strings.HasPrefix(v.Name, k) {
+		if !strings.HasPrefix(v.Name, k+"_") {
 			continue
 		}
 
@@ -93,8 +109,43 @@ func (g *Group) Reset() {
 	g.Values = make(map[string]*Var)
 }
 
-func (g *Group) Print() {
+func (g *Group) Bytes() []byte {
+	return g.DotEnv(nil)
+}
+
+func (g *Group) MaskBytes() []byte {
+	return g.DotEnv(func(v *Var) string {
+		if v.Mask != "" {
+			return v.Mask
+		}
+		return v.Value
+	})
+}
+
+func (g *Group) DotEnv(valuer func(*Var) string) []byte {
+	values := make(map[string]string)
 	for _, v := range g.Values {
-		fmt.Printf("%s: %s\n", v.GroupName(g.Name), v.Value)
+		if valuer != nil {
+			values[v.GroupName(g.Name)] = valuer(v)
+		} else {
+			values[v.GroupName(g.Name)] = v.Value
+		}
 	}
+	return DotEnv(values)
+}
+
+func DotEnv(values map[string]string) []byte {
+	buf := bytes.NewBuffer(nil)
+
+	keys := maps.Keys(values)
+	sort.Strings(keys)
+
+	for _, key := range keys {
+		buf.WriteString(key)
+		buf.WriteRune('=')
+		buf.WriteString(values[key])
+		buf.WriteRune('\n')
+	}
+
+	return buf.Bytes()
 }

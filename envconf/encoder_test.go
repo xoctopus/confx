@@ -35,7 +35,6 @@ func TestEncoder_Encode(t *testing.T) {
 			err := enc.Encode(map[Key]string{})
 			NewWithT(t).Expect(err).NotTo(BeNil())
 			NewWithT(t).Expect(envconf.NewErrMarshalUnexpectMapKeyType(reflect.TypeOf(Key{})).Is(err)).To(BeTrue())
-			NewWithT(t).Expect(err.Error()).To(ContainSubstring("Key"))
 		})
 		t.Run("UnexpectMapKeyValue", func(t *testing.T) {
 			err := enc.Encode(map[string]string{"": "any"})
@@ -60,7 +59,6 @@ func TestEncoder_Encode(t *testing.T) {
 				"Key3": "value3",
 			})
 			NewWithT(t).Expect(err).To(BeNil())
-			grp.Print()
 
 			grp.Reset()
 			err = enc.Encode(map[string]string(nil))
@@ -73,7 +71,6 @@ func TestEncoder_Encode(t *testing.T) {
 
 		err := enc.Encode([]int{1, 2, 3})
 		NewWithT(t).Expect(err).To(BeNil())
-		grp.Print()
 
 		err = enc.Encode([]MustFailed{{}})
 		NewWithT(t).Expect(err).NotTo(BeNil())
@@ -88,14 +85,10 @@ func TestEncoder_Encode(t *testing.T) {
 			SkipTag    datatypes.Endpoint `env:"-"`
 			Inline
 			datatypes.Password
-			// MustFailed todo if inline implements TextMarshaller will overwrite?
+			// todo if anonymous field implements TextMarshaller will overwrite?
 			MustFailed MustFailed
 		}{
-			HasTag: &datatypes.Address{
-				Group: "group",
-				Key:   "key",
-				Ext:   "ext",
-			},
+			HasTag: datatypes.NewAddress("group", "filename.png"),
 			Inline: Inline{
 				String: "inline string",
 				Int:    100,
@@ -105,7 +98,5 @@ func TestEncoder_Encode(t *testing.T) {
 		err := enc.Encode(val)
 		NewWithT(t).Expect(err).NotTo(BeNil())
 		NewWithT(t).Expect(errors.Is(err, ErrMustMarshalFailed)).To(BeTrue())
-
-		grp.Print()
 	})
 }

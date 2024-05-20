@@ -17,27 +17,24 @@ import (
 func ExampleDecoder_Decode() {
 	grp := envconf.NewGroup("TEST")
 
-	grp.Add(envconf.NewVar("MapStringString_Key1", "Value1"))
-	grp.Add(envconf.NewVar("MapStringString_Key2", "Value2"))
-	grp.Add(envconf.NewVar("MapStringString_Key3", ""))
-	grp.Add(envconf.NewVar("MapStringInt_Key1", "0"))
-	grp.Add(envconf.NewVar("MapStringInt_Key2", "1"))
-	grp.Add(envconf.NewVar("MapStringInt_Key3", "2"))
-	grp.Add(envconf.NewVar("MapStringInt64_Key1", "0"))
-	grp.Add(envconf.NewVar("MapStringInt64_Key2", "1"))
-	grp.Add(envconf.NewVar("MapStringInt64_Key3", "2"))
+	grp.Add(envconf.NewVar("MapStringString_Key", "Value"))
+	grp.Add(envconf.NewVar("MapStringInt_Key", "100"))
+	grp.Add(envconf.NewVar("MapStringInt64_Key", "101"))
+	grp.Add(envconf.NewVar("MapStringPassword_Key", "password"))
 	grp.Add(envconf.NewVar("Slice_0_A", "2"))
 	grp.Add(envconf.NewVar("Slice_0_B", "string"))
 	grp.Add(envconf.NewVar("Array_0_A", "string"))
 	grp.Add(envconf.NewVar("Array_0_B", "2"))
 
 	dec := envconf.NewDecoder(grp)
+	enc := envconf.NewEncoder(grp)
 
 	v := &struct {
-		MapStringString map[string]string
-		MapStringInt    map[string]int
-		MapStringInt64  map[string]int64
-		Slice           []struct {
+		MapStringString   map[string]string
+		MapStringInt      map[string]int
+		MapStringInt64    map[string]int64
+		MapStringPassword map[string]datatypes.Password
+		Slice             []struct {
 			A int
 			B string
 		}
@@ -47,15 +44,37 @@ func ExampleDecoder_Decode() {
 		}
 	}{}
 
-	err := dec.Decode(v)
-	fmt.Println(err)
+	if err := dec.Decode(v); err != nil {
+		return
+	}
+	if err := enc.Encode(v); err != nil {
+		return
+	}
 
 	demoVar := envconf.NewVar("VarName", "")
 	fmt.Println(demoVar.GroupName(grp.Name))
+	fmt.Println(string(grp.Bytes()))
+	fmt.Println(string(grp.MaskBytes()))
 
-	// Output:
-	// <nil>
+	// output:
 	// TEST__VarName
+	// TEST__Array_0_A=string
+	// TEST__Array_0_B=2
+	// TEST__MapStringInt64_Key=101
+	// TEST__MapStringInt_Key=100
+	// TEST__MapStringPassword_Key=password
+	// TEST__MapStringString_Key=Value
+	// TEST__Slice_0_A=2
+	// TEST__Slice_0_B=string
+	//
+	// TEST__Array_0_A=string
+	// TEST__Array_0_B=2
+	// TEST__MapStringInt64_Key=101
+	// TEST__MapStringInt_Key=100
+	// TEST__MapStringPassword_Key=--------
+	// TEST__MapStringString_Key=Value
+	// TEST__Slice_0_A=2
+	// TEST__Slice_0_B=string
 }
 
 type DefaultSetter struct {
