@@ -20,8 +20,10 @@ github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/sincospro/datatypes v0.0.4 h1:NGKLZSjx5/pKFj4qnJszExSM8kdxy1pl/GlG/F8URyU=
 github.com/sincospro/datatypes v0.0.4/go.mod h1:a7JVIj/kTIXC6KZ+2v2T0H1xbwa9DTU6pmT5AOHvL6U=
-github.com/sincospro/x v0.0.5 h1:bHsqq+1Px3UffciRCuUbB52FNw51CZTvJ/hFQQMh4tg=
-github.com/sincospro/x v0.0.5/go.mod h1:JuC+8+NTFnqhZkTXtLI7m7paZ3OjaaWQBjsXCG846tw=
+github.com/sincospro/x v0.0.7 h1:CO4GUAUuOf0YZ8rTJu66L4sQeGKZ3efurCOLUBY0fZw=
+github.com/sincospro/x v0.0.7/go.mod h1:JuC+8+NTFnqhZkTXtLI7m7paZ3OjaaWQBjsXCG846tw=
+github.com/sincospro/x v0.0.8 h1:9yCmcEMll5rWhdsXSzgcC3skvAQwbR8c+PIAtNMLoV4=
+github.com/sincospro/x v0.0.8/go.mod h1:JuC+8+NTFnqhZkTXtLI7m7paZ3OjaaWQBjsXCG846tw=
 github.com/spf13/cobra v1.8.0 h1:7aJaZx1B85qltLMc546zn58BxxfZdR/W22ej9CFoEf0=
 github.com/spf13/cobra v1.8.0/go.mod h1:WXLWApfZ71AjXPya3WOlMsY9yMs7YeiHhFVlvLyhcho=
 github.com/spf13/pflag v1.0.5 h1:iy+VFUOCP1a+8yFto/drg2CJ5u0yRoB7fZw3DKv/JXA=

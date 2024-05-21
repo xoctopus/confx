@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/sincospro/conf/commands/cmd"
 	"github.com/sincospro/conf/envconf"
 )
 
@@ -73,7 +72,7 @@ func WithMakefileGenerator() Option {
 		if app.Meta == DefaultMeta || app.root == "" {
 			panic("should set app meta and root")
 		}
-		app.gen.AddCommand((&cmd.GoCmdMakefileGenerator{}).Command())
+		// app.gen.AddCommand((&cmd.GoCmdMakefileGenerator{}).Command())
 	}
 }
 
@@ -82,7 +81,7 @@ func WithDefaultConfigGenerator() Option {
 		if app.Meta == DefaultMeta || app.root == "" {
 			panic("should set app meta and root")
 		}
-		app.gen.AddCommand((&cmd.GoCmdDefaultConfigGenerator{}).Command())
+		// app.gen.AddCommand((&cmd.GoCmdDefaultConfigGenerator{}).Command())
 	}
 }
 
@@ -91,7 +90,7 @@ func WithDockerfileGenerator() Option {
 		if app.Meta == DefaultMeta || app.root == "" {
 			panic("should set app meta and root")
 		}
-		app.gen.AddCommand((&cmd.GoCmdDockerfileGenerator{}).Command())
+		// app.gen.AddCommand((&cmd.GoCmdDockerfileGenerator{}).Command())
 	}
 }
 
