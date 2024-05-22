@@ -10,6 +10,10 @@ import (
 	"golang.org/x/exp/maps"
 )
 
+type VarOptions struct {
+	Optional bool
+}
+
 func NewVar(name, value string) *Var {
 	return &Var{Name: name, Value: value}
 }
@@ -19,7 +23,7 @@ type Var struct {
 	Value string
 	Mask  string
 
-	Options any
+	VarOptions
 }
 
 func (v *Var) GroupName(prefix string) string {
@@ -27,7 +31,9 @@ func (v *Var) GroupName(prefix string) string {
 }
 
 func (v *Var) ParseOption(flag map[string]struct{}) {
-	// todo to parse options from flag
+	if _, ok := flag["optional"]; ok {
+		v.Optional = true
+	}
 }
 
 func NewGroup(name string) *Group {
