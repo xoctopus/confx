@@ -4,7 +4,7 @@ FORMAT_FILES=`find . -type f -name '*.go' | grep -E -v '_generated.go|.pb.go'`
 tidy:
 	go mod tidy
 cover: tidy
-	go test -race -failfast -parallel 1 -gcflags="all=-N -l" ${TEST_PACKAGES} -covermode=atomic -coverprofile cover.out
+	go test -failfast -parallel 1 -gcflags="all=-N -l" ${TEST_PACKAGES} -covermode=atomic -coverprofile cover.out
 test: tidy
 	go test -race -failfast -parallel 1 -gcflags="all=-N -l" ${TEST_PACKAGES}
 

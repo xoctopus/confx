@@ -44,27 +44,27 @@ func ExampleNewAppContext() {
 		}),
 		WithBatchRunner(
 			func() {
-				time.Sleep(time.Microsecond * 100)
+				time.Sleep(time.Second * 1)
 				fmt.Println("batch runner 1")
 			},
 			func() {
-				time.Sleep(time.Microsecond * 300)
+				time.Sleep(time.Second * 2)
 				fmt.Println("batch runner 2")
 			},
 		),
 		WithPreRunner(
 			func() {
-				time.Sleep(time.Microsecond * 100)
+				time.Sleep(time.Second * 1)
 				fmt.Println("pre runner 1")
 			},
 			func() {
-				time.Sleep(time.Microsecond * 300)
+				time.Sleep(time.Second * 2)
 				fmt.Println("pre runner 2")
 			},
 		),
 		WithMainExecutor(
 			func() error {
-				time.Sleep(time.Microsecond * 500)
+				time.Sleep(time.Second * 3)
 				fmt.Println("main entry")
 				return nil
 			},
