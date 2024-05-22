@@ -10,10 +10,3 @@ type GoCmdDockerfileGenerator struct {
 	OutputDIR           string `cmd:""`
 	// todo if need certification support for tls/ssl https
 }
-
-type GoCmdDefaultConfigGenerator struct {
-	EnableCgo       bool     `cmd:""`
-	CLibDirectories []string `cmd:""`
-	CLibNames       []string `cmd:""`
-	OutputDIR       string   `cmd:""`
-}

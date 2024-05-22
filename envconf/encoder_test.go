@@ -78,10 +78,12 @@ func TestEncoder_Encode(t *testing.T) {
 	})
 
 	t.Run("Struct", func(t *testing.T) {
+		grp.Reset()
+
 		val := &struct {
 			unexported any
 			PtrIsNil   *int
-			HasTag     *datatypes.Address `env:"address,opt,upstream,copy,expose"`
+			HasTag     *datatypes.Address `env:"address,optional,upstream,copy,expose"`
 			SkipTag    datatypes.Endpoint `env:"-"`
 			Inline
 			datatypes.Password
@@ -98,5 +100,9 @@ func TestEncoder_Encode(t *testing.T) {
 		err := enc.Encode(val)
 		NewWithT(t).Expect(err).NotTo(BeNil())
 		NewWithT(t).Expect(errors.Is(err, ErrMustMarshalFailed)).To(BeTrue())
+
+		v := grp.Get("address")
+		NewWithT(t).Expect(v).NotTo(BeNil())
+		NewWithT(t).Expect(v.Optional).To(BeTrue())
 	})
 }

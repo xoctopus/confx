@@ -1,12 +1,17 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
+	"time"
 
 	"github.com/sincospro/datatypes"
 
 	"github.com/sincospro/conf/confapp"
+	"github.com/sincospro/conf/confapp/example/pkg/modules/module1"
+	"github.com/sincospro/conf/confapp/example/pkg/modules/module2"
+	"github.com/sincospro/conf/confapp/example/pkg/modules/module3"
 )
 
 var (
@@ -16,7 +21,13 @@ var (
 	CommitID string
 	Date     string
 
-	app *confapp.AppCtx
+	app    *confapp.AppCtx
+	config = &struct {
+		WorkerID uint64
+		Endpoint datatypes.Endpoint
+	}{
+		WorkerID: 100,
+	}
 )
 
 func init() {
@@ -28,37 +39,32 @@ func init() {
 			CommitID: CommitID,
 			Date:     Date,
 		}),
-		confapp.WithWorkDir("."),
+		confapp.WithMainRoot("."),
+		confapp.WithDefaultConfigGenerator(),
+		confapp.WithMainExecutor(Main),
+		confapp.WithPreRunner(
+			module1.InitRunner(context.Background()),
+		),
+		confapp.WithBatchRunner(
+			module2.InitRunner(context.Background()),
+			module3.InitRunner(context.Background()),
+		),
 	)
+
+	app.Conf(config)
+}
+
+func Main() error {
+	log.Printf("app: %s", app.Version())
+	log.Printf("WorkerID: %v", config.WorkerID)
+	log.Printf("Endpoint: %s", config.Endpoint)
+	time.Sleep(2 * time.Second)
+	return nil
 }
 
 func main() {
-	log.Printf("==> app version")
-	log.Println(app.Meta.String())
-
-	config := &struct {
-		WorkerID uint64
-		Endpoint datatypes.Endpoint
-	}{
-		WorkerID: 100,
+	if err := app.Command.Execute(); err != nil {
+		app.PrintErrln(err)
+		os.Exit(-1)
 	}
-
-	log.Println("==> default config:")
-	log.Printf("WorkerID: %v", config.WorkerID)
-	log.Printf("Endpoint: %s", config.Endpoint)
-
-	content, err := os.ReadFile("config/local.yml")
-	if err != nil {
-		panic(err)
-	}
-	log.Println("==>local config:")
-	log.Printf("\n%s", string(content))
-
-	if err = app.Conf(config); err != nil {
-		panic(err)
-	}
-
-	log.Println("==>after local config loaded: ")
-	log.Printf("WorkerID: %v", config.WorkerID)
-	log.Printf("Endpoint: %s", config.Endpoint)
 }

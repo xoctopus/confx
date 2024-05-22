@@ -15,5 +15,8 @@ LDFLAGS="-s -w -X ${VERSION_PATH}.Name=${NAME}    \
 build: clean
 	go build -ldflags ${LDFLAGS} -o ${NAME}
 
+run: build
+	./example
+
 clean:
 	@rm -rf example

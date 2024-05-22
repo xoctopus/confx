@@ -150,7 +150,6 @@ func TestNewCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_ = cmd.Execute()
 
 	for _, name := range mustParsedFlags {
 		flag := cmd.Flags().Lookup(name)
@@ -206,13 +205,24 @@ func TestNewCommand(t *testing.T) {
 	t.Log(flags["is-required"].LangHelp(cmdx.ZH))
 	t.Log(flags["is-required"].LangHelp(cmdx.EN))
 	t.Log(flags["is-required"].Env("prefix"))
+
+	cmd, err = cmdx.NewCommand(cmdx.EN, &DemoOptions{})
+	NewWithT(t).Expect(err).To(BeNil())
+
+	flag := cmd.Flags().Lookup("is-required")
+	flag.Value.Set("set require")
+	flag.Changed = true
+	NewWithT(t).Expect(cmd.Execute()).To(BeNil())
 }
 
 func (v *DemoOptions) Use() string { return "demo" }
 
 func (v *DemoOptions) Short() string { return "demo short" }
 
-func (v *DemoOptions) Exec(_ *cobra.Command) error { return nil }
+func (v *DemoOptions) Exec(cmd *cobra.Command) error {
+	cmd.Println(cmd.Flag("is-required").Value.String())
+	return nil
+}
 
 type InvalidExecutor struct{}
 

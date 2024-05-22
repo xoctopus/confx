@@ -14,7 +14,7 @@ func (r Runtime) String() string {
 	return string(r)
 }
 
-const RuntimeKey = "RUNTIME"
+const RuntimeKey = "GO_RUNTIME"
 
 func GetRuntime() Runtime {
 	switch runtime := os.Getenv(RuntimeKey); Runtime(runtime) {
