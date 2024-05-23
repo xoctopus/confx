@@ -6,7 +6,7 @@ require (
 	github.com/onsi/gomega v1.33.1
 	github.com/pkg/errors v0.9.1
 	github.com/sincospro/datatypes v0.0.4
-	github.com/sincospro/x v0.0.9
+	github.com/sincospro/x v0.0.10
 	github.com/spf13/cobra v1.8.0
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 	gopkg.in/yaml.v3 v3.0.1

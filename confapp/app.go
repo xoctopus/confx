@@ -218,8 +218,7 @@ func (app *AppCtx) attachSubCommands() {
 			Defaults: &app.dfts,
 			Output:   filepath.Join(app.root, "config"),
 		}
-		cmd, err := confcmd.NewCommand(confcmd.EN, option)
-		must.NoError(err)
+		cmd := must.NoErrorV(confcmd.NewCommand(confcmd.EN, option))
 		gen.AddCommand(cmd)
 	}
 
