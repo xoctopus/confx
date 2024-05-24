@@ -1,6 +1,7 @@
 package confapp
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -8,6 +9,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/fatih/color"
 	"github.com/sincospro/x/misc/must"
 	"github.com/sincospro/x/reflectx"
 	"github.com/spf13/cobra"
@@ -58,14 +60,8 @@ func WithMainExecutor(main func() error) Option {
 			Use:   "run",
 			Short: "run app's main entry",
 			RunE: func(cmd *cobra.Command, args []string) error {
-				cmd.Println(app.Version())
-
-				sort.Slice(app.vars, func(i, j int) bool {
-					return app.vars[i].Name < app.vars[j].Name
-				})
-				for _, g := range app.vars {
-					cmd.Println(string(g.MaskBytes()))
-				}
+				fmt.Printf("%s\n\n", color.HiCyanString(app.Version()))
+				app.log()
 				app.option.PreRun()
 				return main()
 			},
@@ -125,16 +121,30 @@ func (app *AppCtx) Version() string {
 	return app.option.Meta.String()
 }
 
+func (app *AppCtx) MainRoot() string {
+	return app.root
+}
+
 func (app *AppCtx) Conf(configurations ...any) {
 	app.injectLocalConfig()
 
 	app.dfts = make([]*envconf.Group, 0, len(configurations))
 	app.vars = make([]*envconf.Group, 0, len(configurations))
 	vars := make([]reflect.Value, 0, len(configurations))
+	names := map[string]struct{}{}
 
 	for _, c := range configurations {
 		rv := reflect.ValueOf(c)
-		group := app.group(rv)
+		name := reflectx.Indirect(rv).Type().Name()
+
+		_, ok := names[name]
+		must.BeTrueWrap(!ok, "config name conflicted")
+
+		if len(configurations) > 1 {
+			must.BeTrueWrap(name != "", "anonymous config when more than one")
+		}
+
+		group := app.group(name)
 
 		app.dfts = append(app.dfts, app.marshalDefaults(group, rv))
 		app.vars = append(app.vars, app.scanEnvironment(group, rv))
@@ -142,19 +152,20 @@ func (app *AppCtx) Conf(configurations ...any) {
 	}
 
 	app.initial(vars)
-	app.attachSubCommands()
+	if app.option.NeedAttach() {
+		app.attachSubCommands()
+	}
 }
 
 // injectLocalConfig try parse vars in local.yaml, and inject vars to environment
 func (app *AppCtx) injectLocalConfig() {
 	local, err := os.ReadFile(filepath.Join(app.root, "./config/local.yml"))
-	if err != nil {
-		return
-	}
-	kv := make(map[string]string)
-	if err = yaml.Unmarshal(local, &kv); err == nil {
-		for k, v := range kv {
-			_ = os.Setenv(k, v)
+	if err == nil {
+		kv := make(map[string]string)
+		if err = yaml.Unmarshal(local, &kv); err == nil {
+			for k, v := range kv {
+				_ = os.Setenv(k, v)
+			}
 		}
 	}
 }
@@ -162,51 +173,63 @@ func (app *AppCtx) injectLocalConfig() {
 // marshalDefaults encode default vars
 func (app *AppCtx) marshalDefaults(group string, v any) *envconf.Group {
 	dft := envconf.NewGroup(group)
-	must.NoError(envconf.NewDecoder(dft).Decode(v))
-	must.NoError(envconf.NewEncoder(dft).Encode(v))
+	must.NoErrorWrap(envconf.NewDecoder(dft).Decode(v), "failed to decode default")
+	must.NoErrorWrap(envconf.NewEncoder(dft).Encode(v), "failed to encode default")
 	return dft
 }
 
 // scanEnvironment scan vars from environment
 func (app *AppCtx) scanEnvironment(group string, v any) *envconf.Group {
 	vars := envconf.ParseGroupFromEnv(group)
-	must.NoError(envconf.NewDecoder(vars).Decode(v))
+	must.NoErrorWrap(envconf.NewDecoder(vars).Decode(v), "failed to decode env")
 	return vars
 }
 
-func initialize(v reflect.Value) {
+func initialize(v reflect.Value, g *envconf.Group, field string) {
 	if initializer.CanBeInitialized(v) {
-		must.NoError(initializer.Init(v))
+		must.NoErrorWrap(
+			initializer.Init(v),
+			"failed to init [group:%s] [field:%s]", g.Name, field,
+		)
 		return
 	}
 	v = reflectx.Indirect(v)
 	if v.Kind() == reflect.Struct {
 		for i := 0; i < v.NumField(); i++ {
-			initialize(v.Field(i))
+			if v.Type().Field(i).IsExported() {
+				initialize(v.Field(i), g, v.Type().Field(i).Name)
+			}
 		}
 	}
 }
 
 func (app *AppCtx) initial(vars []reflect.Value) {
 	for i := range vars {
-		initialize(vars[i])
+		initialize(vars[i], app.vars[i], "")
 	}
 }
 
-func (app *AppCtx) group(rv reflect.Value) string {
-	group := rv.Type().Name()
-	rv = reflectx.Indirect(rv)
-	group = rv.Type().Name()
-	if group == "" {
+func (app *AppCtx) log() {
+	app.option.Meta.Print()
+
+	sort.Slice(app.vars, func(i, j int) bool {
+		return app.vars[i].Name < app.vars[j].Name
+	})
+
+	for i := range app.vars {
+		fmt.Printf(color.HiBlueString("%s", app.vars[i].MaskBytes()))
+	}
+	fmt.Println("")
+}
+
+func (app *AppCtx) group(name string) string {
+	if name == "" {
 		return strings.ToUpper(strings.Replace(app.Name(), "-", "_", -1))
 	}
-	return strings.ToUpper(strings.Replace(app.Name()+"__"+group, "-", "_", -1))
+	return strings.ToUpper(strings.Replace(app.Name()+"__"+name, "-", "_", -1))
 }
 
 func (app *AppCtx) attachSubCommands() {
-	if !app.option.NeedAttach() {
-		return
-	}
 	gen := &cobra.Command{
 		Use:   "gen",
 		Short: "generator templates files for makefile, dockerfile and default config",
@@ -218,7 +241,8 @@ func (app *AppCtx) attachSubCommands() {
 			Defaults: &app.dfts,
 			Output:   filepath.Join(app.root, "config"),
 		}
-		cmd := must.NoErrorV(confcmd.NewCommand(confcmd.EN, option))
+		cmd, err := confcmd.NewCommand(confcmd.EN, option)
+		must.NoErrorWrap(err, "failed to new cmd `GoCmdGenDefaultConfigOptions`")
 		gen.AddCommand(cmd)
 	}
 

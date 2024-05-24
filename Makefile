@@ -1,4 +1,4 @@
-TEST_PACKAGES=`go list ./... | grep -E -v 'example|proto'`
+PACKAGES=`go list ./... | grep -E -v 'example|proto'`
 FORMAT_FILES=`find . -type f -name '*.go' | grep -E -v '_generated.go|.pb.go'`
 XGO_OK=$(shell type xgo > /dev/null 2>&1 && echo $$?)
 
@@ -8,16 +8,15 @@ xgo:
 		go install github.com/xhd2015/xgo/cmd/xgo@latest; \
 	fi
 
-
-tidy: xgo
+tidy:
 	go mod tidy
 
 cover: xgo tidy
-	xgo test -failfast ${TEST_PACKAGES} -coverprofile=cover.out -covermode=count
+	xgo test -failfast ${PACKAGES} -coverprofile=cover.out -covermode=count
 
 
-test: xgo tidy
-	xgo test -race -failfast ${TEST_PACKAGES}
+test: tidy
+	xgo test -race -failfast ${PACKAGES}
 
 report:
 	@echo ">>>static checking"

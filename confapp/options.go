@@ -4,15 +4,17 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 type Meta struct {
-	Name     string
-	Feature  string
-	Version  string
-	CommitID string
-	Date     string
-	Runtime  Runtime
+	Name     string  `json:"name"`
+	Feature  string  `json:"feature"`
+	Version  string  `json:"version"`
+	CommitID string  `json:"commit"`
+	Date     string  `json:"date"`
+	Runtime  Runtime `json:"runtime"`
 }
 
 var DefaultMeta = Meta{
@@ -26,6 +28,16 @@ var DefaultMeta = Meta{
 
 func (m *Meta) String() string {
 	return fmt.Sprintf("%s:%s@%s#%s_%s(%s)", m.Name, m.Feature, m.Version, m.CommitID, m.Date, m.Runtime)
+}
+
+func (m *Meta) Print() {
+	fmt.Printf("%s%s\n", color.HiRedString("name:     "), color.HiYellowString("%s", m.Name))
+	fmt.Printf("%s%s\n", color.HiRedString("feature:  "), color.HiYellowString("%s", m.Feature))
+	fmt.Printf("%s%s\n", color.HiRedString("version:  "), color.HiYellowString("%s", m.Version))
+	fmt.Printf("%s%s\n", color.HiRedString("commit:   "), color.HiYellowString("%s", m.CommitID))
+	fmt.Printf("%s%s\n", color.HiRedString("date:     "), color.HiYellowString("%s", m.Date))
+	fmt.Printf("%s%s\n", color.HiRedString("runtime:  "), color.HiYellowString("%s", m.Runtime))
+	fmt.Printf("\n")
 }
 
 func (m *Meta) Overwrite(meta Meta) {
