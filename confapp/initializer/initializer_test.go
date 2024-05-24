@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	_ "unsafe"
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
@@ -19,6 +20,10 @@ var (
 type Initializer struct{}
 
 func (i *Initializer) Init() {}
+
+type InitializerV struct{}
+
+func (i InitializerV) Init() {}
 
 type InitializerWithError struct{}
 
@@ -37,45 +42,48 @@ func (i *InitializerByContextWithError) Init(_ context.Context) error {
 }
 
 func TestInit(t *testing.T) {
-	results := []error{
-		nil,
-		errInitializerWithError,
-		nil,
-		errInitializerByContextWithError,
-		errInitializerByContextWithError,
-		nil,
-	}
-	for i, v := range []any{
-		&Initializer{},
-		&InitializerWithError{},
-		&InitializerByContext{},
-		&InitializerByContextWithError{},
-		reflect.ValueOf(&InitializerByContextWithError{}),
-		&struct{}{},
+	for i, v := range [...]struct {
+		val any
+		err error
+	}{
+		{&Initializer{}, nil},                                                                 // 0
+		{&InitializerWithError{}, errInitializerWithError},                                    // 1
+		{&InitializerByContext{}, nil},                                                        // 2
+		{&InitializerByContextWithError{}, errInitializerByContextWithError},                  // 3
+		{reflect.ValueOf(&InitializerByContextWithError{}), errInitializerByContextWithError}, // 4
+		{&struct{}{}, nil},                                                                    // 5
+		{reflect.ValueOf((*Initializer)(nil)), initializer.ErrInvalidValue},                   // 6
+		{reflect.ValueOf(&struct{ Initializer }{}), nil},                                      // 7
+		{reflect.ValueOf(&struct{ v Initializer }{}), nil},                                    // 8
+		{reflect.ValueOf(&InitializerV{}), nil},                                               // 9
 	} {
 		t.Log(i)
-		if results[i] == nil {
-			NewWithT(t).Expect(initializer.Init(v)).To(BeNil())
+		if v.err == nil {
+			NewWithT(t).Expect(initializer.Init(v.val)).To(BeNil())
 		} else {
-			NewWithT(t).Expect(initializer.Init(v)).To(Equal(results[i]))
+			NewWithT(t).Expect(initializer.Init(v.val)).To(Equal(v.err))
 		}
 	}
 }
 
 func TestCanBeInitialized(t *testing.T) {
-	for i, v := range []any{
-		&Initializer{},
-		&InitializerWithError{},
-		&InitializerByContext{},
-		&InitializerByContextWithError{},
-		reflect.ValueOf(&InitializerByContextWithError{}),
-		Initializer{},
-		InitializerWithError{},
-		InitializerByContext{},
-		InitializerByContextWithError{},
-		reflect.ValueOf(InitializerByContextWithError{}),
-		&struct{}{},
+	for i, v := range [...]struct {
+		v   any
+		can bool
+	}{
+		{&Initializer{}, true},
+		{reflect.ValueOf(&Initializer{}), true},
+		{Initializer{}, false},
+		{reflect.ValueOf(Initializer{}), false},
+		{InitializerV{}, true},
+		{reflect.ValueOf(InitializerV{}), true},
+		{reflect.ValueOf(&struct{ _v Initializer }{}).Elem().Field(0), false},
+		{reflect.ValueOf(&struct{ V_ Initializer }{}).Elem().Field(0), true},
+		{reflect.ValueOf(&struct{ _v *Initializer }{}).Elem().Field(0), false},
+		{reflect.ValueOf(&struct{ V_ *Initializer }{}).Elem().Field(0), true},
 	} {
-		t.Log(i, initializer.CanBeInitialized(v))
+		_ = i
+		can := initializer.CanBeInitialized(v.v)
+		NewWithT(t).Expect(v.can).To(Equal(can))
 	}
 }

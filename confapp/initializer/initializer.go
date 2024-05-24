@@ -2,7 +2,10 @@ package initializer
 
 import (
 	"context"
+	"errors"
 	"reflect"
+
+	"github.com/sincospro/x/reflectx"
 )
 
 type (
@@ -17,11 +20,29 @@ func CanBeInitialized(initializer any) bool {
 	case _Initializer, _WithError, _ByContext, _ByContextWithError:
 		return true
 	case reflect.Value:
-		return CanBeInitialized(v.Interface())
+		v = reflectx.IndirectNew(initializer)
+		if v == reflectx.InvalidValue {
+			return false
+		}
+		if v.CanInterface() {
+			if CanBeInitialized(v.Interface()) {
+				return true
+			}
+		}
+		if v.CanAddr() {
+			if v.Addr().CanInterface() {
+				if CanBeInitialized(v.Addr().Interface()) {
+					return true
+				}
+			}
+		}
+		return false
 	default:
 		return false
 	}
 }
+
+var ErrInvalidValue = errors.New("invalid value")
 
 func InitByContext(ctx context.Context, initializer any) error {
 	switch v := initializer.(type) {
@@ -36,7 +57,23 @@ func InitByContext(ctx context.Context, initializer any) error {
 	case _ByContextWithError:
 		return v.Init(ctx)
 	case reflect.Value:
-		return InitByContext(ctx, v.Interface())
+		v = reflectx.IndirectNew(initializer)
+		if v == reflectx.InvalidValue {
+			return ErrInvalidValue
+		}
+		if v.CanInterface() {
+			if CanBeInitialized(v.Interface()) {
+				return InitByContext(ctx, v.Interface())
+			}
+		}
+		if v.CanAddr() {
+			if v.Addr().CanInterface() {
+				if CanBeInitialized(v.Addr().Interface()) {
+					return InitByContext(ctx, v.Addr().Interface())
+				}
+			}
+		}
+		return nil
 	default:
 		return nil
 	}
