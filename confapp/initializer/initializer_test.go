@@ -57,7 +57,7 @@ func TestInit(t *testing.T) {
 		{reflect.ValueOf(&struct{ v Initializer }{}), nil},                                    // 8
 		{reflect.ValueOf(&InitializerV{}), nil},                                               // 9
 	} {
-		t.Log(i)
+		_ = i
 		if v.err == nil {
 			NewWithT(t).Expect(initializer.Init(v.val)).To(BeNil())
 		} else {

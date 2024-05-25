@@ -40,16 +40,15 @@ func TestGoCmdGenDefaultConfigOptions(t *testing.T) {
 	content, err := os.ReadFile(filename)
 	NewWithT(t).Expect(err).To(BeNil())
 	NewWithT(t).Expect(content).To(Equal([]byte("PREFIX__SomeVarName: SomeVarValue\n")))
+	t.Log(filename)
 
-	// xgo is not patch std function?
-	// t.Run("FailedToMakeOutputDir", func(t *testing.T) {
-	// 	mock.Patch(os.MkdirAll, func(string, os.FileMode) error {
-	// 		return errors.New(t.Name())
-	// 	})
-	// 	err = cmd.Exec(&cobra.Command{})
-	// 	t.Log(err)
-	// 	NewWithT(t).Expect(err.Error()).To(ContainSubstring(t.Name()))
-	// })
+	t.Run("FailedToMakeOutputDir", func(t *testing.T) {
+		cmd2 := *cmd
+		cmd2.Output = filename
+		err = cmd2.Exec(&cobra.Command{})
+		t.Log(err)
+		NewWithT(t).Expect(err.Error()).NotTo(BeNil())
+	})
 
 	t.Run("FailedToMarshalYML", func(t *testing.T) {
 		mock.Patch(yaml.Marshal, func(any) ([]byte, error) {
