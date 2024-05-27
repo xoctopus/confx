@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/sincospro/conf/confcmd"
+	"github.com/xoctopus/confx/confcmd"
 )
 
 type Executor struct {

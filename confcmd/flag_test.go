@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/sincospro/conf/confcmd"
+	"github.com/xoctopus/confx/confcmd"
 )
 
 func TestNewFlagByStructField(t *testing.T) {

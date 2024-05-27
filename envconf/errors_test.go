@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 
-	"github.com/sincospro/conf/envconf"
+	"github.com/xoctopus/confx/envconf"
 )
 
 func TestErrUnexpectMapKeyType(t *testing.T) {

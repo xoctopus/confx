@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sincospro/conf/envconf"
+	"github.com/xoctopus/confx/envconf"
 )
 
 func ExampleParseGroupFromEnv() {

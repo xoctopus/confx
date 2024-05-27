@@ -6,12 +6,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/sincospro/datatypes"
+	"github.com/xoctopus/datatypex"
 
-	"github.com/sincospro/conf/confapp"
-	"github.com/sincospro/conf/confapp/example/pkg/modules/module1"
-	"github.com/sincospro/conf/confapp/example/pkg/modules/module2"
-	"github.com/sincospro/conf/confapp/example/pkg/modules/module3"
+	"github.com/xoctopus/confx/confapp"
+	"github.com/xoctopus/confx/confapp/example/pkg/modules/module1"
+	"github.com/xoctopus/confx/confapp/example/pkg/modules/module2"
+	"github.com/xoctopus/confx/confapp/example/pkg/modules/module3"
 )
 
 var (
@@ -24,7 +24,7 @@ var (
 	app    *confapp.AppCtx
 	config = &struct {
 		WorkerID uint64
-		Endpoint datatypes.Endpoint
+		Endpoint datatypex.Endpoint
 	}{
 		WorkerID: 100,
 	}

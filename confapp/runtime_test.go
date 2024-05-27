@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/sincospro/conf/confapp"
+	"github.com/xoctopus/confx/confapp"
 )
 
 func TestGetRuntime(t *testing.T) {

@@ -3,8 +3,8 @@ package envconf
 import (
 	"reflect"
 
-	"github.com/sincospro/x/reflectx"
-	"github.com/sincospro/x/textx"
+	"github.com/xoctopus/x/reflectx"
+	"github.com/xoctopus/x/textx"
 )
 
 func NewEncoder(g *Group) *Encoder {

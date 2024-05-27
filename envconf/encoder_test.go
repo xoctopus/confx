@@ -6,9 +6,9 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/sincospro/datatypes"
+	"github.com/xoctopus/datatypex"
 
-	"github.com/sincospro/conf/envconf"
+	"github.com/xoctopus/confx/envconf"
 )
 
 func TestEncoder_Encode(t *testing.T) {
@@ -83,19 +83,19 @@ func TestEncoder_Encode(t *testing.T) {
 		val := &struct {
 			unexported any
 			PtrIsNil   *int
-			HasTag     *datatypes.Address `env:"address,optional,upstream,copy,expose"`
-			SkipTag    datatypes.Endpoint `env:"-"`
+			HasTag     *datatypex.Address `env:"address,optional,upstream,copy,expose"`
+			SkipTag    datatypex.Endpoint `env:"-"`
 			Inline
-			datatypes.Password
+			datatypex.Password
 			// todo if anonymous field implements TextMarshaller will overwrite?
 			MustFailed MustFailed
 		}{
-			HasTag: datatypes.NewAddress("group", "filename.png"),
+			HasTag: datatypex.NewAddress("group", "filename.png"),
 			Inline: Inline{
 				String: "inline string",
 				Int:    100,
 			},
-			Password: datatypes.Password("password"),
+			Password: datatypex.Password("password"),
 		}
 		err := enc.Encode(val)
 		NewWithT(t).Expect(err).NotTo(BeNil())

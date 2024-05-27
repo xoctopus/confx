@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sincospro/x/reflectx"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/reflectx"
 )
 
 func NewCommand(lang Lang, v Executor) (*cobra.Command, error) {

@@ -10,15 +10,15 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-	"github.com/sincospro/x/misc/must"
-	"github.com/sincospro/x/reflectx"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/reflectx"
 	"gopkg.in/yaml.v3"
 
-	"github.com/sincospro/conf/confapp/initializer"
-	"github.com/sincospro/conf/confcmd"
-	"github.com/sincospro/conf/confcmd/commands"
-	"github.com/sincospro/conf/envconf"
+	"github.com/xoctopus/confx/confapp/initializer"
+	"github.com/xoctopus/confx/confcmd"
+	"github.com/xoctopus/confx/confcmd/commands"
+	"github.com/xoctopus/confx/envconf"
 )
 
 type Option func(*AppCtx)

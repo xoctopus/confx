@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"github.com/sincospro/datatypes"
-	"github.com/sincospro/x/misc/must"
+	"github.com/xoctopus/datatypex"
+	"github.com/xoctopus/x/misc/must"
 
-	. "github.com/sincospro/conf/confapp"
+	. "github.com/xoctopus/confx/confapp"
 )
 
 func ExampleNewAppContext() {
@@ -135,12 +135,12 @@ APP__CONFIG2__ClientEndpoint: http://localhost:8888/demo`), os.ModePerm))
 
 type Config1 struct {
 	WorkerID int
-	Endpoint datatypes.Endpoint
+	Endpoint datatypex.Endpoint
 }
 
 type Config2 struct {
 	ServerPort     uint16
-	ClientEndpoint datatypes.Endpoint
+	ClientEndpoint datatypex.Endpoint
 
 	server *http.Server
 	client *http.Client

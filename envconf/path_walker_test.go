@@ -5,7 +5,7 @@ import (
 
 	. "github.com/onsi/gomega"
 
-	"github.com/sincospro/conf/envconf"
+	"github.com/xoctopus/confx/envconf"
 )
 
 type stringer string

@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"github.com/sincospro/conf/envconf"
+	"github.com/xoctopus/confx/envconf"
 )
 
 type GoCmdGenDefaultConfigOptions struct {

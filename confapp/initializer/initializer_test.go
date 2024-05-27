@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 
-	"github.com/sincospro/conf/confapp/initializer"
+	"github.com/xoctopus/confx/confapp/initializer"
 )
 
 var (

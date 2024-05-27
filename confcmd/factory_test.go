@@ -4,10 +4,10 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"github.com/sincospro/x/ptrx"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/ptrx"
 
-	cmdx "github.com/sincospro/conf/confcmd"
+	cmdx "github.com/xoctopus/confx/confcmd"
 )
 
 var mustParsedFlags = []string{

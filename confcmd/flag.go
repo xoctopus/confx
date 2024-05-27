@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-	"github.com/sincospro/x/misc/stringsx"
-	"github.com/sincospro/x/reflectx"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/misc/stringsx"
+	"github.com/xoctopus/x/reflectx"
 )
 
 func NewFlag(name string, lang Lang) *Flag {

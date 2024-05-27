@@ -11,8 +11,8 @@ import (
 	"github.com/xhd2015/xgo/runtime/mock"
 	"gopkg.in/yaml.v3"
 
-	"github.com/sincospro/conf/confcmd/commands"
-	"github.com/sincospro/conf/envconf"
+	"github.com/xoctopus/confx/confcmd/commands"
+	"github.com/xoctopus/confx/envconf"
 )
 
 func TestGoCmdGenDefaultConfigOptions(t *testing.T) {

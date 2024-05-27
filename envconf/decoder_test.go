@@ -7,11 +7,11 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/sincospro/datatypes"
-	"github.com/sincospro/x/ptrx"
-	"github.com/sincospro/x/textx"
+	"github.com/xoctopus/datatypex"
+	"github.com/xoctopus/x/ptrx"
+	"github.com/xoctopus/x/textx"
 
-	"github.com/sincospro/conf/envconf"
+	"github.com/xoctopus/confx/envconf"
 )
 
 func ExampleDecoder_Decode() {
@@ -33,7 +33,7 @@ func ExampleDecoder_Decode() {
 		MapStringString   map[string]string
 		MapStringInt      map[string]int
 		MapStringInt64    map[string]int64
-		MapStringPassword map[string]datatypes.Password
+		MapStringPassword map[string]datatypex.Password
 		Slice             []struct {
 			A int
 			B string
@@ -271,12 +271,12 @@ func TestDecoder_Decode(t *testing.T) {
 
 		val := &struct {
 			private  int
-			Endpoint datatypes.Endpoint `env:"SomeEndpoint"`
+			Endpoint datatypex.Endpoint `env:"SomeEndpoint"`
 			Field    Inline
 			Skip     int `env:"-"`
 			IntPtr   *int
 			Inline
-			Timestamp datatypes.Timestamp
+			Timestamp datatypex.Timestamp
 			Failed    MustFailed
 		}{
 			private: 19820, // to check if this value is modified
