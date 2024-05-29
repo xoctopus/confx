@@ -237,13 +237,11 @@ func (app *AppCtx) attachSubCommands() {
 	app.Command.AddCommand(gen)
 
 	if app.option.GenDefaults {
-		option := &commands.GoCmdGenDefaultConfigOptions{
-			Defaults: &app.dfts,
-			Output:   filepath.Join(app.root, "config"),
-		}
-		cmd, err := confcmd.NewCommand(confcmd.EN, option)
-		must.NoErrorWrap(err, "failed to new cmd `GoCmdGenDefaultConfigOptions`")
-		gen.AddCommand(cmd)
+		option := commands.NewGoCmdGenDefaultConfigOptions(
+			app.dfts,
+			filepath.Join(app.root, "config"),
+		)
+		gen.AddCommand(confcmd.NewCommand(option))
 	}
 
 	if app.option.GenDockerfile {

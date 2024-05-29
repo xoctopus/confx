@@ -1,54 +1,48 @@
 package confcmd_test
 
 import (
+	"bytes"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/spf13/cobra"
-	"github.com/xoctopus/x/ptrx"
 
-	cmdx "github.com/xoctopus/confx/confcmd"
+	. "github.com/xoctopus/confx/confcmd"
 )
 
-var mustParsedFlags = []string{
-	"multi-lang",
-	"overwritten",
-	"embed-integers",
-	"embed-floats",
-	"embed-strings",
-	"int-ptr",
-	"int",
-	"int-8",
-	"int-16",
-	"int-32",
-	"int-64",
-	"uint-ptr",
-	"uint",
-	"uint-8",
-	"uint-16",
-	"uint-32",
-	"uint-64",
-	"float-32",
-	"float-64",
-	"string",
-	"boolean",
+type TestStruct struct {
+	unexported           int
+	Ignored              string   `cmd:"-"`
+	IsRequired           []string `cmd:",required"`
+	OverwrittenFlagName  bool     `cmd:"is-bool"`
+	OverwrittenEnvKey    string   `env:"is-string"`
+	DisableEnvInject     int32    `env:"-"`
+	HasMultiLangHelp     []int    `help:"help default" help.en:"help en" help.zh:"中文帮助"`
+	HasDefaultValue      []float64
+	OverwrittenGroupName ***Basics `cmd:"values"`
+	SlicesGroup          **Slices  // flags group
+	Basics                         // inline anonymous
+	Slices               `cmd:"-"` // skip
+
+	// Executor enhancements
+	*FlagSet         `cmd:"-"`
+	*MultiLangHelper `cmd:"-"`
+	*EnvInjector     `cmd:"-"`
 }
 
-var mustNotParsedFlags = []string{
-	"skipped-unexported",
-	"skipped-ignore",
-	"be-overwritten",
+func (e *TestStruct) Use() string { return "cmd use" }
+
+func (e *TestStruct) Short() string { return "cmd short" }
+
+func (e *TestStruct) Exec(cmd *cobra.Command) error {
+	cmd.Println(cmd.Flag("is-required").Value.String())
+	return nil
 }
 
-type DemoOptions struct {
-	MultiLang         int     `help.en:"multi language" help.zh:"多语言"`
-	skippedUnexported any     `help.en:"any"  help.zh:"随便"`
-	SkippedIgnored    any     `name:"-"`
-	BeOverwritten     bool    `name:"overwritten"`
-	IsRequired        string  `name:"is-required,required" help:"a" help.en:"b" help.zh:"帮助"`
-	Embed             *Slices // embed struct
-	Basics                    // anonymous struct
-}
+func (e *TestStruct) Long() string { return "cmd long description" }
+
+func (e *TestStruct) Example() string { return "cmd usage example" }
 
 type Basics struct {
 	IntPtr  *int
@@ -70,164 +64,237 @@ type Basics struct {
 }
 
 type Slices struct {
-	Integers         []int64
-	Floats           []float64
-	Strings          []string
-	UnsignedIntegers []uint64 // cobra unsupported
+	IntegerSlice     []int
+	Integer32Slice   []int32
+	Integer64Slice   []int64
+	UnsignedIntegers []uint
+	Float32Slice     []float32
+	Float64Slice     []float64
+	StringSlice      []string
+	BooleanSlice     []bool
 }
 
-func ExampleNewCommand() {
-	type Inline struct {
-		InlineField int
-	}
-	var opt = &struct {
-		DemoOptions
-		HasDefaults string `name:"rewrite-tag"`
-		IsRequired  bool   `name:",required"`
-		HasHelp     string `help:"default describe" help.en:"en describe" help.zh:"中文帮助"`
-		Embed       struct {
-			Field int
-		}
-		Inline
-	}{
-		HasDefaults: "has-defaults",
-	}
-
-	cmd, err := cmdx.NewCommand(cmdx.ZH, opt)
-	if err != nil {
-		return
-	}
-
-	for _, _ = range []string{"rewrite-tag", "is-required", "has-help", "embed-field", "inline-field"} {
-		// flag := cmd.Flags().Lookup(name)
-		// if flag != nil {
-		// 	_name := flag.Name
-		// 	if flag.Deprecated
-		// 	fmt.Printf("--%s: %s\n", flag.Name, flag.Usage, flag.DefValue)
-		// 	if flag.Usage != "" {
-		// 		(default: %s)
-		// }
-		// }
-	}
-	_ = cmd.Help()
-
-	//demo short
-	//
-	//Usage:
-	//  demo [flags]
-	//
-	//Flags:
-	//      --boolean
-	//      --embed-field int
-	//      --embed-floats float64Slice    (default [])
-	//      --embed-integers int64Slice    (default [])
-	//      --embed-strings strings
-	//      --float-32 float32
-	//      --float-64 float
-	//      --has-help string             中文帮助
-	//      --inline-field int
-	//      --int int
-	//      --int-16 int16
-	//      --int-32 int32
-	//      --int-64 int
-	//      --int-8 int8
-	//      --int-ptr int
-	//      --is-required
-	//      --multi-lang int              多语言
-	//      --overwritten
-	//      --rewrite-tag string           (default "has-defaults")
-	//      --string string
-	//      --uint uint
-	//      --uint-16 uint16
-	//      --uint-32 uint32
-	//      --uint-64 uint
-	//      --uint-8 uint8
-	//      --uint-ptr uint
-}
-
-func TestNewCommand(t *testing.T) {
-	cmd, err := cmdx.NewCommand(cmdx.EN, &DemoOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for _, name := range mustParsedFlags {
-		flag := cmd.Flags().Lookup(name)
-		NewWithT(t).Expect(flag).NotTo(BeNil())
-	}
-
-	for _, name := range mustNotParsedFlags {
-		flag := cmd.Flags().Lookup(name)
-		NewWithT(t).Expect(flag).To(BeNil())
-	}
-
-	t.Run("NameConflict", func(t *testing.T) {
-		type Inline struct {
-			Int int
-		}
-
-		flags := make(map[string]*cmdx.Flag)
-		err = cmdx.ParseFlags(&struct {
-			Int int
-			Inline
-		}{}, cmdx.EN, flags)
-		NewWithT(t).Expect(err).NotTo(BeNil())
-		NewWithT(t).Expect(err.Error()).To(ContainSubstring("name conflict"))
-	})
-
-	t.Run("NewCommandFailedToParseFlag", func(t *testing.T) {
-		_, err = cmdx.NewCommand(cmdx.EN, InvalidExecutor{})
-		NewWithT(t).Expect(err).NotTo(BeNil())
-		NewWithT(t).Expect(err.Error()).To(Equal("expect value can be set"))
-	})
-
-	t.Run("CannotSet", func(t *testing.T) {
-		flags := make(map[string]*cmdx.Flag)
-		err = cmdx.ParseFlags(struct{}{}, cmdx.EN, flags)
-		NewWithT(t).Expect(err).NotTo(BeNil())
-		NewWithT(t).Expect(err.Error()).To(Equal("expect value can be set"))
+func TestParseFlags(t *testing.T) {
+	t.Run("InvalidValue", func(t *testing.T) {
+		defer func() {
+			v := recover().(error)
+			NewWithT(t).Expect(v).NotTo(BeNil())
+			NewWithT(t).Expect(v.Error()).To(ContainSubstring("invalid input value"))
+		}()
+		ParseFlags(nil)
 	})
 
 	t.Run("NotStruct", func(t *testing.T) {
-		flags := make(map[string]*cmdx.Flag)
-		err = cmdx.ParseFlags(ptrx.Ptr(100), cmdx.EN, flags)
-		NewWithT(t).Expect(err).NotTo(BeNil())
-		NewWithT(t).Expect(err.Error()).To(Equal("expect a struct value"))
+		defer func() {
+			v := recover().(error)
+			NewWithT(t).Expect(v).NotTo(BeNil())
+			NewWithT(t).Expect(v.Error()).To(ContainSubstring("expect a struct value"))
+		}()
+		v := new(int)
+		ParseFlags(v)
 	})
 
-	flags := make(map[string]*cmdx.Flag)
-	err = cmdx.ParseFlags(&DemoOptions{}, cmdx.EN, flags)
-	if err != nil {
-		t.Fatal(err)
+	t.Run("CannotSet", func(t *testing.T) {
+		defer func() {
+			v := recover().(error)
+			NewWithT(t).Expect(v).NotTo(BeNil())
+			NewWithT(t).Expect(v.Error()).To(ContainSubstring("expect value can set"))
+		}()
+		v := struct{}{}
+		ParseFlags(v)
+	})
+
+	t.Run("ParseStructFields", func(t *testing.T) {
+		v := &TestStruct{
+			HasDefaultValue: []float64{1, 2, 3},
+		}
+
+		flags := ParseFlags(v)
+
+		find := func(field string) *Flag {
+			for _, f := range flags {
+				if f.Field() == field {
+					return f
+				}
+			}
+			return nil
+		}
+
+		NewWithT(t).Expect(find("unexported")).To(BeNil())
+		NewWithT(t).Expect(find("Ignored")).To(BeNil())
+		NewWithT(t).Expect(find("IsRequired").IsRequired()).To(BeTrue())
+		NewWithT(t).Expect(find("OverwrittenFlagName").Name()).To(Equal("is-bool"))
+		NewWithT(t).Expect(find("OverwrittenEnvKey").EnvKey("any")).To(Equal("ANY__IS_STRING"))
+		NewWithT(t).Expect(find("OverwrittenEnvKey").EnvKey("")).To(Equal("IS_STRING"))
+		NewWithT(t).Expect(find("DisableEnvInject").EnvKey("any")).To(Equal(""))
+		NewWithT(t).Expect(find("HasMultiLangHelp").Help(FlagHelp)).To(Equal("help default"))
+		NewWithT(t).Expect(find("HasMultiLangHelp").Help(LangEN)).To(Equal("help en"))
+		NewWithT(t).Expect(find("HasMultiLangHelp").Help(LangZH)).To(Equal("中文帮助"))
+		NewWithT(t).Expect(find("HasDefaultValue").DefaultValue()).To(Equal(v.HasDefaultValue))
+		NewWithT(t).Expect(find("values.UintPtr")).NotTo(BeNil())
+		NewWithT(t).Expect(find("SlicesGroup.IntegerSlice")).NotTo(BeNil())
+		NewWithT(t).Expect(find("IntPtr")).NotTo(BeNil())
+		NewWithT(t).Expect(find("Slices")).To(BeNil())
+		NewWithT(t).Expect(find("Slices.UnsignedIntegers")).To(BeNil())
+	})
+}
+
+func TestNewCommand(t *testing.T) {
+	t.Run("FailedToAddFlag", func(t *testing.T) {
+		t.Run("FlagNameConflict", func(t *testing.T) {
+			defer func() {
+				v := recover().(error)
+				NewWithT(t).Expect(v.Error()).To(ContainSubstring("flag name conflict"))
+			}()
+
+			var v Executor = &struct {
+				*TestStruct
+				Int int // this flag name will conflict with TestStruct.Basics.Int
+			}{
+				TestStruct: &TestStruct{
+					MultiLangHelper: NewDefaultMultiLangHelper(),
+					FlagSet:         NewFlagSet(),
+				},
+			}
+			_ = NewCommand(v)
+		})
+
+		t.Run("EnvKeyConflict", func(t *testing.T) {
+			defer func() {
+				v := recover().(error)
+				NewWithT(t).Expect(v.Error()).To(ContainSubstring("env key conflict"))
+			}()
+
+			var v Executor = &struct {
+				*TestStruct
+				UserDefine string `env:"is-string"` // this env key will conflict with TestStruct.OverwrittenEnvKey
+			}{
+				TestStruct: &TestStruct{
+					MultiLangHelper: NewDefaultMultiLangHelper(),
+					FlagSet:         NewFlagSet(),
+				},
+			}
+			_ = NewCommand(v)
+		})
+
+		t.Run("UnsupportedFlagType", func(t *testing.T) {
+			defer func() {
+				v := recover().(error)
+				NewWithT(t).Expect(v.Error()).To(ContainSubstring("unsupported flag value"))
+			}()
+
+			var v Executor = &struct {
+				*TestStruct
+				UnsignedInteger32Slices []uint32 // cobra does not support []uint32 flag
+			}{
+				TestStruct: &TestStruct{
+					MultiLangHelper: NewDefaultMultiLangHelper(),
+					FlagSet:         NewFlagSet(),
+				},
+			}
+			_ = NewCommand(v)
+		})
+	})
+
+}
+
+func ExampleNewCommand() {
+	var v Executor = &TestStruct{
+		HasDefaultValue: []float64{1, 2, 3},
+		MultiLangHelper: NewDefaultMultiLangHelper(),
+		FlagSet:         NewFlagSet(),
+		EnvInjector:     NewEnvInjector("test"),
 	}
-	t.Log(flags["is-required"].Name())
-	t.Log(flags["is-required"].LangHelp(cmdx.Lang("xx")))
-	t.Log(flags["is-required"].LangHelp(cmdx.ZH))
-	t.Log(flags["is-required"].LangHelp(cmdx.EN))
-	t.Log(flags["is-required"].Env("prefix"))
+	cmd := NewCommand(v)
 
-	cmd, err = cmdx.NewCommand(cmdx.EN, &DemoOptions{})
-	NewWithT(t).Expect(err).To(BeNil())
+	if v.Flag("is-required") == nil {
+		return
+	}
+	flags := v.Flags()
+	if flags["is-required"] == nil {
+		return
+	}
 
-	flag := cmd.Flags().Lookup("is-required")
-	flag.Value.Set("set require")
-	flag.Changed = true
-	NewWithT(t).Expect(cmd.Execute()).To(BeNil())
+	buf := bytes.NewBufferString("")
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+
+	{
+		buf.Reset()
+		cmd.SetArgs([]string{"--is-required", "a b c"})
+		if err := cmd.Execute(); err != nil {
+			return
+		}
+		fmt.Println(buf.String())
+	}
+
+	injector := v.(CanInjectFromEnv)
+	injector.SetPrefix("demo")
+	v.SetHelpLang(LangZH)
+
+	v.OutputFlagsHelp(v.HelpLang(), injector.Prefix())
+
+	{
+		// buf.Reset()
+		// prefix := v.(EnvInjector).Prefix()
+		// _ = os.Setenv(v.Flag("is-required").EnvKey(prefix), "i love you")
+		// if err := cmd.Execute(); err != nil {
+		// 	return
+		// }
+		// fmt.Println(buf.String())
+	}
+
+	// Output:
+	// [a b c]
+	//
+	//┌────────────────────────────────┬──────────┬───────────────┬──────────────────────────────────────┬──────────────┐
+	//│ flag name                      │ required │ default value │ environment key                      │ help info    │
+	//├────────────────────────────────┼──────────┼───────────────┼──────────────────────────────────────┼──────────────┤
+	//│ boolean                        │          │ false         │ DEMO__BOOLEAN                        │              │
+	//│ disable-env-inject             │          │ 0             │                                      │              │
+	//│ float-32                       │          │ 0             │ DEMO__FLOAT_32                       │              │
+	//│ float-64                       │          │ 0             │ DEMO__FLOAT_64                       │              │
+	//│ has-default-value              │          │ [1 2 3]       │ DEMO__HAS_DEFAULT_VALUE              │              │
+	//│ has-multi-lang-help            │          │ []            │ DEMO__HAS_MULTI_LANG_HELP            │ 中文帮助     │
+	//│ int                            │          │ 0             │ DEMO__INT                            │              │
+	//│ int-16                         │          │ 0             │ DEMO__INT_16                         │              │
+	//│ int-32                         │          │ 0             │ DEMO__INT_32                         │              │
+	//│ int-64                         │          │ 0             │ DEMO__INT_64                         │              │
+	//│ int-8                          │          │ 0             │ DEMO__INT_8                          │              │
+	//│ int-ptr                        │          │ 0             │ DEMO__INT_PTR                        │              │
+	//│ is-bool                        │          │ false         │ DEMO__OVERWRITTEN_FLAG_NAME          │              │
+	//│ is-required                    │ yes      │ []            │ DEMO__IS_REQUIRED                    │              │
+	//│ overwritten-env-key            │          │               │ DEMO__IS_STRING                      │              │
+	//│ slices-group-boolean-slice     │          │ []            │ DEMO__SLICES_GROUP_BOOLEAN_SLICE     │              │
+	//│ slices-group-float-32-slice    │          │ []            │ DEMO__SLICES_GROUP_FLOAT_32_SLICE    │              │
+	//│ slices-group-float-64-slice    │          │ []            │ DEMO__SLICES_GROUP_FLOAT_64_SLICE    │              │
+	//│ slices-group-integer-32-slice  │          │ []            │ DEMO__SLICES_GROUP_INTEGER_32_SLICE  │              │
+	//│ slices-group-integer-64-slice  │          │ []            │ DEMO__SLICES_GROUP_INTEGER_64_SLICE  │              │
+	//│ slices-group-integer-slice     │          │ []            │ DEMO__SLICES_GROUP_INTEGER_SLICE     │              │
+	//│ slices-group-string-slice      │          │ []            │ DEMO__SLICES_GROUP_STRING_SLICE      │              │
+	//│ slices-group-unsigned-integers │          │ []            │ DEMO__SLICES_GROUP_UNSIGNED_INTEGERS │              │
+	//│ string                         │          │               │ DEMO__STRING                         │              │
+	//│ uint                           │          │ 0             │ DEMO__UINT                           │              │
+	//│ uint-16                        │          │ 0             │ DEMO__UINT_16                        │              │
+	//│ uint-32                        │          │ 0             │ DEMO__UINT_32                        │              │
+	//│ uint-64                        │          │ 0             │ DEMO__UINT_64                        │              │
+	//│ uint-8                         │          │ 0             │ DEMO__UINT_8                         │              │
+	//│ uint-ptr                       │          │ 0             │ DEMO__UINT_PTR                       │              │
+	//│ values-boolean                 │          │ false         │ DEMO__VALUES_BOOLEAN                 │              │
+	//│ values-float-32                │          │ 0             │ DEMO__VALUES_FLOAT_32                │              │
+	//│ values-float-64                │          │ 0             │ DEMO__VALUES_FLOAT_64                │              │
+	//│ values-int                     │          │ 0             │ DEMO__VALUES_INT                     │              │
+	//│ values-int-16                  │          │ 0             │ DEMO__VALUES_INT_16                  │              │
+	//│ values-int-32                  │          │ 0             │ DEMO__VALUES_INT_32                  │              │
+	//│ values-int-64                  │          │ 0             │ DEMO__VALUES_INT_64                  │              │
+	//│ values-int-8                   │          │ 0             │ DEMO__VALUES_INT_8                   │              │
+	//│ values-int-ptr                 │          │ 0             │ DEMO__VALUES_INT_PTR                 │              │
+	//│ values-string                  │          │               │ DEMO__VALUES_STRING                  │              │
+	//│ values-uint                    │          │ 0             │ DEMO__VALUES_UINT                    │              │
+	//│ values-uint-16                 │          │ 0             │ DEMO__VALUES_UINT_16                 │              │
+	//│ values-uint-32                 │          │ 0             │ DEMO__VALUES_UINT_32                 │              │
+	//│ values-uint-64                 │          │ 0             │ DEMO__VALUES_UINT_64                 │              │
+	//│ values-uint-8                  │          │ 0             │ DEMO__VALUES_UINT_8                  │              │
+	//│ values-uint-ptr                │          │ 0             │ DEMO__VALUES_UINT_PTR                │              │
+	//└────────────────────────────────┴──────────┴───────────────┴──────────────────────────────────────┴──────────────┘
 }
-
-func (v *DemoOptions) Use() string { return "demo" }
-
-func (v *DemoOptions) Short() string { return "demo short" }
-
-func (v *DemoOptions) Exec(cmd *cobra.Command) error {
-	cmd.Println(cmd.Flag("is-required").Value.String())
-	return nil
-}
-
-type InvalidExecutor struct{}
-
-func (v InvalidExecutor) Use() string { return "demo" }
-
-func (v InvalidExecutor) Short() string { return "demo short" }
-
-func (v InvalidExecutor) Exec(_ *cobra.Command) error { return nil }

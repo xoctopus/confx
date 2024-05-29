@@ -8,12 +8,25 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	"github.com/xoctopus/confx/confcmd"
 	"github.com/xoctopus/confx/envconf"
 )
 
+func NewGoCmdGenDefaultConfigOptions(defaults []*envconf.Group, output string) *GoCmdGenDefaultConfigOptions {
+	return &GoCmdGenDefaultConfigOptions{
+		Defaults:        &defaults,
+		Output:          output,
+		MultiLangHelper: confcmd.NewDefaultMultiLangHelper(),
+		FlagSet:         confcmd.NewFlagSet(),
+	}
+}
+
 type GoCmdGenDefaultConfigOptions struct {
-	Defaults *[]*envconf.Group `name:"-"`
-	Output   string            `name:"output" help:"config file output dir"`
+	Defaults *[]*envconf.Group `cmd:"-"`
+	Output   string            `cmd:"output" help:"config file output dir"`
+
+	*confcmd.MultiLangHelper
+	*confcmd.FlagSet
 }
 
 func (c *GoCmdGenDefaultConfigOptions) Use() string {

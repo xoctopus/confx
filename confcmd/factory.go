@@ -4,90 +4,132 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/reflectx"
 )
 
-func NewCommand(lang Lang, v Executor) (*cobra.Command, error) {
-	flags := make(map[string]*Flag)
-
-	if err := ParseFlags(v, lang, flags); err != nil {
-		return nil, err
-	}
+func NewCommand(v Executor) *cobra.Command {
+	flags := ParseFlags(v)
 
 	cmd := &cobra.Command{
 		Use:   v.Use(),
 		Short: v.Short(),
+		// PersistentPreRun: func(cmd *cobra.Command, args []string) {
+		// 	prefix := ""
+		// 	if injector, ok := v.(EnvInjector); ok {
+		// 		prefix = injector.Prefix()
+		// 	} else {
+		// 		return
+		// 	}
+		// 	for _, f := range v.Flags() {
+		// 		envKey := f.EnvKey(prefix)
+		// 		envVar := os.Getenv(envKey)
+		// 		if envVar != "" {
+		// 			args = append(args, "--"+f.Name(), envVar)
+		// 		}
+		// 	}
+		// 	cmd.SetArgs(args)
+		// },
+		// PreRunE: func(cmd *cobra.Command, args []string) error {
+		// 	prefix := ""
+		// 	if injector, ok := v.(EnvInjector); ok {
+		// 		prefix = injector.Prefix()
+		// 	} else {
+		// 		return nil
+		// 	}
+		// 	for _, f := range v.Flags() {
+		// 		envKey := f.EnvKey(prefix)
+		// 		envVar := os.Getenv(envKey)
+		// 		if envVar != "" {
+		// 			args = append(args, "--"+f.Name(), envVar)
+		// 		}
+		// 	}
+		// 	cmd.SetArgs(args)
+		// 	return nil
+		// },
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return v.Exec(cmd)
 		},
 	}
 
+	lang := v.HelpLang()
 	for _, f := range flags {
-		if err := f.Register(cmd); err != nil {
-			continue
-		}
+		v.AddFlag(f)
+		err := f.Register(cmd, lang)
+		must.NoErrorWrap(err, "failed to registered flag: %s", f.name)
 	}
 
-	return cmd, nil
+	if executor, ok := v.(WithExample); ok {
+		cmd.Example = executor.Example()
+	}
+	if executor, ok := v.(WithLong); ok {
+		cmd.Long = executor.Long()
+	}
+
+	return cmd
 }
 
-func ParseFlags(v any, lang Lang, flags map[string]*Flag, prefixes ...string) error {
+func ParseFlags(v any) []*Flag {
+	return parseFlags(v, "")
+}
+
+func parseFlags(v any, prefix string) []*Flag {
+	flags := make([]*Flag, 0)
+
 	rv, ok := v.(reflect.Value)
 	if !ok {
 		rv = reflectx.Indirect(reflect.ValueOf(v))
 	}
 
+	must.BeTrueWrap(rv != reflectx.InvalidValue, "invalid input value")
+
 	if rv.Kind() == reflect.Pointer {
 		if rv.IsNil() && rv.CanSet() {
 			rv = reflectx.IndirectNew(rv)
+		} else {
+			rv = rv.Elem()
 		}
-		return ParseFlags(rv, lang, flags, prefixes...)
-	}
-
-	if rv.Kind() != reflect.Struct {
-		return errors.Errorf("expect a struct value")
-	}
-
-	if !rv.CanSet() {
-		return errors.Errorf("expect value can be set")
+		flags = append(flags, parseFlags(rv, prefix)...)
+		return flags
 	}
 
 	rt := rv.Type()
+
+	must.BeTrueWrap(rv.Kind() == reflect.Struct, "expect a struct value, but got %s")
+
+	must.BeTrueWrap(
+		rv.CanSet(),
+		"expect value can set: [type: %s] [prefix: %s]", rt, prefix,
+	)
+
 	for i := 0; i < rv.NumField(); i++ {
-		frt := rt.Field(i)
-
-		if !frt.IsExported() {
+		sf := rv.Type().Field(i)
+		if !sf.IsExported() {
 			continue
 		}
 
-		prefix := strings.Join(prefixes, "-")
-		f := NewFlagByStructField(prefix, lang, frt)
-		if f == nil {
+		name := sf.Name
+		tagKey, _ := reflectx.ParseTagKeyAndFlags(sf.Tag.Get(FlagCmd))
+		if tagKey == "-" {
 			continue
 		}
-
-		if _, ok = flags[f.name]; ok {
-			return errors.Errorf("name conflict: [flag: %s] [field: %s]", f.name, frt.Name)
+		if tagKey != "" {
+			name = tagKey
 		}
 
-		frv := rv.Field(i)
-		if reflectx.Deref(frt.Type).Kind() == reflect.Struct {
-			tagVal, _ := frt.Tag.Lookup(flagKey)
-			_, tagFlags := reflectx.ParseTagKeyAndFlags(tagVal)
-			_prefixes := prefixes
-			if !(len(tagFlags) == 0 && frt.Anonymous) {
-				_prefixes = append(_prefixes, f.name)
+		fv := rv.Field(i)
+		if reflectx.Deref(fv.Type()).Kind() == reflect.Struct {
+			_prefix := strings.TrimPrefix(prefix+"."+name, ".")
+			if sf.Anonymous && sf.Tag == "" {
+				_prefix = prefix
 			}
-			if err := ParseFlags(frv, lang, flags, _prefixes...); err != nil {
-				return err
-			}
+			flags = append(flags, parseFlags(fv, _prefix)...)
 			continue
 		}
-		f.value = reflectx.IndirectNew(frv)
-		f.defaults = f.value.Interface()
-		flags[f.name] = f
+		if flag := NewFlagByStructInfo(prefix, sf, fv); flag != nil {
+			flags = append(flags, flag)
+		}
 	}
-	return nil
+	return flags
 }

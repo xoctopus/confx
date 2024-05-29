@@ -16,9 +16,8 @@ import (
 )
 
 func TestGoCmdGenDefaultConfigOptions(t *testing.T) {
-	cmd := &commands.GoCmdGenDefaultConfigOptions{
-		Output: os.TempDir(),
-		Defaults: &[]*envconf.Group{
+	cmd := commands.NewGoCmdGenDefaultConfigOptions(
+		[]*envconf.Group{
 			{
 				Name: "PREFIX",
 				Values: map[string]*envconf.Var{
@@ -29,7 +28,8 @@ func TestGoCmdGenDefaultConfigOptions(t *testing.T) {
 				},
 			},
 		},
-	}
+		os.TempDir(),
+	)
 	t.Log(cmd.Use())
 	t.Log(cmd.Short())
 

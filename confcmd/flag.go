@@ -1,46 +1,51 @@
 package confcmd
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/misc/stringsx"
+	"github.com/xoctopus/x/ptrx"
 	"github.com/xoctopus/x/reflectx"
 )
 
-func NewFlag(name string, lang Lang) *Flag {
-	return &Flag{
-		name:     name,
-		lang:     lang,
-		helps:    make(map[string]string),
-		required: false,
+func NewFlagByStructInfo(prefix string, sf reflect.StructField, fv reflect.Value) *Flag {
+	field := strings.TrimPrefix(prefix+"."+sf.Name, ".")
+	f := &Flag{
+		field: field,
+		name:  field,
+		env:   ptrx.Ptr(field),
+		helps: make(map[string]string),
 	}
-}
 
-func NewFlagByStructField(prefix string, lang Lang, sf reflect.StructField) *Flag {
-	name := sf.Name
-	if prefix != "" {
-		name = prefix + "-" + name
-	}
-	f := NewFlag(name, lang)
-
-	if v, ok := sf.Tag.Lookup(flagKey); ok {
+	if v, ok := sf.Tag.Lookup(FlagCmd); ok {
 		tagKey, flags := reflectx.ParseTagKeyAndFlags(v)
 		if tagKey == "-" {
 			return nil
 		}
 		if tagKey != "" {
-			f.name = tagKey
+			f.name = strings.TrimPrefix(prefix+"."+tagKey, ".")
 		}
-		if _, ok = flags[requiredFlag]; ok {
+		if _, ok = flags[FlagRequired]; ok {
 			f.required = true
 		}
 	}
 
-	for _, key := range helpKeys {
+	if v, ok := sf.Tag.Lookup(FlagEnv); ok {
+		tagKey, _ := reflectx.ParseTagKeyAndFlags(v)
+		if tagKey == "-" {
+			f.env = nil
+		} else {
+			if tagKey != "" {
+				*f.env = strings.TrimPrefix(prefix+"."+tagKey, ".")
+			}
+		}
+	}
+
+	for _, key := range MultiLangHelpKeys {
 		if tagKey, ok := sf.Tag.Lookup(key); ok {
 			help, _ := reflectx.ParseTagKeyAndFlags(tagKey)
 			f.helps[key] = help
@@ -48,28 +53,45 @@ func NewFlagByStructField(prefix string, lang Lang, sf reflect.StructField) *Fla
 	}
 
 	f.name = stringsx.LowerDashJoint(f.name)
-	f.envkey = stringsx.UpperSnakeCase(f.name)
+	if f.env != nil {
+		*f.env = stringsx.UpperSnakeCase(*f.env)
+	}
+
+	f.value = reflectx.IndirectNew(fv)
+	f.defaults = f.value.Interface()
 
 	return f
 }
 
 type Flag struct {
-	name     string
-	envkey   string
-	lang     Lang
-	helps    map[string]string
+	// field struct field name
+	field string
+	// name command flag name, eg: some-flag
+	name string
+	// env key can injector from env var, eg: SOME_FLAG
+	env *string
+	// helps multi-language help info
+	helps map[string]string
+	// required if this flag is required
 	required bool
+	// defaults flag's default value
 	defaults any
-	value    reflect.Value
+	// value filed value
+	value reflect.Value
 }
 
 func (f *Flag) Name() string {
 	return f.name
 }
 
-func (f *Flag) LangHelp(lang Lang) string {
-	key := strings.ToLower("help." + string(lang))
-	keys := append([]string{key}, helpKeys...)
+func (f *Flag) Field() string {
+	return f.field
+}
+
+func (f *Flag) Help(lang LangType) string {
+	keys := make([]string, 0, len(MultiLangHelpKeys)+1)
+	keys = append(keys, strings.ToLower(lang.HelpKey()))
+	keys = append(keys, MultiLangHelpKeys...)
 
 	for _, name := range keys {
 		if help, _ := f.helps[name]; help != "" {
@@ -83,56 +105,86 @@ func (f *Flag) IsRequired() bool {
 	return f.required
 }
 
-func (f *Flag) Help() string {
-	return f.LangHelp(f.lang)
+func (f *Flag) DefaultValue() any {
+	return f.defaults
 }
 
-func (f *Flag) Env(prefix string) (string, string) {
-	key := f.envkey
-	if prefix != "" {
-		key = strings.ToUpper(prefix + "__" + f.envkey)
+func (f *Flag) Value() any {
+	must.BeTrueWrap(
+		f.value.IsValid() && f.value.CanInterface(),
+		"field is not valid or cannot interface: %s", f.name,
+	)
+	return f.value.Interface()
+}
+
+func (f *Flag) ValueVarP() any {
+	must.BeTrueWrap(
+		f.value.IsValid() && f.value.CanAddr() && f.value.Addr().CanInterface(),
+		"field is not valid or cannot interface, or addr cannot interface: %s", f.name,
+	)
+	return f.value.Addr().Interface()
+}
+
+func (f *Flag) EnvKey(prefix string) string {
+	if f.env == nil {
+		return ""
 	}
-	return key, fmt.Sprint(f.defaults)
+	if prefix != "" {
+		return strings.Replace(strings.ToUpper(prefix+"__"+*f.env), "-", "_", -1)
+	}
+	return strings.Replace(strings.ToUpper(*f.env), "-", "_", -1)
 }
 
-func (f *Flag) Register(cmd *cobra.Command) error {
-	switch defaults := f.defaults.(type) {
+func (f *Flag) Register(cmd *cobra.Command, lang LangType) error {
+	flags := cmd.Flags()
+	help := f.Help(lang)
+	switch v := f.defaults.(type) {
 	case bool:
-		cmd.Flags().BoolVarP(f.value.Addr().Interface().(*bool), f.name, "", defaults, f.Help())
+		flags.BoolVarP(f.ValueVarP().(*bool), f.name, "", v, help)
 	case string:
-		cmd.Flags().StringVarP(f.value.Addr().Interface().(*string), f.name, "", defaults, f.Help())
+		flags.StringVarP(f.ValueVarP().(*string), f.name, "", v, help)
 	case int:
-		cmd.Flags().IntVarP(f.value.Addr().Interface().(*int), f.name, "", defaults, f.Help())
+		flags.IntVarP(f.ValueVarP().(*int), f.name, "", v, help)
 	case int8:
-		cmd.Flags().Int8VarP(f.value.Addr().Interface().(*int8), f.name, "", defaults, f.Help())
+		flags.Int8VarP(f.ValueVarP().(*int8), f.name, "", v, help)
 	case int16:
-		cmd.Flags().Int16VarP(f.value.Addr().Interface().(*int16), f.name, "", defaults, f.Help())
+		flags.Int16VarP(f.ValueVarP().(*int16), f.name, "", v, help)
 	case int32:
-		cmd.Flags().Int32VarP(f.value.Addr().Interface().(*int32), f.name, "", defaults, f.Help())
+		flags.Int32VarP(f.ValueVarP().(*int32), f.name, "", v, help)
 	case int64:
-		cmd.Flags().Int64VarP(f.value.Addr().Interface().(*int64), f.name, "", defaults, f.Help())
+		flags.Int64VarP(f.ValueVarP().(*int64), f.name, "", v, help)
 	case uint:
-		cmd.Flags().UintVarP(f.value.Addr().Interface().(*uint), f.name, "", defaults, f.Help())
+		flags.UintVarP(f.ValueVarP().(*uint), f.name, "", v, help)
 	case uint8:
-		cmd.Flags().Uint8VarP(f.value.Addr().Interface().(*uint8), f.name, "", defaults, f.Help())
+		flags.Uint8VarP(f.ValueVarP().(*uint8), f.name, "", v, help)
 	case uint16:
-		cmd.Flags().Uint16VarP(f.value.Addr().Interface().(*uint16), f.name, "", defaults, f.Help())
+		flags.Uint16VarP(f.ValueVarP().(*uint16), f.name, "", v, help)
 	case uint32:
-		cmd.Flags().Uint32VarP(f.value.Addr().Interface().(*uint32), f.name, "", defaults, f.Help())
+		flags.Uint32VarP(f.ValueVarP().(*uint32), f.name, "", v, help)
 	case uint64:
-		cmd.Flags().Uint64VarP(f.value.Addr().Interface().(*uint64), f.name, "", defaults, f.Help())
+		flags.Uint64VarP(f.ValueVarP().(*uint64), f.name, "", v, help)
 	case float32:
-		cmd.Flags().Float32VarP(f.value.Addr().Interface().(*float32), f.name, "", defaults, f.Help())
+		flags.Float32VarP(f.ValueVarP().(*float32), f.name, "", v, help)
 	case float64:
-		cmd.Flags().Float64VarP(f.value.Addr().Interface().(*float64), f.name, "", defaults, f.Help())
+		flags.Float64VarP(f.ValueVarP().(*float64), f.name, "", v, help)
+	case []int:
+		flags.IntSliceVarP(f.ValueVarP().(*[]int), f.name, "", v, help)
+	case []int32:
+		flags.Int32SliceVarP(f.ValueVarP().(*[]int32), f.name, "", v, help)
 	case []int64:
-		cmd.Flags().Int64SliceVarP(f.value.Addr().Interface().(*[]int64), f.name, "", defaults, f.Help())
+		flags.Int64SliceVarP(f.ValueVarP().(*[]int64), f.name, "", v, help)
+	case []uint:
+		flags.UintSliceVarP(f.ValueVarP().(*[]uint), f.name, "", v, help)
+	case []float32:
+		flags.Float32SliceVarP(f.ValueVarP().(*[]float32), f.name, "", v, help)
 	case []float64:
-		cmd.Flags().Float64SliceVarP(f.value.Addr().Interface().(*[]float64), f.name, "", defaults, f.Help())
+		flags.Float64SliceVarP(f.ValueVarP().(*[]float64), f.name, "", v, help)
 	case []string:
-		cmd.Flags().StringSliceVarP(f.value.Addr().Interface().(*[]string), f.name, "", defaults, f.Help())
+		flags.StringSliceVarP(f.ValueVarP().(*[]string), f.name, "", v, help)
+	case []bool:
+		flags.BoolSliceVarP(f.ValueVarP().(*[]bool), f.name, "", v, help)
 	default:
-		return errors.Errorf("unsupport flag value type: `%s`", f.value.Type())
+		return errors.Errorf("unsupported flag value type: `%s`", f.value.Type())
 	}
 	if f.required {
 		return cmd.MarkFlagRequired(f.name)
