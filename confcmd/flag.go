@@ -10,6 +10,7 @@ import (
 	"github.com/xoctopus/x/misc/stringsx"
 	"github.com/xoctopus/x/ptrx"
 	"github.com/xoctopus/x/reflectx"
+	"github.com/xoctopus/x/textx"
 )
 
 func NewFlagByStructInfo(prefix string, sf reflect.StructField, fv reflect.Value) *Flag {
@@ -138,6 +139,7 @@ func (f *Flag) EnvKey(prefix string) string {
 func (f *Flag) Register(cmd *cobra.Command, lang LangType) error {
 	flags := cmd.Flags()
 	help := f.Help(lang)
+
 	switch v := f.defaults.(type) {
 	case bool:
 		flags.BoolVarP(f.ValueVarP().(*bool), f.name, "", v, help)
@@ -190,4 +192,37 @@ func (f *Flag) Register(cmd *cobra.Command, lang LangType) error {
 		return cmd.MarkFlagRequired(f.name)
 	}
 	return nil
+}
+
+func (f *Flag) ParseEnv(envVar string) error {
+	parser := func(rv reflect.Value, envVar string) error {
+		return textx.UnmarshalText([]byte(envVar), rv)
+	}
+
+	var err error
+
+	switch f.value.Interface().(type) {
+	case bool, string,
+		int, int8, int16, int32, int64,
+		uint, uint8, uint16, uint32, uint64,
+		float32, float64:
+		err = parser(f.value, envVar)
+	case []int, []int32, []int64, []uint,
+		[]float32, []float64, []string, []bool:
+		fields := strings.Fields(envVar)
+		for _, field := range fields {
+			fieldv := reflect.New(f.value.Type().Elem()).Elem()
+			if err = parser(fieldv, field); err != nil {
+				return err
+			}
+			f.value = reflect.Append(f.value, fieldv)
+		}
+	default:
+		err = errors.Errorf("unsupported flag value type: `%s`", f.value.Type())
+	}
+
+	if err == nil {
+		f.defaults = f.value.Interface()
+	}
+	return err
 }

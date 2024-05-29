@@ -10,8 +10,8 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/xhd2015/xgo/runtime v1.0.37
 	github.com/xoctopus/datatypex v0.0.5
-	github.com/xoctopus/x v0.0.13
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
+	github.com/xoctopus/x v0.0.14
+	golang.org/x/exp v0.0.0-20240529005216-23cca8864a10
 	gopkg.in/yaml.v3 v3.0.1
 )
 

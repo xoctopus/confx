@@ -43,10 +43,10 @@ github.com/xhd2015/xgo/runtime v1.0.37 h1:WBFh1aX8c7OLEGafyhdEDfe+BWlXdcLqPvFe2T
 github.com/xhd2015/xgo/runtime v1.0.37/go.mod h1:9GBQ2SzJCzpD3T+HRN+2C0TUOGv7qIz4s0mad1xJ8Jo=
 github.com/xoctopus/datatypex v0.0.5 h1:VwXghgCqy7s+S9xTf+71CwZx2HB+lQGf7HDhUDXao+I=
 github.com/xoctopus/datatypex v0.0.5/go.mod h1:iP29lYi0cY+IXbEnIRnMbnuEPWHu2wVDYbBFk1MHrlA=
-github.com/xoctopus/x v0.0.13 h1:0W2xq0RWye3hTszq1dX/A57Gm7K06VzkTGg3DZGo/uY=
-github.com/xoctopus/x v0.0.13/go.mod h1:WTjvuc3Qxn1RaQ536VQjnsh33LhVwtxWUDydlrETxPw=
-golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 h1:vr/HnozRka3pE4EsMEg1lgkXJkTFJCVUX+S/ZT6wYzM=
-golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842/go.mod h1:XtvwrStGgqGPLc4cjQfWqZHG1YFdYs6swckp8vpsjnc=
+github.com/xoctopus/x v0.0.14 h1:zK8DGyhOikV5eq2oUz3AIrnj7Cky7ryavmgp0eRAwyk=
+github.com/xoctopus/x v0.0.14/go.mod h1:WTjvuc3Qxn1RaQ536VQjnsh33LhVwtxWUDydlrETxPw=
+golang.org/x/exp v0.0.0-20240529005216-23cca8864a10 h1:vpzMC/iZhYFAjJzHU0Cfuq+w1vLLsF2vLkDrPjzKYck=
+golang.org/x/exp v0.0.0-20240529005216-23cca8864a10/go.mod h1:XtvwrStGgqGPLc4cjQfWqZHG1YFdYs6swckp8vpsjnc=
 golang.org/x/net v0.25.0 h1:d/OCCoBEUq33pjydKrGQhw7IlUPI2Oylr+8qLx49kac=
 golang.org/x/net v0.25.0/go.mod h1:JkAGAh7GEvH74S6FOH42FLoXpXbE/aqXSrIQjXgsiwM=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

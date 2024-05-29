@@ -1,6 +1,7 @@
 package confcmd
 
 import (
+	"os"
 	"reflect"
 	"strings"
 
@@ -15,56 +16,38 @@ func NewCommand(v Executor) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   v.Use(),
 		Short: v.Short(),
-		// PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// 	prefix := ""
-		// 	if injector, ok := v.(EnvInjector); ok {
-		// 		prefix = injector.Prefix()
-		// 	} else {
-		// 		return
-		// 	}
-		// 	for _, f := range v.Flags() {
-		// 		envKey := f.EnvKey(prefix)
-		// 		envVar := os.Getenv(envKey)
-		// 		if envVar != "" {
-		// 			args = append(args, "--"+f.Name(), envVar)
-		// 		}
-		// 	}
-		// 	cmd.SetArgs(args)
-		// },
-		// PreRunE: func(cmd *cobra.Command, args []string) error {
-		// 	prefix := ""
-		// 	if injector, ok := v.(EnvInjector); ok {
-		// 		prefix = injector.Prefix()
-		// 	} else {
-		// 		return nil
-		// 	}
-		// 	for _, f := range v.Flags() {
-		// 		envKey := f.EnvKey(prefix)
-		// 		envVar := os.Getenv(envKey)
-		// 		if envVar != "" {
-		// 			args = append(args, "--"+f.Name(), envVar)
-		// 		}
-		// 	}
-		// 	cmd.SetArgs(args)
-		// 	return nil
-		// },
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return v.Exec(cmd)
 		},
 	}
 
-	lang := v.HelpLang()
-	for _, f := range flags {
-		v.AddFlag(f)
-		err := f.Register(cmd, lang)
-		must.NoErrorWrap(err, "failed to registered flag: %s", f.name)
+	if executor, ok := v.(WithLong); ok {
+		cmd.Long = executor.Long()
 	}
-
 	if executor, ok := v.(WithExample); ok {
 		cmd.Example = executor.Example()
 	}
-	if executor, ok := v.(WithLong); ok {
-		cmd.Long = executor.Long()
+
+	lang := v.HelpLang()
+	injector, _ := v.(CanInjectFromEnv)
+	prefix := ""
+	if injector != nil {
+		prefix = injector.Prefix()
+	}
+	for _, f := range flags {
+		v.AddFlag(f)
+		if injector != nil {
+			if envKey := f.EnvKey(prefix); envKey != "" {
+				if envVar := os.Getenv(envKey); envVar != "" {
+					must.NoErrorWrap(
+						f.ParseEnv(envVar),
+						"failed to parse flag: %s from env: %s", f.name, envVar,
+					)
+				}
+			}
+		}
+		err := f.Register(cmd, lang)
+		must.NoErrorWrap(err, "failed to registered flag: %s", f.name)
 	}
 
 	return cmd

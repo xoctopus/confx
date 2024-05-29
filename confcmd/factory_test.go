@@ -3,6 +3,7 @@ package confcmd_test
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"testing"
 
 	. "github.com/onsi/gomega"
@@ -36,7 +37,8 @@ func (e *TestStruct) Use() string { return "cmd use" }
 func (e *TestStruct) Short() string { return "cmd short" }
 
 func (e *TestStruct) Exec(cmd *cobra.Command) error {
-	cmd.Println(cmd.Flag("is-required").Value.String())
+	cmd.Printf("is-required: %s\n", cmd.Flag("is-required").Value.String())
+	cmd.Printf("string:      %s\n", cmd.Flag("string").Value.String())
 	return nil
 }
 
@@ -154,6 +156,7 @@ func TestNewCommand(t *testing.T) {
 				TestStruct: &TestStruct{
 					MultiLangHelper: NewDefaultMultiLangHelper(),
 					FlagSet:         NewFlagSet(),
+					EnvInjector:     NewEnvInjector("demo"),
 				},
 			}
 			_ = NewCommand(v)
@@ -172,6 +175,7 @@ func TestNewCommand(t *testing.T) {
 				TestStruct: &TestStruct{
 					MultiLangHelper: NewDefaultMultiLangHelper(),
 					FlagSet:         NewFlagSet(),
+					EnvInjector:     NewEnvInjector("demo"),
 				},
 			}
 			_ = NewCommand(v)
@@ -190,15 +194,15 @@ func TestNewCommand(t *testing.T) {
 				TestStruct: &TestStruct{
 					MultiLangHelper: NewDefaultMultiLangHelper(),
 					FlagSet:         NewFlagSet(),
+					EnvInjector:     NewEnvInjector("demo"),
 				},
 			}
 			_ = NewCommand(v)
 		})
 	})
-
 }
 
-func ExampleNewCommand() {
+func ExampleNewCommand_from_args() {
 	var v Executor = &TestStruct{
 		HasDefaultValue: []float64{1, 2, 3},
 		MultiLangHelper: NewDefaultMultiLangHelper(),
@@ -223,10 +227,61 @@ func ExampleNewCommand() {
 		buf.Reset()
 		cmd.SetArgs([]string{"--is-required", "a b c"})
 		if err := cmd.Execute(); err != nil {
+			fmt.Println(err)
 			return
 		}
 		fmt.Println(buf.String())
 	}
+
+	// Output:
+	// is-required: [a b c]
+	// string:
+}
+
+func ExampleNewCommand_from_env() {
+	var v Executor = &TestStruct{
+		HasDefaultValue: []float64{1, 2, 3},
+		MultiLangHelper: NewDefaultMultiLangHelper(),
+		FlagSet:         NewFlagSet(),
+		EnvInjector:     NewEnvInjector("test"),
+	}
+	_ = os.Setenv("TEST__STRING", "i love you")
+
+	cmd := NewCommand(v)
+
+	buf := bytes.NewBufferString("")
+	cmd.SetOut(buf)
+	cmd.SetErr(buf)
+
+	// injector := v.(CanInjectFromEnv)
+	// injector.SetPrefix("demo")
+	// v.SetHelpLang(LangZH)
+
+	// v.OutputFlagsHelp(v.HelpLang(), injector.Prefix())
+
+	{
+		buf.Reset()
+		cmd.SetArgs([]string{"--is-required", "d e f"})
+		if err := cmd.Execute(); err != nil {
+			fmt.Println(err)
+			return
+		}
+		fmt.Println(buf.String())
+	}
+
+	// Output:
+	// is-required: [d e f]
+	// string:      i love you
+}
+
+func ExampleNewCommand_output_flag() {
+	var v Executor = &TestStruct{
+		HasDefaultValue: []float64{1, 2, 3},
+		MultiLangHelper: NewDefaultMultiLangHelper(),
+		FlagSet:         NewFlagSet(),
+		EnvInjector:     NewEnvInjector("demo"),
+	}
+	_ = NewCommand(v)
 
 	injector := v.(CanInjectFromEnv)
 	injector.SetPrefix("demo")
@@ -234,19 +289,7 @@ func ExampleNewCommand() {
 
 	v.OutputFlagsHelp(v.HelpLang(), injector.Prefix())
 
-	{
-		// buf.Reset()
-		// prefix := v.(EnvInjector).Prefix()
-		// _ = os.Setenv(v.Flag("is-required").EnvKey(prefix), "i love you")
-		// if err := cmd.Execute(); err != nil {
-		// 	return
-		// }
-		// fmt.Println(buf.String())
-	}
-
 	// Output:
-	// [a b c]
-	//
 	//┌────────────────────────────────┬──────────┬───────────────┬──────────────────────────────────────┬──────────────┐
 	//│ flag name                      │ required │ default value │ environment key                      │ help info    │
 	//├────────────────────────────────┼──────────┼───────────────┼──────────────────────────────────────┼──────────────┤
