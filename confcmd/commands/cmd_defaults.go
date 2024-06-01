@@ -37,7 +37,7 @@ func (c *GoCmdGenDefaultConfigOptions) Short() string {
 	return "generate go cmd default config template"
 }
 
-func (c *GoCmdGenDefaultConfigOptions) Exec(cmd *cobra.Command) error {
+func (c *GoCmdGenDefaultConfigOptions) Exec(cmd *cobra.Command, _ ...string) error {
 	if err := os.MkdirAll(c.Output, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "failed to create output dir")
 	}

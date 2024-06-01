@@ -14,7 +14,7 @@ type Executor interface {
 	// Short a short description of this executor
 	Short() string
 	// Exec impls executor handle logic
-	Exec(cmd *cobra.Command) error
+	Exec(cmd *cobra.Command, args ...string) error
 	// Flag returns executor's flag by flag name
 	Flag(name string) *Flag
 	// Flags returns executor's flag map

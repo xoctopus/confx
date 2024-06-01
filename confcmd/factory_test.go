@@ -36,7 +36,7 @@ func (e *TestStruct) Use() string { return "cmd use" }
 
 func (e *TestStruct) Short() string { return "cmd short" }
 
-func (e *TestStruct) Exec(cmd *cobra.Command) error {
+func (e *TestStruct) Exec(cmd *cobra.Command, args ...string) error {
 	cmd.Printf("is-required: %s\n", cmd.Flag("is-required").Value.String())
 	cmd.Printf("string:      %s\n", cmd.Flag("string").Value.String())
 	return nil

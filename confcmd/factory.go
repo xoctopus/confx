@@ -17,7 +17,7 @@ func NewCommand(v Executor) *cobra.Command {
 		Use:   v.Use(),
 		Short: v.Short(),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return v.Exec(cmd)
+			return v.Exec(cmd, args...)
 		},
 	}
 
