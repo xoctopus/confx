@@ -35,6 +35,10 @@ func TestNewFlagByStructField(t *testing.T) {
 		_, ok = flag.ValueVarP().(*int)
 		NewWithT(t).Expect(ok).To(BeTrue())
 		NewWithT(t).Expect(flag.DefaultValue()).To(Equal(some.Field1))
+
+		err := flag.Register(&cobra.Command{}, LangZH, "100")
+		NewWithT(t).Expect(err).To(BeNil())
+		NewWithT(t).Expect(flag.Value()).To(Equal(100))
 	}
 
 	{
@@ -52,6 +56,10 @@ func TestNewFlagByStructField(t *testing.T) {
 		_, ok = flag.ValueVarP().(*string)
 		NewWithT(t).Expect(ok).To(BeTrue())
 		NewWithT(t).Expect(flag.DefaultValue()).To(Equal(some.Field2))
+
+		err := flag.Register(&cobra.Command{}, LangZH, "some string")
+		NewWithT(t).Expect(err).To(BeNil())
+		NewWithT(t).Expect(flag.Value()).To(Equal("some string"))
 	}
 
 	{
@@ -71,8 +79,8 @@ func TestNewFlagByStructField(t *testing.T) {
 		NewWithT(t).Expect(flag.Help(LangEN)).To(Equal(""))
 		NewWithT(t).Expect(flag.EnvKey("")).To(Equal("ANY_OVERWRITE_ENV"))
 
-		err := flag.Register(&cobra.Command{}, LangZH, "9999")
-		NewWithT(t).Expect(err).To(BeNil())
-		NewWithT(t).Expect(flag.Value()).To(Equal(int64(9999)))
+		err := flag.Register(&cobra.Command{}, LangZH, "invalid value")
+		NewWithT(t).Expect(err).NotTo(BeNil())
+		NewWithT(t).Expect(err.Error()).To(ContainSubstring("failed to parse int64"))
 	}
 }
