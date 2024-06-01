@@ -184,18 +184,19 @@ func TestNewCommand(t *testing.T) {
 		t.Run("UnsupportedFlagType", func(t *testing.T) {
 			defer func() {
 				v := recover().(error)
-				NewWithT(t).Expect(v.Error()).To(ContainSubstring("unsupported flag value"))
+				NewWithT(t).Expect(v.Error()).To(ContainSubstring("unsupported type"))
 			}()
 
 			var v Executor = &struct {
 				*TestStruct
-				UnsignedInteger32Slices []uint32 // cobra does not support []uint32 flag
+				Field []struct{ Int int }
 			}{
 				TestStruct: &TestStruct{
 					MultiLangHelper: NewDefaultMultiLangHelper(),
 					FlagSet:         NewFlagSet(),
 					EnvInjector:     NewEnvInjector("demo"),
 				},
+				Field: []struct{ Int int }{{1}},
 			}
 			_ = NewCommand(v)
 		})
@@ -225,7 +226,7 @@ func ExampleNewCommand_from_args() {
 
 	{
 		buf.Reset()
-		cmd.SetArgs([]string{"--is-required", "a b c"})
+		cmd.SetArgs([]string{"--is-required", "a", "--is-required", "b", "--is-required", "c"})
 		if err := cmd.Execute(); err != nil {
 			fmt.Println(err)
 			return
@@ -253,12 +254,6 @@ func ExampleNewCommand_from_env() {
 	cmd.SetOut(buf)
 	cmd.SetErr(buf)
 
-	// injector := v.(CanInjectFromEnv)
-	// injector.SetPrefix("demo")
-	// v.SetHelpLang(LangZH)
-
-	// v.OutputFlagsHelp(v.HelpLang(), injector.Prefix())
-
 	{
 		buf.Reset()
 		cmd.SetArgs([]string{"--is-required", "d e f"})
@@ -274,7 +269,7 @@ func ExampleNewCommand_from_env() {
 	// string:      i love you
 }
 
-func ExampleNewCommand_output_flag() {
+func ExampleNewCommand_output_flags() {
 	var v Executor = &TestStruct{
 		HasDefaultValue: []float64{1, 2, 3},
 		MultiLangHelper: NewDefaultMultiLangHelper(),

@@ -1,16 +1,23 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/spf13/cobra"
 
 	"github.com/xoctopus/confx/confcmd"
 )
 
 type Executor struct {
-	ServerExpose   uint16 `name:"" help:"server expose port"`
-	PrivateKey     string `name:"" help:"server private key"`
-	ClientEndpoint string `name:"" help:"client endpoint"`
-	Key            string `name:"key,required" help:"query command flag by key"`
+	ServerExpose   uint16 `cmd:"" help:"server expose port"`
+	PrivateKey     string `cmd:"" help:"server private key"`
+	ClientEndpoint string `cmd:"" help:"client endpoint"`
+	Key            string `cmd:"key,required" help:"query command flag by key"`
+
+	// Executor enhancements
+	*confcmd.FlagSet         `cmd:"-"`
+	*confcmd.MultiLangHelper `cmd:"-"`
+	*confcmd.EnvInjector     `cmd:"-"`
 }
 
 var _ confcmd.Executor = (*Executor)(nil)
@@ -24,12 +31,18 @@ func (c *Executor) Short() string {
 }
 
 func (c *Executor) Exec(cmd *cobra.Command) error {
-	flag := cmd.Flags().Lookup(c.Key)
-	if flag == nil {
-		cmd.Printf("key %s not found\n", c.Key)
+	if strings.ToLower(c.Key) == "all" {
+		for name, flag := range c.Flags() {
+			cmd.Printf("%s ==> %v\n", name, flag.Value())
+		}
 		return nil
 	}
-	cmd.Printf("query: %s ==> %s\n", c.Key, flag.Value.String())
+	f := c.Flag(c.Key)
+	if f == nil {
+		cmd.Printf("%s is not found\n", c.Key)
+		return nil
+	}
+	cmd.Printf("%s ==> %v\n", c.Key, f.Value())
 	return nil
 }
 
@@ -38,17 +51,14 @@ var (
 )
 
 func init() {
-	var (
-		err      error
-		executor = Executor{
-			ServerExpose:   10000,
-			ClientEndpoint: "localhost:10001",
-		}
-	)
-	cmd, err = confcmd.NewCommand(confcmd.EN, &executor)
-	if err != nil {
-		panic(err)
-	}
+	cmd = confcmd.NewCommand(&Executor{
+		ServerExpose:   10000,
+		ClientEndpoint: "localhost:10001",
+
+		FlagSet:         confcmd.NewFlagSet(),
+		MultiLangHelper: confcmd.NewDefaultMultiLangHelper(),
+		EnvInjector:     confcmd.NewEnvInjector("example"),
+	})
 }
 
 func main() {

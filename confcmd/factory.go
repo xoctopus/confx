@@ -30,23 +30,13 @@ func NewCommand(v Executor) *cobra.Command {
 
 	lang := v.HelpLang()
 	injector, _ := v.(CanInjectFromEnv)
-	prefix := ""
-	if injector != nil {
-		prefix = injector.Prefix()
-	}
 	for _, f := range flags {
 		v.AddFlag(f)
+		envVar := ""
 		if injector != nil {
-			if envKey := f.EnvKey(prefix); envKey != "" {
-				if envVar := os.Getenv(envKey); envVar != "" {
-					must.NoErrorWrap(
-						f.ParseEnv(envVar),
-						"failed to parse flag: %s from env: %s", f.name, envVar,
-					)
-				}
-			}
+			envVar = os.Getenv(f.EnvKey(injector.Prefix()))
 		}
-		err := f.Register(cmd, lang)
+		err := f.Register(cmd, lang, envVar)
 		must.NoErrorWrap(err, "failed to registered flag: %s", f.name)
 	}
 

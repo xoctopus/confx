@@ -4,13 +4,12 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/misc/stringsx"
 	"github.com/xoctopus/x/ptrx"
 	"github.com/xoctopus/x/reflectx"
-	"github.com/xoctopus/x/textx"
 )
 
 func NewFlagByStructInfo(prefix string, sf reflect.StructField, fv reflect.Value) *Flag {
@@ -59,7 +58,6 @@ func NewFlagByStructInfo(prefix string, sf reflect.StructField, fv reflect.Value
 	}
 
 	f.value = reflectx.IndirectNew(fv)
-	f.defaults = f.value.Interface()
 
 	return f
 }
@@ -75,8 +73,6 @@ type Flag struct {
 	helps map[string]string
 	// required if this flag is required
 	required bool
-	// defaults flag's default value
-	defaults any
 	// value filed value
 	value reflect.Value
 }
@@ -107,7 +103,7 @@ func (f *Flag) IsRequired() bool {
 }
 
 func (f *Flag) DefaultValue() any {
-	return f.defaults
+	return f.value.Interface()
 }
 
 func (f *Flag) Value() any {
@@ -136,93 +132,25 @@ func (f *Flag) EnvKey(prefix string) string {
 	return strings.Replace(strings.ToUpper(*f.env), "-", "_", -1)
 }
 
-func (f *Flag) Register(cmd *cobra.Command, lang LangType) error {
-	flags := cmd.Flags()
-	help := f.Help(lang)
+func (f *Flag) Register(cmd *cobra.Command, lang LangType, envVar string) error {
+	fv := NewFlagValue(f.value)
 
-	switch v := f.defaults.(type) {
-	case bool:
-		flags.BoolVarP(f.ValueVarP().(*bool), f.name, "", v, help)
-	case string:
-		flags.StringVarP(f.ValueVarP().(*string), f.name, "", v, help)
-	case int:
-		flags.IntVarP(f.ValueVarP().(*int), f.name, "", v, help)
-	case int8:
-		flags.Int8VarP(f.ValueVarP().(*int8), f.name, "", v, help)
-	case int16:
-		flags.Int16VarP(f.ValueVarP().(*int16), f.name, "", v, help)
-	case int32:
-		flags.Int32VarP(f.ValueVarP().(*int32), f.name, "", v, help)
-	case int64:
-		flags.Int64VarP(f.ValueVarP().(*int64), f.name, "", v, help)
-	case uint:
-		flags.UintVarP(f.ValueVarP().(*uint), f.name, "", v, help)
-	case uint8:
-		flags.Uint8VarP(f.ValueVarP().(*uint8), f.name, "", v, help)
-	case uint16:
-		flags.Uint16VarP(f.ValueVarP().(*uint16), f.name, "", v, help)
-	case uint32:
-		flags.Uint32VarP(f.ValueVarP().(*uint32), f.name, "", v, help)
-	case uint64:
-		flags.Uint64VarP(f.ValueVarP().(*uint64), f.name, "", v, help)
-	case float32:
-		flags.Float32VarP(f.ValueVarP().(*float32), f.name, "", v, help)
-	case float64:
-		flags.Float64VarP(f.ValueVarP().(*float64), f.name, "", v, help)
-	case []int:
-		flags.IntSliceVarP(f.ValueVarP().(*[]int), f.name, "", v, help)
-	case []int32:
-		flags.Int32SliceVarP(f.ValueVarP().(*[]int32), f.name, "", v, help)
-	case []int64:
-		flags.Int64SliceVarP(f.ValueVarP().(*[]int64), f.name, "", v, help)
-	case []uint:
-		flags.UintSliceVarP(f.ValueVarP().(*[]uint), f.name, "", v, help)
-	case []float32:
-		flags.Float32SliceVarP(f.ValueVarP().(*[]float32), f.name, "", v, help)
-	case []float64:
-		flags.Float64SliceVarP(f.ValueVarP().(*[]float64), f.name, "", v, help)
-	case []string:
-		flags.StringSliceVarP(f.ValueVarP().(*[]string), f.name, "", v, help)
-	case []bool:
-		flags.BoolSliceVarP(f.ValueVarP().(*[]bool), f.name, "", v, help)
-	default:
-		return errors.Errorf("unsupported flag value type: `%s`", f.value.Type())
+	if envVar != "" {
+		if err := fv.Set(envVar); err != nil {
+			return err
+		}
 	}
+
+	cmd.Flags().AddFlag(&pflag.Flag{
+		Name:     f.name,
+		Usage:    f.Help(lang),
+		Value:    fv,
+		DefValue: fv.String(),
+	})
+
 	if f.required {
 		return cmd.MarkFlagRequired(f.name)
 	}
+
 	return nil
-}
-
-func (f *Flag) ParseEnv(envVar string) error {
-	parser := func(rv reflect.Value, envVar string) error {
-		return textx.UnmarshalText([]byte(envVar), rv)
-	}
-
-	var err error
-
-	switch f.value.Interface().(type) {
-	case bool, string,
-		int, int8, int16, int32, int64,
-		uint, uint8, uint16, uint32, uint64,
-		float32, float64:
-		err = parser(f.value, envVar)
-	case []int, []int32, []int64, []uint,
-		[]float32, []float64, []string, []bool:
-		fields := strings.Fields(envVar)
-		for _, field := range fields {
-			fieldv := reflect.New(f.value.Type().Elem()).Elem()
-			if err = parser(fieldv, field); err != nil {
-				return err
-			}
-			f.value = reflect.Append(f.value, fieldv)
-		}
-	default:
-		err = errors.Errorf("unsupported flag value type: `%s`", f.value.Type())
-	}
-
-	if err == nil {
-		f.defaults = f.value.Interface()
-	}
-	return err
 }
