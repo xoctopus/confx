@@ -1,7 +1,6 @@
 package confcmd_test
 
 import (
-	"fmt"
 	"math/big"
 	"reflect"
 	"testing"
@@ -59,7 +58,8 @@ func TestNewFlagValue(t *testing.T) {
 		},
 	}
 
-	cases := []*struct {
+	tests := []struct {
+		name         string
 		defaultValue string   // assert equal flagValue.String() before set
 		typeName     string   // assert flagValue.Type()
 		setValues    []string // call flagValue.Set(string)
@@ -67,65 +67,39 @@ func TestNewFlagValue(t *testing.T) {
 		value        string   // assert equal flagValue.String() after set
 		value2       any      // assert equal flagValue's value after set
 	}{
-		// IntPtr *int
-		{"0", "int", []string{"1"}, "", "1", ptrx.Ptr(int(1))},
-		// Int int
-		{"0", "int", []string{"0xFF"}, "", "255", int(255)},
-		// Int8  int8
-		{"0", "int8", []string{"077"}, "", "63", int8(63)},
-		// Int16 int16
-		{"0", "int16", []string{"0b1111"}, "", "15", int16(15)},
-		// Int32 int32
-		{"0", "int32", []string{"defg"}, "failed to parse int32", "", int32(0)},
-		// Int64 int64
-		{"0", "int64", []string{"1"}, "", "1", int64(1)},
-		// UintPtr *uint
-		{"100", "uint", []string{"101"}, "", "101", ptrx.Ptr(uint(101))},
-		// Uint uint
-		{"0", "uint", []string{"1"}, "", "1", uint(1)},
-		// Uint8 uint8
-		{"0", "uint8", []string{"1"}, "", "1", uint8(1)},
-		// Uint16 uint16
-		{"0", "uint16", []string{"1"}, "", "1", uint16(1)},
-		// Uint32 uint32
-		{"0", "uint32", []string{"1"}, "", "1", uint32(1)},
-		// Uint64 uint64
-		{"0", "uint64", []string{"1"}, "", "1", uint64(1)},
-		// Float32 float32
-		{"0", "float32", []string{"100.1"}, "", "100.1", float32(100.1)},
-		// Float64 float64
-		{"0", "float64", []string{"100.2"}, "", "100.2", float64(100.2)},
-		// String string
-		{"abc", "string", []string{"def"}, "", "def", "def"},
-		// Boolean bool
-		{"false", "bool", []string{"1", "0", "true"}, "", "true", true},
-		// IntegerSlice []int
-		{"[]", "[]int", []string{"1", "2\v3", "4 5", "6\t7"}, "", "[1 2 3 4 5 6 7]", []int{1, 2, 3, 4, 5, 6, 7}},
-		// IntegerPtrSlice []*int
-		{"[]", "[]*int", []string{"8\r9"}, "", "[8 9]", []*int{ptrx.Ptr(8), ptrx.Ptr(9)}},
-		// UnsignedIntegerSlice []uint
-		{"[]", "[]uint", []string{"99\n98"}, "", "[99 98]", []uint{99, 98}},
-		// UnsignedIntegerPtrSlice []*uint
+		{"IntPtr", "0", "int", []string{"1"}, "", "1", ptrx.Ptr(int(1))},
+		{"Int", "0", "int", []string{"0xFF"}, "", "255", int(255)},
+		{"Int8", "0", "int8", []string{"077"}, "", "63", int8(63)},
+		{"Int16", "0", "int16", []string{"0b1111"}, "", "15", int16(15)},
+		{"Int32", "0", "int32", []string{"defg"}, "failed to parse int32", "", int32(0)},
+		{"Int64", "0", "int64", []string{"1"}, "", "1", int64(1)},
+		{"UintPtr", "100", "uint", []string{"101"}, "", "101", ptrx.Ptr(uint(101))},
+		{"Uint", "0", "uint", []string{"1"}, "", "1", uint(1)},
+		{"Uint8", "0", "uint8", []string{"1"}, "", "1", uint8(1)},
+		{"Uint16", "0", "uint16", []string{"1"}, "", "1", uint16(1)},
+		{"Uint32", "0", "uint32", []string{"1"}, "", "1", uint32(1)},
+		{"Uint64", "0", "uint64", []string{"1"}, "", "1", uint64(1)},
+		{"Float32", "0", "float32", []string{"100.1"}, "", "100.1", float32(100.1)},
+		{"Float64", "0", "float64", []string{"100.2"}, "", "100.2", float64(100.2)},
+		{"String", "abc", "string", []string{"def"}, "", "def", "def"},
+		{"Boolean", "false", "bool", []string{"1", "0", "true"}, "", "true", true},
+		{"IntegerSlice", "[]", "[]int", []string{"1", "2\v3", "4 5", "6\t7"}, "", "[1 2 3 4 5 6 7]", []int{1, 2, 3, 4, 5, 6, 7}},
+		{"IntegerPtrSlice", "[]", "[]*int", []string{"8\r9"}, "", "[8 9]", []*int{ptrx.Ptr(8), ptrx.Ptr(9)}},
+		{"UnsignedIntegerSlice", "[]", "[]uint", []string{"99\n98"}, "", "[99 98]", []uint{99, 98}},
 		// input string "101,102" is scanned as just one field
-		// textx.UnmarshalText scans string to numeric use fmt.Sscan to support multi numeric bases
-		// so should split field use strings.asciiSpace. it supports '\t', '\n', '\v' , '\f', '\r' and ' ' to split a string to fields
-		{"[]", "[]*uint", []string{"101,102", "103\f104"}, "", "[101 103 104]", []*uint{ptrx.Ptr(uint(101)), ptrx.Ptr(uint(103)), ptrx.Ptr(uint(104))}},
-		// Float64Slice []float64
-		{"[]", "[]float64", []string{}, "", "[]", []float64(nil)},
-		// Float64PtrSlice []*float64
-		{"[]", "[]*float64", []string{"1.00001"}, "", "[1.00001]", []*float64{ptrx.Ptr(float64(1.00001))}},
-		// StringSlice []string
-		{"[]", "[]string", []string{"a", "b", "c d", "e\nf"}, "", "[a b c d e f]", []string{"a", "b", "c", "d", "e", "f"}},
-		// StringPtrSlice []*string
-		{"[]", "[]*string", []string{"ab cd ef"}, "", "[ab cd ef]", []*string{ptrx.Ptr("ab"), ptrx.Ptr("cd"), ptrx.Ptr("ef")}},
-		// BooleanSlice []bool
-		{"[]", "[]bool", []string{"1 true false 0"}, "", "[true true false false]", []bool{true, true, false, false}},
-		// BooleanPtrSlice []*bool
-		{"[]", "[]*bool", []string{"1 0 -1"}, "failed to parse []*bool at index 2", "true false", []*bool{ptrx.Ptr(true), ptrx.Ptr(false)}},
-		// CanBeTextEncoded big.Int
-		{"100", "big.Int", []string{"", "101"}, "", "101", *(new(big.Int).SetInt64(101))},
-		// CanBeTextEncodedSlice []big.Int
+		// textx.UnmarshalText scans string to numeric use `fmt.Sscan` to support
+		// multi numeric bases. so should split field use strings.asciiSpace.
+		// it supports '\t','\n','\v','\f','\r' and ' ' to split a string to fields
+		{"UnsignedIntegerPtrSlice", "[]", "[]*uint", []string{"101,102", "103\f104"}, "", "[101 103 104]", []*uint{ptrx.Ptr(uint(101)), ptrx.Ptr(uint(103)), ptrx.Ptr(uint(104))}},
+		{"Float64Slice", "[]", "[]float64", []string{}, "", "[]", []float64(nil)},
+		{"Float64PtrSlice", "[]", "[]*float64", []string{"1.00001"}, "", "[1.00001]", []*float64{ptrx.Ptr(float64(1.00001))}},
+		{"StringSlice", "[]", "[]string", []string{"a", "b", "c d", "e\nf"}, "", "[a b c d e f]", []string{"a", "b", "c", "d", "e", "f"}},
+		{"StringPtrSlice", "[]", "[]*string", []string{"ab cd ef"}, "", "[ab cd ef]", []*string{ptrx.Ptr("ab"), ptrx.Ptr("cd"), ptrx.Ptr("ef")}},
+		{"BooleanSlice", "[]", "[]bool", []string{"1 true false 0"}, "", "[true true false false]", []bool{true, true, false, false}},
+		{"BooleanPtrSlice", "[]", "[]*bool", []string{"1 0 -1"}, "failed to parse []*bool at index 2", "true false", []*bool{ptrx.Ptr(true), ptrx.Ptr(false)}},
+		{"CanBeTextEncoded", "100", "big.Int", []string{"", "101"}, "", "101", *(new(big.Int).SetInt64(101))},
 		{
+			name:         "CanBeTextEncodedSlice",
 			defaultValue: "[100 101 102]",
 			typeName:     "[]big.Int",
 			setValues:    []string{"", "103", "104"},
@@ -139,8 +113,8 @@ func TestNewFlagValue(t *testing.T) {
 				*(new(big.Int).SetInt64(104)),
 			},
 		},
-		// CanBeTextEncodedPtr *big.Int
 		{
+			name:         "CanBeTextEncodedPtr",
 			defaultValue: "0",
 			typeName:     "big.Int",
 			setValues:    []string{"999"},
@@ -148,8 +122,8 @@ func TestNewFlagValue(t *testing.T) {
 			value:        "999",
 			value2:       new(big.Int).SetInt64(999),
 		},
-		// CanBeTextEncodedPtrSlice []*big.Int // 29
 		{
+			name:         "CanBeTextEncodedPtrSlice",
 			defaultValue: "[]",
 			typeName:     "[]*big.Int",
 			setValues:    []string{"998 997 996"},
@@ -161,20 +135,16 @@ func TestNewFlagValue(t *testing.T) {
 				new(big.Int).SetInt64(996),
 			},
 		},
-		// MultiDimensionalSlice [][]int
-		{"[]", "[][]int", []string{"1 2 3"}, "unsupported type", "", nil},
-		// MultiDimensionalSlice2 []*[]int
-		{"[]", "[]*[]int", []string{"1 2 3"}, "unsupported type", "", nil},
+		{"MultiDimensionalSlice", "[]", "[][]int", []string{"1 2 3"}, "unsupported type", "", nil},
+		{"MultiDimensionalSlice2", "[]", "[]*[]int", []string{"1 2 3"}, "unsupported type", "", nil},
 	}
 
 	datarv := reflect.ValueOf(data)
-	for i := 0; i < len(cases); i++ {
-		c := cases[i]
-		rv := reflectx.IndirectNew(datarv.Elem().Field(i))
-		sf := datarv.Elem().Type().Field(i)
-		name := fmt.Sprintf("Index%02d_%s", i, sf.Name)
+	for i, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := tests[i]
+			rv := reflectx.IndirectNew(datarv.Elem().Field(i))
 
-		t.Run(name, func(t *testing.T) {
 			fv := NewFlagValue(rv)
 			NewWithT(t).Expect(fv.String()).To(Equal(c.defaultValue))
 			NewWithT(t).Expect(fv.Type()).To(Equal(c.typeName))
