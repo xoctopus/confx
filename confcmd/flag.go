@@ -22,15 +22,34 @@ func NewFlagByStructInfo(prefix string, sf reflect.StructField, fv reflect.Value
 	}
 
 	if v, ok := sf.Tag.Lookup(FlagCmd); ok {
-		tagKey, flags := reflectx.ParseTagKeyAndFlags(v)
-		if tagKey == "-" {
+		parts := strings.Split(v, ",")
+		if parts[0] == "-" {
 			return nil
 		}
-		if tagKey != "" {
-			f.name = strings.TrimPrefix(prefix+"."+tagKey, ".")
+		if parts[0] != "" {
+			f.name = strings.TrimPrefix(prefix+"."+parts[0], ".")
 		}
-		if _, ok = flags[FlagRequired]; ok {
-			f.required = true
+		for _, part := range parts[1:] {
+			part = strings.TrimSpace(part)
+			if part == FlagRequired || part == FlagRequiredShort {
+				f.required = true
+				continue
+			}
+			if part == FlagPersistent || part == FlagPersistentShort {
+				f.persistent = true
+				continue
+			}
+			kv := strings.Split(part, "=")
+			switch strings.ToLower(kv[0]) {
+			case FlagCanNoOptShort, FlagCanNoOpt:
+				if len(kv) == 2 {
+					f.noOptionDef = ptrx.Ptr(kv[1])
+				}
+			case FlagShorthandShort, FlagShorthand:
+				if len(kv) == 2 {
+					f.shorthand = kv[1]
+				}
+			}
 		}
 	}
 
@@ -67,18 +86,30 @@ type Flag struct {
 	field string
 	// name command flag name, eg: some-flag
 	name string
+	// shorthand
+	shorthand string
 	// env key can injector from env var, eg: SOME_FLAG
 	env *string
 	// helps multi-language help info
 	helps map[string]string
 	// required if this flag is required
 	required bool
+	// persistent if this flag is persistent
+	persistent bool
+	// noOptionDef means the default when a flag has no option.
+	// like `uname --kernel-version` the flag has no option default to enable
+	// print kernel version
+	noOptionDef *string
 	// value filed value
 	value reflect.Value
 }
 
 func (f *Flag) Name() string {
 	return f.name
+}
+
+func (f *Flag) Shorthand() string {
+	return f.shorthand
 }
 
 func (f *Flag) Field() string {
@@ -102,8 +133,19 @@ func (f *Flag) IsRequired() bool {
 	return f.required
 }
 
+func (f *Flag) IsPersistent() bool {
+	return f.persistent
+}
+
 func (f *Flag) DefaultValue() any {
 	return f.value.Interface()
+}
+
+func (f *Flag) NoOptionDefaultValue() string {
+	if f.noOptionDef == nil {
+		return ""
+	}
+	return *f.noOptionDef
 }
 
 func (f *Flag) Value() any {
@@ -141,15 +183,31 @@ func (f *Flag) Register(cmd *cobra.Command, lang LangType, envVar string) error 
 		}
 	}
 
-	cmd.Flags().AddFlag(&pflag.Flag{
+	flag := &pflag.Flag{
 		Name:     f.name,
 		Usage:    f.Help(lang),
 		Value:    fv,
 		DefValue: fv.String(),
-	})
+	}
+
+	if f.noOptionDef != nil {
+		flag.NoOptDefVal = *f.noOptionDef
+	}
+	if len(f.shorthand) == 1 {
+		flag.Shorthand = f.shorthand
+	}
+
+	if f.persistent {
+		cmd.PersistentFlags().AddFlag(flag)
+	} else {
+		cmd.Flags().AddFlag(flag)
+	}
 
 	if f.required {
-		return cmd.MarkFlagRequired(f.name)
+		must.NoErrorWrap(
+			cmd.MarkFlagRequired(f.name),
+			"failed to mark flag as required: %s", f.name,
+		)
 	}
 
 	return nil

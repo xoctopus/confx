@@ -1,66 +1,33 @@
 package main
 
 import (
-	"strings"
-
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/misc/must"
 
 	"github.com/xoctopus/confx/confcmd"
+	"github.com/xoctopus/confx/confcmd/example/cmds"
 )
 
-type Executor struct {
-	ServerExpose   uint16 `cmd:"" help:"server expose port"`
-	PrivateKey     string `cmd:"" help:"server private key"`
-	ClientEndpoint string `cmd:"" help:"client endpoint"`
-	Key            string `cmd:"key,required" help:"query command flag by key"`
-
-	// Executor enhancements
-	*confcmd.FlagSet         `cmd:"-"`
-	*confcmd.MultiLangHelper `cmd:"-"`
-	*confcmd.EnvInjector     `cmd:"-"`
-}
-
-var _ confcmd.Executor = (*Executor)(nil)
-
-func (c *Executor) Use() string {
-	return "example"
-}
-
-func (c *Executor) Short() string {
-	return "a cmd factory example"
-}
-
-func (c *Executor) Exec(cmd *cobra.Command) error {
-	if strings.ToLower(c.Key) == "all" {
-		for name, flag := range c.Flags() {
-			cmd.Printf("%s ==> %v\n", name, flag.Value())
-		}
-		return nil
-	}
-	f := c.Flag(c.Key)
-	if f == nil {
-		cmd.Printf("%s is not found\n", c.Key)
-		return nil
-	}
-	cmd.Printf("%s ==> %v\n", c.Key, f.Value())
-	return nil
-}
-
 var (
-	cmd *cobra.Command
+	root *cobra.Command
 )
 
 func init() {
-	cmd = confcmd.NewCommand(&Executor{
-		ServerExpose:   10000,
-		ClientEndpoint: "localhost:10001",
+	root = &cobra.Command{}
 
-		FlagSet:         confcmd.NewFlagSet(),
-		MultiLangHelper: confcmd.NewDefaultMultiLangHelper(),
-		EnvInjector:     confcmd.NewEnvInjector("example"),
-	})
+	globals := confcmd.ParseFlags(cmds.DefaultGlobal)
+	for _, f := range globals {
+		must.NoErrorWrap(
+			f.Register(root, confcmd.LangEN, ""),
+			"failed to register global flag: %s", f.Name(),
+		)
+	}
+
+	root.AddCommand(cmds.ServerCmd)
 }
 
 func main() {
-	_ = cmd.Execute()
+	if err := root.Execute(); err != nil {
+		root.PrintErr(err)
+	}
 }

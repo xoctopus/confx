@@ -76,6 +76,7 @@ func (fs *FlagSet) AddFlag(f *Flag) {
 type Output struct {
 	FlagName string `table:"flag name"`
 	Required string `table:"required"`
+	NoOptDef string `table:"no option default"`
 	Default  any    `table:"default value"`
 	EnvKey   string `table:"environment key"`
 	Help     string `table:"help info"`
@@ -99,6 +100,11 @@ func (fs *FlagSet) OutputFlagsHelp(lang LangType, prefix string) {
 		}
 		if f.IsRequired() {
 			o.Required = "yes"
+		}
+		if v := f.NoOptionDefaultValue(); v == "" {
+			o.NoOptDef = "-"
+		} else {
+			o.NoOptDef = v
 		}
 		output = append(output, o)
 	}

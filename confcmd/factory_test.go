@@ -16,6 +16,7 @@ type TestStruct struct {
 	unexported           int
 	Ignored              string   `cmd:"-"`
 	IsRequired           []string `cmd:",required"`
+	Debug                bool     `cmd:",p,nop=1"` // has no option default and as persistent flag
 	OverwrittenFlagName  bool     `cmd:"is-bool"`
 	OverwrittenEnvKey    string   `env:"is-string"`
 	DisableEnvInject     int32    `env:"-"`
@@ -285,54 +286,55 @@ func ExampleNewCommand_output_flags() {
 	v.OutputFlagsHelp(v.HelpLang(), injector.Prefix())
 
 	// Output:
-	//┌────────────────────────────────┬──────────┬───────────────┬──────────────────────────────────────┬──────────────┐
-	//│ flag name                      │ required │ default value │ environment key                      │ help info    │
-	//├────────────────────────────────┼──────────┼───────────────┼──────────────────────────────────────┼──────────────┤
-	//│ boolean                        │          │ false         │ DEMO__BOOLEAN                        │              │
-	//│ disable-env-inject             │          │ 0             │                                      │              │
-	//│ float-32                       │          │ 0             │ DEMO__FLOAT_32                       │              │
-	//│ float-64                       │          │ 0             │ DEMO__FLOAT_64                       │              │
-	//│ has-default-value              │          │ [1 2 3]       │ DEMO__HAS_DEFAULT_VALUE              │              │
-	//│ has-multi-lang-help            │          │ []            │ DEMO__HAS_MULTI_LANG_HELP            │ 中文帮助     │
-	//│ int                            │          │ 0             │ DEMO__INT                            │              │
-	//│ int-16                         │          │ 0             │ DEMO__INT_16                         │              │
-	//│ int-32                         │          │ 0             │ DEMO__INT_32                         │              │
-	//│ int-64                         │          │ 0             │ DEMO__INT_64                         │              │
-	//│ int-8                          │          │ 0             │ DEMO__INT_8                          │              │
-	//│ int-ptr                        │          │ 0             │ DEMO__INT_PTR                        │              │
-	//│ is-bool                        │          │ false         │ DEMO__OVERWRITTEN_FLAG_NAME          │              │
-	//│ is-required                    │ yes      │ []            │ DEMO__IS_REQUIRED                    │              │
-	//│ overwritten-env-key            │          │               │ DEMO__IS_STRING                      │              │
-	//│ slices-group-boolean-slice     │          │ []            │ DEMO__SLICES_GROUP_BOOLEAN_SLICE     │              │
-	//│ slices-group-float-32-slice    │          │ []            │ DEMO__SLICES_GROUP_FLOAT_32_SLICE    │              │
-	//│ slices-group-float-64-slice    │          │ []            │ DEMO__SLICES_GROUP_FLOAT_64_SLICE    │              │
-	//│ slices-group-integer-32-slice  │          │ []            │ DEMO__SLICES_GROUP_INTEGER_32_SLICE  │              │
-	//│ slices-group-integer-64-slice  │          │ []            │ DEMO__SLICES_GROUP_INTEGER_64_SLICE  │              │
-	//│ slices-group-integer-slice     │          │ []            │ DEMO__SLICES_GROUP_INTEGER_SLICE     │              │
-	//│ slices-group-string-slice      │          │ []            │ DEMO__SLICES_GROUP_STRING_SLICE      │              │
-	//│ slices-group-unsigned-integers │          │ []            │ DEMO__SLICES_GROUP_UNSIGNED_INTEGERS │              │
-	//│ string                         │          │               │ DEMO__STRING                         │              │
-	//│ uint                           │          │ 0             │ DEMO__UINT                           │              │
-	//│ uint-16                        │          │ 0             │ DEMO__UINT_16                        │              │
-	//│ uint-32                        │          │ 0             │ DEMO__UINT_32                        │              │
-	//│ uint-64                        │          │ 0             │ DEMO__UINT_64                        │              │
-	//│ uint-8                         │          │ 0             │ DEMO__UINT_8                         │              │
-	//│ uint-ptr                       │          │ 0             │ DEMO__UINT_PTR                       │              │
-	//│ values-boolean                 │          │ false         │ DEMO__VALUES_BOOLEAN                 │              │
-	//│ values-float-32                │          │ 0             │ DEMO__VALUES_FLOAT_32                │              │
-	//│ values-float-64                │          │ 0             │ DEMO__VALUES_FLOAT_64                │              │
-	//│ values-int                     │          │ 0             │ DEMO__VALUES_INT                     │              │
-	//│ values-int-16                  │          │ 0             │ DEMO__VALUES_INT_16                  │              │
-	//│ values-int-32                  │          │ 0             │ DEMO__VALUES_INT_32                  │              │
-	//│ values-int-64                  │          │ 0             │ DEMO__VALUES_INT_64                  │              │
-	//│ values-int-8                   │          │ 0             │ DEMO__VALUES_INT_8                   │              │
-	//│ values-int-ptr                 │          │ 0             │ DEMO__VALUES_INT_PTR                 │              │
-	//│ values-string                  │          │               │ DEMO__VALUES_STRING                  │              │
-	//│ values-uint                    │          │ 0             │ DEMO__VALUES_UINT                    │              │
-	//│ values-uint-16                 │          │ 0             │ DEMO__VALUES_UINT_16                 │              │
-	//│ values-uint-32                 │          │ 0             │ DEMO__VALUES_UINT_32                 │              │
-	//│ values-uint-64                 │          │ 0             │ DEMO__VALUES_UINT_64                 │              │
-	//│ values-uint-8                  │          │ 0             │ DEMO__VALUES_UINT_8                  │              │
-	//│ values-uint-ptr                │          │ 0             │ DEMO__VALUES_UINT_PTR                │              │
-	//└────────────────────────────────┴──────────┴───────────────┴──────────────────────────────────────┴──────────────┘
+	// ┌────────────────────────────────┬──────────┬───────────────────┬───────────────┬──────────────────────────────────────┬──────────────┐
+	// │ flag name                      │ required │ no option default │ default value │ environment key                      │ help info    │
+	// ├────────────────────────────────┼──────────┼───────────────────┼───────────────┼──────────────────────────────────────┼──────────────┤
+	// │ boolean                        │          │ -                 │ false         │ DEMO__BOOLEAN                        │              │
+	// │ debug                          │          │ 1                 │ false         │ DEMO__DEBUG                          │              │
+	// │ disable-env-inject             │          │ -                 │ 0             │                                      │              │
+	// │ float-32                       │          │ -                 │ 0             │ DEMO__FLOAT_32                       │              │
+	// │ float-64                       │          │ -                 │ 0             │ DEMO__FLOAT_64                       │              │
+	// │ has-default-value              │          │ -                 │ [1 2 3]       │ DEMO__HAS_DEFAULT_VALUE              │              │
+	// │ has-multi-lang-help            │          │ -                 │ []            │ DEMO__HAS_MULTI_LANG_HELP            │ 中文帮助     │
+	// │ int                            │          │ -                 │ 0             │ DEMO__INT                            │              │
+	// │ int-16                         │          │ -                 │ 0             │ DEMO__INT_16                         │              │
+	// │ int-32                         │          │ -                 │ 0             │ DEMO__INT_32                         │              │
+	// │ int-64                         │          │ -                 │ 0             │ DEMO__INT_64                         │              │
+	// │ int-8                          │          │ -                 │ 0             │ DEMO__INT_8                          │              │
+	// │ int-ptr                        │          │ -                 │ 0             │ DEMO__INT_PTR                        │              │
+	// │ is-bool                        │          │ -                 │ false         │ DEMO__OVERWRITTEN_FLAG_NAME          │              │
+	// │ is-required                    │ yes      │ -                 │ []            │ DEMO__IS_REQUIRED                    │              │
+	// │ overwritten-env-key            │          │ -                 │               │ DEMO__IS_STRING                      │              │
+	// │ slices-group-boolean-slice     │          │ -                 │ []            │ DEMO__SLICES_GROUP_BOOLEAN_SLICE     │              │
+	// │ slices-group-float-32-slice    │          │ -                 │ []            │ DEMO__SLICES_GROUP_FLOAT_32_SLICE    │              │
+	// │ slices-group-float-64-slice    │          │ -                 │ []            │ DEMO__SLICES_GROUP_FLOAT_64_SLICE    │              │
+	// │ slices-group-integer-32-slice  │          │ -                 │ []            │ DEMO__SLICES_GROUP_INTEGER_32_SLICE  │              │
+	// │ slices-group-integer-64-slice  │          │ -                 │ []            │ DEMO__SLICES_GROUP_INTEGER_64_SLICE  │              │
+	// │ slices-group-integer-slice     │          │ -                 │ []            │ DEMO__SLICES_GROUP_INTEGER_SLICE     │              │
+	// │ slices-group-string-slice      │          │ -                 │ []            │ DEMO__SLICES_GROUP_STRING_SLICE      │              │
+	// │ slices-group-unsigned-integers │          │ -                 │ []            │ DEMO__SLICES_GROUP_UNSIGNED_INTEGERS │              │
+	// │ string                         │          │ -                 │               │ DEMO__STRING                         │              │
+	// │ uint                           │          │ -                 │ 0             │ DEMO__UINT                           │              │
+	// │ uint-16                        │          │ -                 │ 0             │ DEMO__UINT_16                        │              │
+	// │ uint-32                        │          │ -                 │ 0             │ DEMO__UINT_32                        │              │
+	// │ uint-64                        │          │ -                 │ 0             │ DEMO__UINT_64                        │              │
+	// │ uint-8                         │          │ -                 │ 0             │ DEMO__UINT_8                         │              │
+	// │ uint-ptr                       │          │ -                 │ 0             │ DEMO__UINT_PTR                       │              │
+	// │ values-boolean                 │          │ -                 │ false         │ DEMO__VALUES_BOOLEAN                 │              │
+	// │ values-float-32                │          │ -                 │ 0             │ DEMO__VALUES_FLOAT_32                │              │
+	// │ values-float-64                │          │ -                 │ 0             │ DEMO__VALUES_FLOAT_64                │              │
+	// │ values-int                     │          │ -                 │ 0             │ DEMO__VALUES_INT                     │              │
+	// │ values-int-16                  │          │ -                 │ 0             │ DEMO__VALUES_INT_16                  │              │
+	// │ values-int-32                  │          │ -                 │ 0             │ DEMO__VALUES_INT_32                  │              │
+	// │ values-int-64                  │          │ -                 │ 0             │ DEMO__VALUES_INT_64                  │              │
+	// │ values-int-8                   │          │ -                 │ 0             │ DEMO__VALUES_INT_8                   │              │
+	// │ values-int-ptr                 │          │ -                 │ 0             │ DEMO__VALUES_INT_PTR                 │              │
+	// │ values-string                  │          │ -                 │               │ DEMO__VALUES_STRING                  │              │
+	// │ values-uint                    │          │ -                 │ 0             │ DEMO__VALUES_UINT                    │              │
+	// │ values-uint-16                 │          │ -                 │ 0             │ DEMO__VALUES_UINT_16                 │              │
+	// │ values-uint-32                 │          │ -                 │ 0             │ DEMO__VALUES_UINT_32                 │              │
+	// │ values-uint-64                 │          │ -                 │ 0             │ DEMO__VALUES_UINT_64                 │              │
+	// │ values-uint-8                  │          │ -                 │ 0             │ DEMO__VALUES_UINT_8                  │              │
+	// │ values-uint-ptr                │          │ -                 │ 0             │ DEMO__VALUES_UINT_PTR                │              │
+	// └────────────────────────────────┴──────────┴───────────────────┴───────────────┴──────────────────────────────────────┴──────────────┘
 }
