@@ -1,4 +1,4 @@
-# conf
+# confx
 
 middlewares configurations(WIP)
 
