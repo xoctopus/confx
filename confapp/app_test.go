@@ -3,11 +3,14 @@ package confapp_test
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 	"net/http"
 	"os"
 	"path/filepath"
+	"testing"
 	"time"
 
+	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
@@ -181,4 +184,223 @@ func ExampleInitFailed() {
 
 	// Output:
 	// failed to init [group:APP] [field:SomeKey]: must fail
+}
+
+type MapConfig struct {
+	Number *big.Int
+	String string
+}
+
+type config struct {
+	Map map[string]*MapConfig
+}
+
+func TestAppCtx_Conf(t *testing.T) {
+	t.Run("ConfSlice", func(t *testing.T) {
+		t.Run("HasEnvVars", func(t *testing.T) {
+			t.Setenv("TEST__IntSlice_0", "10")
+			t.Setenv("TEST__IntSlice_2", "12")
+			t.Setenv("TEST__IntSlice_4", "14")
+			t.Run("DefaultEmpty", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct{ IntSlice []int }{}
+				app.Conf(v)
+				NewWithT(t).Expect(v.IntSlice).To(Equal([]int{10, 0, 12, 0, 14}))
+			})
+			t.Run("HasDefaultValue", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct{ IntSlice []int }{IntSlice: []int{1, 2, 3}}
+				app.Conf(v)
+				NewWithT(t).Expect(v.IntSlice).To(Equal([]int{10, 0, 12, 0, 14}))
+			})
+		})
+		t.Run("NoEnvVars", func(t *testing.T) {
+			t.Run("DefaultEmpty", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct{ IntSlice []int }{}
+				app.Conf(v)
+				NewWithT(t).Expect(v.IntSlice).To(BeNil())
+			})
+			t.Run("HasDefaultValue", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct{ IntSlice []int }{IntSlice: []int{1, 2, 3}}
+				app.Conf(v)
+				NewWithT(t).Expect(v.IntSlice).To(Equal([]int{1, 2, 3}))
+			})
+		})
+	})
+	t.Run("ConfArray", func(t *testing.T) {
+		t.Run("HasEnvVars", func(t *testing.T) {
+			t.Setenv("TEST__IntArray_0", "10")
+			t.Setenv("TEST__IntArray_2", "12")
+			t.Setenv("TEST__IntArray_4", "14")
+			t.Run("DefaultEmpty", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct{ IntArray [3]int }{}
+				app.Conf(v)
+				NewWithT(t).Expect(v.IntArray).To(Equal([3]int{10, 0, 12}))
+			})
+			t.Run("HasDefaultValue", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct{ IntArray [3]int }{IntArray: [3]int{1, 2, 3}}
+				app.Conf(v)
+				NewWithT(t).Expect(v.IntArray).To(Equal([3]int{10, 2, 12}))
+			})
+		})
+		t.Run("NoEnvVars", func(t *testing.T) {
+			t.Run("DefaultEmpty", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct{ IntArray [3]int }{}
+				app.Conf(v)
+				NewWithT(t).Expect(v.IntArray).To(Equal([3]int{}))
+			})
+			t.Run("HasDefaultValue", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct{ IntArray [3]int }{IntArray: [3]int{1, 2, 3}}
+				app.Conf(v)
+				NewWithT(t).Expect(v.IntArray).To(Equal([3]int{1, 2, 3}))
+			})
+		})
+	})
+	t.Run("ConfSimpleMap", func(t *testing.T) {
+		t.Run("HasEnvVars", func(t *testing.T) {
+			t.Setenv("TEST__SimpleMap1_1", "1")
+			t.Setenv("TEST__SimpleMap1_2", "2")
+			t.Setenv("TEST__SimpleMap2_a", "10")
+			t.Setenv("TEST__SimpleMap2_b", "20")
+			t.Run("DefaultEmpty", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct {
+					SimpleMap1 map[int]string
+					SimpleMap2 map[string]int
+				}{}
+				app.Conf(v)
+				NewWithT(t).Expect(v.SimpleMap1).To(Equal(map[int]string{1: "1", 2: "2"}))
+				NewWithT(t).Expect(v.SimpleMap2).To(Equal(map[string]int{"a": 10, "b": 20}))
+			})
+			t.Run("HasDefaultValue", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct {
+					SimpleMap1 map[int]string
+					SimpleMap2 map[string]int
+				}{
+					SimpleMap1: map[int]string{1: "10", 2: "20", 3: "30"},
+					SimpleMap2: map[string]int{"a": 1, "b": 2, "c": 3},
+				}
+				app.Conf(v)
+				NewWithT(t).Expect(v.SimpleMap1).To(Equal(map[int]string{1: "1", 2: "2", 3: "30"}))
+				NewWithT(t).Expect(v.SimpleMap2).To(Equal(map[string]int{"a": 10, "b": 20, "c": 3}))
+			})
+		})
+		t.Run("NoEnvVars", func(t *testing.T) {
+			t.Run("DefaultEmpty", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct {
+					SimpleMap1 map[int]string
+					SimpleMap2 map[string]int
+				}{}
+				NewWithT(t).Expect(v.SimpleMap1).To(BeNil())
+				NewWithT(t).Expect(v.SimpleMap2).To(BeNil())
+				app.Conf(v)
+				NewWithT(t).Expect(v.SimpleMap1).To(HaveLen(0))
+				NewWithT(t).Expect(v.SimpleMap2).To(HaveLen(0))
+			})
+			t.Run("HasDefaultValue", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &struct {
+					SimpleMap1 map[int]string
+					SimpleMap2 map[string]int
+				}{
+					SimpleMap1: map[int]string{1: "10", 2: "20", 3: "30"},
+					SimpleMap2: map[string]int{"a": 1, "b": 2, "c": 3},
+				}
+				app.Conf(v)
+				NewWithT(t).Expect(v.SimpleMap1).To(Equal(map[int]string{1: "10", 2: "20", 3: "30"}))
+				NewWithT(t).Expect(v.SimpleMap2).To(Equal(map[string]int{"a": 1, "b": 2, "c": 3}))
+			})
+		})
+	})
+	t.Run("ConfComplexMap", func(t *testing.T) {
+		t.Run("HasEnvVars", func(t *testing.T) {
+			t.Setenv("TEST__CONFIG__Map_1_Number", "100")
+			t.Setenv("TEST__CONFIG__Map_1_String", "100")
+			t.Setenv("TEST__CONFIG__Map_2_Number", "200")
+			t.Setenv("TEST__CONFIG__Map_2_String", "200")
+			t.Run("DefaultEmpty", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &config{}
+				app.Conf(v)
+				NewWithT(t).Expect(v.Map["1"].Number.Int64()).To(Equal(int64(100)))
+				NewWithT(t).Expect(v.Map["1"].String).To(Equal("100"))
+				NewWithT(t).Expect(v.Map["2"].Number.Int64()).To(Equal(int64(200)))
+				NewWithT(t).Expect(v.Map["2"].String).To(Equal("200"))
+			})
+			t.Run("HasDefaultValue", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &config{
+					Map: map[string]*MapConfig{
+						"1": {Number: big.NewInt(1), String: "1"},
+						"2": {Number: big.NewInt(2), String: "2"},
+						"3": {Number: big.NewInt(300), String: "300"},
+					},
+				}
+				app.Conf(v)
+				NewWithT(t).Expect(v.Map["1"].Number.Int64()).To(Equal(int64(100)))
+				NewWithT(t).Expect(v.Map["1"].String).To(Equal("100"))
+				NewWithT(t).Expect(v.Map["2"].Number.Int64()).To(Equal(int64(200)))
+				NewWithT(t).Expect(v.Map["2"].String).To(Equal("200"))
+				NewWithT(t).Expect(v.Map["3"].Number.Int64()).To(Equal(int64(300)))
+				NewWithT(t).Expect(v.Map["3"].String).To(Equal("300"))
+			})
+		})
+		t.Run("NoEnvVars", func(t *testing.T) {
+			t.Run("HasDefaultValue", func(t *testing.T) {
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				v := &config{
+					Map: map[string]*MapConfig{
+						"k1": {
+							Number: big.NewInt(10),
+							String: "10",
+						},
+						"k2": {
+							Number: big.NewInt(20),
+							String: "20",
+						},
+					},
+				}
+				app.Conf(v)
+				NewWithT(t).Expect(v.Map["k1"].Number.Int64()).To(Equal(int64(10)))
+				NewWithT(t).Expect(v.Map["k1"].String).To(Equal("10"))
+				NewWithT(t).Expect(v.Map["k2"].Number.Int64()).To(Equal(int64(20)))
+				NewWithT(t).Expect(v.Map["k2"].String).To(Equal("20"))
+			})
+			t.Run("InvalidKeyType", func(t *testing.T) {
+				type invalid struct {
+					Map map[*string]MapConfig
+				}
+				v := &invalid{}
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				defer func() {
+					r := recover()
+					err, ok := r.(error)
+					NewWithT(t).Expect(ok).To(BeTrue())
+					NewWithT(t).Expect(err.Error()).To(ContainSubstring("unexpected map key type"))
+				}()
+				app.Conf(v)
+			})
+			t.Run("InvalidKeyValue", func(t *testing.T) {
+				v := &config{
+					Map: map[string]*MapConfig{"_key__": nil},
+				}
+				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				defer func() {
+					r := recover()
+					err, ok := r.(error)
+					NewWithT(t).Expect(ok).To(BeTrue())
+					NewWithT(t).Expect(err.Error()).To(ContainSubstring("unexpected map key"))
+				}()
+				app.Conf(v)
+			})
+		})
+	})
 }

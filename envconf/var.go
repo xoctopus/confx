@@ -64,17 +64,25 @@ type Group struct {
 	Values map[string]*Var
 }
 
-func (g *Group) MapEntries(k string) (entries []string) {
+func (g *Group) MapEntries(k string) []string {
+	keys := make(map[string]struct{})
 	for _, v := range g.Values {
 		if !strings.HasPrefix(v.Name, k+"_") {
 			continue
 		}
 
 		if entry := strings.TrimPrefix(v.Name, k+"_"); len(entry) > 0 {
-			entries = append(entries, entry)
+			if index := strings.Index(entry, "_"); index > 0 {
+				entry = entry[:index]
+			}
+			keys[entry] = struct{}{}
 		}
 	}
-	return
+	entries := maps.Keys(keys)
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i] < entries[j]
+	})
+	return entries
 }
 
 func (g *Group) SliceLength(k string) int {

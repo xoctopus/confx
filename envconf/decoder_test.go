@@ -207,7 +207,9 @@ func TestDecoder_Decode(t *testing.T) {
 
 		t.Run("Success", func(t *testing.T) {
 			grp.Reset()
-			grp.Add(envconf.NewVar("Map_key", "val"))
+			grp.Add(envconf.NewVar("Map_key1", "val1"))
+			grp.Add(envconf.NewVar("Map_key2", "val2"))
+			grp.Add(envconf.NewVar("Map_key3", "val3"))
 
 			val := &struct {
 				Map map[string]string
@@ -215,17 +217,33 @@ func TestDecoder_Decode(t *testing.T) {
 
 			err := dec.Decode(val)
 			NewWithT(t).Expect(err).To(BeNil())
-			NewWithT(t).Expect(val.Map).To(Equal(map[string]string{"key": "val"}))
+			NewWithT(t).Expect(val.Map).To(Equal(map[string]string{
+				"key1": "val1",
+				"key2": "val2",
+				"key3": "val3",
+			}))
 		})
 	})
 
 	t.Run("Slice", func(t *testing.T) {
-		t.Run("FailedToDecodeValue", func(t *testing.T) {
+		t.Run("FailedToDecodeSlice", func(t *testing.T) {
 			grp.Reset()
 			grp.Add(envconf.NewVar("Slice_0", "any_non_numeric"))
 
 			val := &struct {
 				Slice []int
+			}{}
+
+			err := dec.Decode(val)
+			NewWithT(t).Expect(err).NotTo(BeNil())
+			NewWithT(t).Expect(errors.As(err, ptrx.Ptr(&textx.ErrUnmarshalFailed{}))).To(BeTrue())
+		})
+		t.Run("FailedToDecodeArray", func(t *testing.T) {
+			grp.Reset()
+			grp.Add(envconf.NewVar("Array_0", "any_non_numeric"))
+
+			val := &struct {
+				Array [1]int
 			}{}
 
 			err := dec.Decode(val)

@@ -90,11 +90,20 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 			rv.SetMapIndex(krv.Elem(), vrv.Elem())
 		}
 		return nil
-	case reflect.Slice, reflect.Array:
+	case reflect.Slice:
 		length := d.g.SliceLength(pw.String())
-		if kind == reflect.Slice && rv.IsNil() {
+		if length > 0 {
 			rv.Set(reflect.MakeSlice(rt, length, length))
 		}
+		for i := 0; i < length; i++ {
+			pw.Enter(i)
+			if err := d.decode(pw, rv.Index(i)); err != nil {
+				return err
+			}
+			pw.Leave()
+		}
+		return nil
+	case reflect.Array:
 		for i := 0; i < rv.Len(); i++ {
 			pw.Enter(i)
 			if err := d.decode(pw, rv.Index(i)); err != nil {

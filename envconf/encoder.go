@@ -66,7 +66,8 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 		return d.encode(pw, rv.Elem())
 	}
 
-	if rt.Implements(rtTextMarshaller) {
+	if rt.Implements(rtTextMarshaller) ||
+		rv.CanAddr() && rv.Addr().Type().Implements(rtTextMarshaller) {
 		return d.set(pw, rv)
 	}
 

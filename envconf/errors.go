@@ -49,7 +49,7 @@ func (e *ErrUnexpectMapKeyType) Error() string {
 type ErrUnexpectMapKeyValue string
 
 func (e ErrUnexpectMapKeyValue) Error() string {
-	return "unexpect map key, expect alphabet only, but got `" + string(e) + "`"
+	return "unexpected map key, expect alphabet only, but got `" + string(e) + "`"
 }
 
 func NewInvalidValueErr() *ErrInvalidDecodeValue {
