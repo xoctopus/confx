@@ -40,7 +40,6 @@ func init() {
 			Date:     Date,
 		}),
 		confapp.WithMainRoot("."),
-		confapp.WithDefaultConfigGenerator(),
 		confapp.WithMainExecutor(Main),
 		confapp.WithPreRunner(
 			module1.InitRunner(context.Background()),

@@ -16,8 +16,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/xoctopus/confx/confapp/initializer"
-	"github.com/xoctopus/confx/confcmd"
-	"github.com/xoctopus/confx/confcmd/commands"
 	"github.com/xoctopus/confx/envconf"
 )
 
@@ -33,12 +31,6 @@ func WithMainRoot(root string) Option {
 func WithBuildMeta(meta Meta) Option {
 	return func(app *AppCtx) {
 		app.option.Meta.Overwrite(meta)
-	}
-}
-
-func WithDefaultConfigGenerator() Option {
-	return func(app *AppCtx) {
-		app.option.GenDefaults = true
 	}
 }
 
@@ -151,6 +143,7 @@ func (app *AppCtx) Conf(configurations ...any) {
 		vars = append(vars, rv)
 	}
 
+	app.mustWriteDefault()
 	app.initial(vars)
 	if app.option.NeedAttach() {
 		app.attachSubCommands()
@@ -182,6 +175,7 @@ func (app *AppCtx) marshalDefaults(group string, v any) *envconf.Group {
 func (app *AppCtx) scanEnvironment(group string, v any) *envconf.Group {
 	vars := envconf.ParseGroupFromEnv(group)
 	must.NoErrorWrap(envconf.NewDecoder(vars).Decode(v), "failed to decode env")
+	must.NoErrorWrap(envconf.NewEncoder(vars).Encode(v), "failed to encode env")
 	return vars
 }
 
@@ -229,19 +223,37 @@ func (app *AppCtx) group(name string) string {
 	return strings.ToUpper(strings.Replace(app.Name()+"__"+name, "-", "_", -1))
 }
 
+func (app *AppCtx) mustWriteDefault() {
+	dir := filepath.Join(app.root, "config")
+
+	must.NoErrorWrap(
+		os.MkdirAll(dir, os.ModePerm),
+		"failed to create output dir",
+	)
+
+	m := make(map[string]string)
+	for _, g := range app.dfts {
+		for _, v := range g.Values {
+			if !v.Optional {
+				m[v.GroupName(g.Name)] = v.Value
+			}
+		}
+	}
+
+	content, err := yaml.Marshal(m)
+	must.NoErrorWrap(err, "failed to marshal default vars")
+
+	filename := filepath.Join(dir, "default.yml")
+	must.NoErrorWrap(
+		os.WriteFile(filename, content, os.ModePerm),
+		"failed to write default config file",
+	)
+}
+
 func (app *AppCtx) attachSubCommands() {
 	gen := &cobra.Command{
 		Use:   "gen",
 		Short: "generator templates files for makefile, dockerfile and default config",
-	}
-	app.Command.AddCommand(gen)
-
-	if app.option.GenDefaults {
-		option := commands.NewGoCmdGenDefaultConfigOptions(
-			app.dfts,
-			filepath.Join(app.root, "config"),
-		)
-		gen.AddCommand(confcmd.NewCommand(option))
 	}
 
 	if app.option.GenDockerfile {
@@ -249,4 +261,6 @@ func (app *AppCtx) attachSubCommands() {
 
 	if app.option.GenMakefile {
 	}
+
+	app.Command.AddCommand(gen)
 }

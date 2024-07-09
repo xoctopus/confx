@@ -9,12 +9,12 @@ require (
 	github.com/modood/table v0.0.0-20220527013332-8d47e76dad33
 	github.com/onsi/gomega v1.33.1
 	github.com/pkg/errors v0.9.1
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
-	github.com/xhd2015/xgo/runtime v1.0.40
-	github.com/xoctopus/datatypex v0.0.5
+	github.com/xhd2015/xgo/runtime v1.0.43
+	github.com/xoctopus/datatypex v0.0.6
 	github.com/xoctopus/x v0.0.18
-	golang.org/x/exp v0.0.0-20240531132922-fd00a4e0eefc
+	golang.org/x/exp v0.0.0-20240707233637-46b078467d37
 	gopkg.in/yaml.v3 v3.0.1
 )
 

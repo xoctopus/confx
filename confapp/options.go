@@ -63,7 +63,6 @@ func (m *Meta) Overwrite(meta Meta) {
 
 type AppOption struct {
 	Meta
-	GenDefaults   bool
 	GenMakefile   bool
 	GenDockerfile bool
 
@@ -74,7 +73,7 @@ type AppOption struct {
 }
 
 func (o *AppOption) NeedAttach() bool {
-	return o.GenDefaults || o.GenMakefile || o.GenDockerfile
+	return o.GenMakefile || o.GenDockerfile
 }
 
 func (o *AppOption) AppendPreRunners(runners ...func()) {
