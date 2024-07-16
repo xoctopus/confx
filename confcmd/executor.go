@@ -1,13 +1,16 @@
 package confcmd
 
 import (
-	"sort"
+	"os"
+	"strings"
 
-	"github.com/modood/table"
 	"github.com/spf13/cobra"
-	"github.com/xoctopus/x/misc/must"
 )
 
+// Executor used to generate a cobra.Command
+//
+// it defines the basic info for constructing cobra.Command, such as usage
+// message, short description and execution method
 type Executor interface {
 	// Use command usage message, as `cobra.Command.Use`
 	Use() string
@@ -15,141 +18,83 @@ type Executor interface {
 	Short() string
 	// Exec impls executor handle logic
 	Exec(cmd *cobra.Command, args ...string) error
-	// Flag returns executor's flag by flag name
-	Flag(name string) *Flag
-	// Flags returns executor's flag map
-	Flags() map[string]*Flag
-	// AddFlag add flag to executor
-	AddFlag(*Flag)
-	// OutputFlagsHelp output flags help
-	OutputFlagsHelp(lang LangType, prefix string)
-	// HelpLang returns support help language type
-	HelpLang() LangType
-	// SetHelpLang set help language
-	SetHelpLang(lang LangType)
 }
 
+// WithLong defines executor's lang help message
 type WithLong interface {
-	// Long executor's long help message
 	Long() string
 }
 
+// WithExample defines executor's examples of how to use
 type WithExample interface {
-	// Example examples of how to use
 	Example() string
 }
 
-func NewFlagSet() *FlagSet {
-	return &FlagSet{
-		flags: map[string]*Flag{},
-		envs:  map[string]*Flag{},
-	}
-}
-
-// FlagSet supports management of flags and envs
-type FlagSet struct {
-	flags map[string]*Flag
-	envs  map[string]*Flag
-}
-
-func (fs *FlagSet) Flag(name string) *Flag {
-	return fs.flags[name]
-}
-
-func (fs *FlagSet) Flags() map[string]*Flag {
-	return fs.flags
-}
-
-func (fs *FlagSet) AddFlag(f *Flag) {
-	name := f.Name()
-	_, ok := fs.flags[name]
-	must.BeTrueWrap(!ok, "flag name conflict: %s", name)
-	fs.flags[name] = f
-
-	if key := f.EnvKey(""); key != "" {
-		_, ok = fs.envs[key]
-		must.BeTrueWrap(!ok, "env key conflict: %s", key)
-		fs.envs[key] = f
-	}
-}
-
-type Output struct {
-	FlagName string `table:"flag name"`
-	Required string `table:"required"`
-	NoOptDef string `table:"no option default"`
-	Default  any    `table:"default value"`
-	EnvKey   string `table:"environment key"`
-	Help     string `table:"help info"`
-}
-
-func (fs *FlagSet) OutputFlagsHelp(lang LangType, prefix string) {
-	flags := make([]*Flag, 0, len(fs.flags))
-	for _, f := range fs.flags {
-		flags = append(flags, f)
-	}
-	sort.Slice(flags, func(i, j int) bool {
-		return flags[i].name < flags[j].name
-	})
-	output := make([]Output, 0, len(flags))
-	for _, f := range flags {
-		o := Output{
-			FlagName: f.Name(),
-			Default:  f.DefaultValue(),
-			EnvKey:   f.EnvKey(prefix),
-			Help:     f.Help(lang),
-		}
-		if f.IsRequired() {
-			o.Required = "yes"
-		}
-		if v := f.NoOptionDefaultValue(); v == "" {
-			o.NoOptDef = "-"
-		} else {
-			o.NoOptDef = v
-		}
-		output = append(output, o)
-	}
-	table.Output(output)
-}
-
-func NewMultiLangHelper(lang LangType) *MultiLangHelper {
-	return &MultiLangHelper{lang: lang}
-}
-
-func NewDefaultMultiLangHelper() *MultiLangHelper {
-	return NewMultiLangHelper(DefaultLang)
-}
-
-// MultiLangHelper support executor's flag has multi-language help
-type MultiLangHelper struct {
-	lang LangType
-}
-
-func (l *MultiLangHelper) HelpLang() LangType {
-	return l.lang
-}
-
-func (l *MultiLangHelper) SetHelpLang(lang LangType) {
-	l.lang = lang
-}
-
-type CanInjectFromEnv interface {
+// WithEnv if an executor impls `WithEnv`, it allows executor's flag
+// to be parsed from env vars
+type WithEnv interface {
 	Prefix() string
-	SetPrefix(string)
+	Var(key string) string
 }
 
-func NewEnvInjector(prefix string) *EnvInjector {
-	return &EnvInjector{prefix: prefix}
+func NewEnv(prefix string) *Env {
+	return &Env{prefix: prefix}
 }
 
-// EnvInjector support executor's flag value to inject from env vars
-type EnvInjector struct {
+type Env struct {
 	prefix string
 }
 
-func (v *EnvInjector) Prefix() string {
-	return v.prefix
+func (v *Env) Prefix() string { return v.prefix }
+
+func (v *Env) Var(key string) string {
+	if key == "" {
+		return ""
+	}
+	envKey := ""
+	if v.prefix != "" {
+		envKey = strings.Replace(strings.ToUpper(v.prefix+"__"+key), "-", "_", -1)
+	} else {
+		envKey = strings.Replace(strings.ToUpper(key), "-", "_", -1)
+	}
+	return os.Getenv(envKey)
 }
 
-func (v *EnvInjector) SetPrefix(prefix string) {
-	v.prefix = prefix
+// LocalizeHelper help translate flag help message by i18n message id
+type LocalizeHelper func(i18nId string) string
+
+// NewCommand generate a `*cobra.Command` by Executor
+func NewCommand(v Executor, localize ...LocalizeHelper) *cobra.Command {
+	flags := ParseFlags(v)
+
+	cmd := &cobra.Command{
+		Use:   v.Use(),
+		Short: v.Short(),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return v.Exec(cmd, args...)
+		},
+	}
+
+	if exec, ok := v.(WithLong); ok {
+		cmd.Long = exec.Long()
+	}
+	if exec, ok := v.(WithExample); ok {
+		cmd.Example = exec.Example()
+	}
+
+	env, _ := v.(WithEnv)
+	trans := LocalizeHelper(nil)
+	if len(localize) > 0 && localize[0] != nil {
+		trans = localize[0]
+	}
+
+	for _, f := range flags {
+		envVar := ""
+		if env != nil {
+			envVar = env.Var(f.Env())
+		}
+		f.Register(cmd, envVar, trans)
+	}
+
+	return cmd
 }

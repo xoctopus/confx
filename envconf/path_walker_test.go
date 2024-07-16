@@ -54,6 +54,8 @@ func TestPathWalker(t *testing.T) {
 		{
 			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"name", stringer("3")}))
 			NewWithT(t).Expect(pw.String()).To(Equal("name_3"))
+			NewWithT(t).Expect(pw.EnvKey()).To(Equal("NAME_3"))
+			NewWithT(t).Expect(pw.FlagKey()).To(Equal("name-3"))
 		}
 		pw.Leave()
 	}

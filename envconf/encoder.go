@@ -116,10 +116,10 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 				continue
 			}
 			name := frt.Name
-			flag := make(map[string]struct{})
+			flags := make(map[string]struct{})
 			if tag, ok := frt.Tag.Lookup("env"); ok {
 				tagName := ""
-				tagName, flag = reflectx.ParseTagKeyAndFlags(tag)
+				tagName, flags = reflectx.ParseTagValue(tag)
 				if tagName == "-" {
 					continue
 				}
@@ -127,12 +127,12 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 					name = tagName
 				}
 			}
-			inline := len(flag) == 0 && frt.Anonymous &&
+			inline := len(flags) == 0 && frt.Anonymous &&
 				reflectx.Deref(frt.Type).Kind() == reflect.Struct
 			if !inline {
 				pw.Enter(name)
 			}
-			d.flags[pw.String()] = flag
+			d.flags[pw.String()] = flags
 			if err := d.encode(pw, rv.Field(i)); err != nil {
 				return err
 			}

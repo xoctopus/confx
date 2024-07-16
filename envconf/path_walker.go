@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -30,6 +31,14 @@ func (pw *PathWalker) Paths() []any {
 
 func (pw *PathWalker) String() string {
 	return StringifyPath(pw.paths...)
+}
+
+func (pw *PathWalker) FlagKey() string {
+	return strings.Replace(strings.ToLower(pw.String()), "_", "-", -1)
+}
+
+func (pw *PathWalker) EnvKey() string {
+	return strings.Replace(strings.ToUpper(pw.String()), "-", "_", -1)
 }
 
 func StringifyPath(paths ...any) string {
