@@ -30,6 +30,7 @@ func WithMainRoot(root string) Option {
 
 func WithBuildMeta(meta Meta) Option {
 	return func(app *AppCtx) {
+		app.option.Meta = DefaultMeta
 		app.option.Meta.Overwrite(meta)
 	}
 }

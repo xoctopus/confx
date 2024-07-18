@@ -19,8 +19,8 @@ type Meta struct {
 
 var DefaultMeta = Meta{
 	Name:     "name",
-	Feature:  "main",
-	Version:  "v0.0.0",
+	Feature:  "branch",
+	Version:  "version",
 	CommitID: "commit",
 	Date:     time.Now().Format("200601021504"),
 	Runtime:  GetRuntime(),
