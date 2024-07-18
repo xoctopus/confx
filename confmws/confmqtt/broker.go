@@ -1,6 +1,8 @@
 package confmqtt
 
 import (
+	"log"
+	"os"
 	"sync"
 	"time"
 
@@ -11,6 +13,12 @@ import (
 
 	"github.com/xoctopus/confx/confmws/conftls"
 )
+
+func init() {
+	mqtt.ERROR = log.New(os.Stdout, "[MQTT ERR]", log.LstdFlags)
+	mqtt.CRITICAL = log.New(os.Stdout, "[MQTT CRI]", log.LstdFlags)
+	mqtt.WARN = log.New(os.Stdout, "[MQTT WRN]", log.LstdFlags)
+}
 
 type Broker struct {
 	Server        datatypex.Endpoint
@@ -27,7 +35,7 @@ type Broker struct {
 func (b *Broker) SetDefault() {
 	b.Retry.SetDefault()
 	if b.Keepalive == 0 {
-		b.Keepalive = 3 * time.Hour
+		b.Keepalive = 3 * time.Second
 	}
 	if b.Timeout == 0 {
 		b.Timeout = 10 * time.Second
@@ -78,12 +86,32 @@ func (b *Broker) options(cid string) *mqtt.ClientOptions {
 		}
 	}
 
+	options.SetAutoReconnect(true)
+	options.SetConnectRetryInterval(b.Timeout)
+
+	// client resuming subscribing the topic before lost connection
 	options.SetCleanSession(false)
 	options.SetResumeSubs(true)
+
+	// keepalive is the interval to probe if connection is alive
 	options.SetKeepAlive(b.Keepalive)
+
 	options.SetWriteTimeout(b.Timeout)
 	options.SetConnectTimeout(b.Timeout)
 	options.SetPingTimeout(b.Timeout)
+
+	options.SetConnectionLostHandler(func(c mqtt.Client, err error) {
+		opt := c.OptionsReader()
+		mqtt.WARN.Printf("connection lost: `%s` caused by %v", opt.ClientID(), err)
+	})
+	options.SetReconnectingHandler(func(_ mqtt.Client, opt *mqtt.ClientOptions) {
+		mqtt.WARN.Printf("reconnecting: `%s`", opt.ClientID)
+	})
+	options.SetOnConnectHandler(func(c mqtt.Client) {
+		opt := c.OptionsReader()
+		mqtt.WARN.Printf("client connected: `%s`", opt.ClientID())
+	})
+
 	return options
 }
 
@@ -130,6 +158,8 @@ func (b *Broker) Close(c *Client) {
 
 func (b *Broker) CloseByClientID(id string) {
 	if c, ok := b.clients.LoadAndDelete(id); ok && c != nil {
-		c.(*Client).cli.Disconnect(500)
+		cc := c.(*Client)
+		cc.cli.Unsubscribe(cc.topic)
+		cc.cli.Disconnect(100)
 	}
 }

@@ -20,8 +20,8 @@ func (c *Client) ID() string {
 	return c.id
 }
 
-func (c *Client) connect() error {
-	return c.wait(c.cli.Connect())
+func (c *Client) Topic() string {
+	return c.topic
 }
 
 func (c *Client) wait(tok mqtt.Token) error {
@@ -30,6 +30,10 @@ func (c *Client) wait(tok mqtt.Token) error {
 		return errors.Wrap(err, "failed to wait")
 	}
 	return nil
+}
+
+func (c *Client) connect() error {
+	return c.wait(c.cli.Connect())
 }
 
 func (c *Client) Publish(payload interface{}) error {
