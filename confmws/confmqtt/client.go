@@ -24,6 +24,10 @@ func (c *Client) Topic() string {
 	return c.topic
 }
 
+func (c *Client) key() string {
+	return c.id + c.topic
+}
+
 func (c *Client) wait(tok mqtt.Token) error {
 	tok.WaitTimeout(c.timeout)
 	if err := tok.Error(); err != nil {

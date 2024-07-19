@@ -35,7 +35,7 @@ type Broker struct {
 func (b *Broker) SetDefault() {
 	b.Retry.SetDefault()
 	if b.Keepalive == 0 {
-		b.Keepalive = 3 * time.Second
+		b.Keepalive = time.Minute
 	}
 	if b.Timeout == 0 {
 		b.Timeout = 10 * time.Second
@@ -86,6 +86,7 @@ func (b *Broker) options(cid string) *mqtt.ClientOptions {
 		}
 	}
 
+	// reconnecting
 	options.SetAutoReconnect(true)
 	options.SetConnectRetryInterval(b.Timeout)
 
@@ -135,7 +136,8 @@ func (b *Broker) NewClient(id, topic string) (*Client, error) {
 	if topic == "" {
 		return nil, ErrInvalidTopic
 	}
-	if c, ok := b.clients.Load(id); ok && c != nil {
+	key := id + topic
+	if c, ok := b.clients.Load(key); ok && c != nil {
 		return c.(*Client), nil
 	}
 
@@ -152,15 +154,15 @@ func (b *Broker) NewClient(id, topic string) (*Client, error) {
 	if err := c.connect(); err != nil {
 		return nil, err
 	}
-	b.clients.Store(id, c)
+	b.clients.Store(key, c)
 	return c, nil
 }
 
 func (b *Broker) Close(c *Client) {
-	b.CloseByClientID(c.id)
+	b.CloseByClientKey(c.key())
 }
 
-func (b *Broker) CloseByClientID(id string) {
+func (b *Broker) CloseByClientKey(id string) {
 	if c, ok := b.clients.LoadAndDelete(id); ok && c != nil {
 		cc := c.(*Client)
 		cc.cli.Unsubscribe(cc.topic)

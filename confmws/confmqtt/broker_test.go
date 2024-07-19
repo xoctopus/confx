@@ -77,6 +77,13 @@ func TestBroker(t *testing.T) {
 	})
 	NewWithT(t).Expect(err).To(BeNil())
 
+	t.Run("NewClientInClientCache", func(t *testing.T) {
+		cc, err := broker.NewClient(suber.ID(), suber.Topic())
+		NewWithT(t).Expect(err).To(BeNil())
+		NewWithT(t).Expect(cc.ID()).To(Equal(suber.ID()))
+		NewWithT(t).Expect(cc.Topic()).To(Equal(suber.Topic()))
+	})
+
 	num := 5
 	for i := 0; i < num; i++ {
 		err = puber.Publish(must.NoErrorV(json.Marshal(NewMessage("payload"))))
@@ -104,6 +111,7 @@ func TestBrokerExt(t *testing.T) {
 		b := &Broker{}
 		b.Retry.Repeats = -1
 		b.SetDefault()
+		b.Server.Port = 9999
 		NewWithT(t).Expect(b.Init()).NotTo(BeNil())
 		liveness := b.LivenessCheck()[b.Server.Hostname()]
 		NewWithT(t).Expect(liveness).NotTo(Equal("ok"))
@@ -116,7 +124,28 @@ func TestBrokerExt(t *testing.T) {
 	})
 }
 
+func TestClientTimeout(t *testing.T) {
+	b := &Broker{}
+	err := broker.Server.UnmarshalText([]byte("tcp://broker.emqx.io:1883"))
+	NewWithT(t).Expect(err).To(BeNil())
+
+	b.SetDefault()
+	b.Timeout = time.Second
+	b.Keepalive = time.Second
+	c, err := b.NewClient("eof_client", "try_eof_client")
+	NewWithT(t).Expect(err).To(BeNil())
+	defer b.Close(c)
+
+	err = c.Subscribe(func(client mqtt.Client, message mqtt.Message) {
+		t.Logf(string(message.Payload()))
+	})
+	NewWithT(t).Expect(err).To(BeNil())
+
+	time.Sleep(time.Minute)
+}
+
 func TestClientReconnection(t *testing.T) {
+	t.Skip("this is a local debug test case")
 	b := &Broker{}
 	err := b.Server.UnmarshalText([]byte("tcp://broker.emqx.io:1883"))
 	NewWithT(t).Expect(err).To(BeNil())
@@ -193,4 +222,36 @@ func TestClientReconnection(t *testing.T) {
 	t.Logf("test finished ")
 	t.Logf("published:  %v", pubed)
 	t.Logf("subscribed: %v", subed)
+}
+
+func TestLocalSubscribing(t *testing.T) {
+	t.Skip("this is a local debug test case")
+	b := &Broker{}
+	b.SetDefault()
+	NewWithT(t).Expect(b.Init()).To(BeNil())
+
+	suber, err := b.NewClient("sub_"+uuid.NewString(), "any_topic")
+	NewWithT(t).Expect(err).To(BeNil())
+
+	err = suber.Subscribe(func(client mqtt.Client, message mqtt.Message) {
+		t.Logf(string(message.Payload()))
+	})
+	NewWithT(t).Expect(err).To(BeNil())
+
+	puber, err := b.NewClient("pub_"+uuid.NewString(), "any_topic")
+	NewWithT(t).Expect(err).To(BeNil())
+	go func() {
+		seq := 1
+		for {
+			err = puber.Publish(strconv.Itoa(seq))
+			NewWithT(t).Expect(err).To(BeNil())
+			time.Sleep(time.Second)
+			seq++
+		}
+	}()
+
+	time.Sleep(300 * time.Second)
+	b.Close(suber)
+	b.Close(puber)
+	return
 }
