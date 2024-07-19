@@ -135,6 +135,10 @@ func (b *Broker) NewClient(id, topic string) (*Client, error) {
 	if topic == "" {
 		return nil, ErrInvalidTopic
 	}
+	if c, ok := b.clients.Load(id); ok && c != nil {
+		return c.(*Client), nil
+	}
+
 	option := b.options(id)
 
 	c := &Client{
