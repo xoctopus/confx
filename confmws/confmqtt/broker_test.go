@@ -125,13 +125,15 @@ func TestBrokerExt(t *testing.T) {
 }
 
 func TestClientTimeout(t *testing.T) {
+	t.Skip("this is a local debug test case")
 	b := &Broker{}
-	err := broker.Server.UnmarshalText([]byte("tcp://broker.emqx.io:1883"))
+	err := b.Server.UnmarshalText([]byte("tcp://broker.emqx.io:1883"))
+	b.SetDefault()
+	b.Timeout = 10 * time.Second
+	b.Keepalive = time.Second
+
 	NewWithT(t).Expect(err).To(BeNil())
 
-	b.SetDefault()
-	b.Timeout = time.Second
-	b.Keepalive = time.Second
 	c, err := b.NewClient("eof_client", "try_eof_client")
 	NewWithT(t).Expect(err).To(BeNil())
 	defer b.Close(c)
@@ -141,7 +143,7 @@ func TestClientTimeout(t *testing.T) {
 	})
 	NewWithT(t).Expect(err).To(BeNil())
 
-	time.Sleep(time.Minute)
+	time.Sleep(30 * time.Second)
 }
 
 func TestClientReconnection(t *testing.T) {
