@@ -11,6 +11,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/google/uuid"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	"github.com/xoctopus/x/misc/must"
 
 	. "github.com/xoctopus/confx/confmws/confmqtt"
@@ -121,6 +122,13 @@ func TestBrokerExt(t *testing.T) {
 		c, err := (&Broker{}).NewClient("", "")
 		NewWithT(t).Expect(err).To(Equal(ErrInvalidTopic))
 		NewWithT(t).Expect(c).To(BeNil())
+	})
+	t.Run("ClientOptionHooks", func(t *testing.T) {
+		opt := &mqtt.ClientOptions{ClientID: "logger_client"}
+		c := mqtt.NewClient(opt)
+		LogOnConnected(c)
+		LogOnReconnecting(c, opt)
+		LogOnConnectionLost(c, errors.New("conn lost"))
 	})
 }
 

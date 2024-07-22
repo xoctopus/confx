@@ -20,6 +20,20 @@ func init() {
 	mqtt.WARN = log.New(os.Stdout, "[MQTT WRN]", log.LstdFlags)
 }
 
+func LogOnConnectionLost(c mqtt.Client, err error) {
+	opt := c.OptionsReader()
+	mqtt.WARN.Printf("connection lost: `%s` caused by %v", opt.ClientID(), err)
+}
+
+func LogOnReconnecting(_ mqtt.Client, opt *mqtt.ClientOptions) {
+	mqtt.WARN.Printf("reconnecting: `%s`", opt.ClientID)
+}
+
+func LogOnConnected(c mqtt.Client) {
+	opt := c.OptionsReader()
+	mqtt.WARN.Printf("client connected: `%s`", opt.ClientID())
+}
+
 type Broker struct {
 	Server        datatypex.Endpoint
 	Retry         retry.Retry
@@ -101,17 +115,9 @@ func (b *Broker) options(cid string) *mqtt.ClientOptions {
 	options.SetConnectTimeout(b.Timeout)
 	options.SetPingTimeout(b.Timeout)
 
-	options.SetConnectionLostHandler(func(c mqtt.Client, err error) {
-		opt := c.OptionsReader()
-		mqtt.WARN.Printf("connection lost: `%s` caused by %v", opt.ClientID(), err)
-	})
-	options.SetReconnectingHandler(func(_ mqtt.Client, opt *mqtt.ClientOptions) {
-		mqtt.WARN.Printf("reconnecting: `%s`", opt.ClientID)
-	})
-	options.SetOnConnectHandler(func(c mqtt.Client) {
-		opt := c.OptionsReader()
-		mqtt.WARN.Printf("client connected: `%s`", opt.ClientID())
-	})
+	options.SetConnectionLostHandler(LogOnConnectionLost)
+	options.SetReconnectingHandler(LogOnReconnecting)
+	options.SetOnConnectHandler(LogOnConnected)
 
 	return options
 }
