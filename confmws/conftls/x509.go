@@ -15,15 +15,15 @@ var DefaultTLSConfig = &tls.Config{
 }
 
 type X509KeyPair struct {
-	Key string
-	Crt string
-	CA  string
+	Key string `help:"x509 private key file path or PEM decoded string"`
+	Crt string `help:"x509 public key file path or PEM decoded string"`
+	CA  string `help:"ca certification"`
 
 	config *tls.Config
 }
 
 func (c *X509KeyPair) IsZero() bool {
-	return c.Key == "" || c.CA == "" || c.Crt == ""
+	return c.Key == "" || c.Crt == ""
 }
 
 func (c *X509KeyPair) read() (key, crt, ca []byte) {
@@ -37,9 +37,11 @@ func (c *X509KeyPair) read() (key, crt, ca []byte) {
 	if err != nil {
 		goto ReturnValue
 	}
-	ca, err = os.ReadFile(c.CA)
-	if err != nil {
-		goto ReturnValue
+	if c.CA != "" {
+		ca, err = os.ReadFile(c.CA)
+		if err != nil {
+			goto ReturnValue
+		}
 	}
 	return key, crt, ca
 
@@ -58,15 +60,21 @@ func (c *X509KeyPair) Init() error {
 	if err != nil {
 		return err
 	}
-	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM(ca) {
-		return errors.Errorf("failed to append cert")
-	}
-	c.config = &tls.Config{
-		RootCAs:            pool,
+
+	config := &tls.Config{
 		Certificates:       []tls.Certificate{cert},
 		InsecureSkipVerify: true,
 	}
+
+	if len(ca) > 0 {
+		pool := x509.NewCertPool()
+		if !pool.AppendCertsFromPEM(ca) {
+			return errors.Errorf("failed to append cert")
+		}
+		config.RootCAs = pool
+	}
+
+	c.config = config
 	return nil
 }
 

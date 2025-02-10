@@ -42,7 +42,7 @@ func (c *Client) connect() error {
 	return c.wait(c.cli.Connect())
 }
 
-func (c *Client) Publish(payload interface{}) error {
+func (c *Client) Publish(payload any) error {
 	return c.wait(c.cli.Publish(c.topic, byte(c.qos), c.retain, payload))
 }
 
