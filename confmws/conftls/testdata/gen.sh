@@ -13,3 +13,10 @@ openssl req -new -key server.key -out server.csr -subj $SUBJECT
 echo "sign certification"
 openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days 365 -sha256 -subj $SUBJECT
 
+echo "generate client private key and certificate request(csr)"
+openssl genrsa -out client.key 2048
+openssl req -new -key client.key -out client.csr -subj $SUBJECT
+
+echo "sign certification"
+openssl x509 -req -in client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out client.crt -days 365 -sha256 -subj $SUBJECT
+
