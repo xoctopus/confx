@@ -3,28 +3,36 @@ package cmds
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/spf13/cobra"
 
 	"github.com/xoctopus/confx/confcmd"
+	"github.com/xoctopus/confx/confmws/conftls"
 )
 
-type RunServer struct {
-	*Global
-	Port uint16 `help:"server listen port"`
-
-	*confcmd.FlagSet
-	*confcmd.MultiLangHelper
+var DefaultServerConfig = &ServerConfig{
+	Debug:    false,
+	Security: false,
+	Port:     8888,
 }
 
-var _ confcmd.Executor = (*RunServer)(nil)
+type ServerConfig struct {
+	Debug    bool   `cmd:",p,nop=1"    help:"debug mode"`
+	LogLevel string `cmd:",p"          help:"set log level [trace debug info warn error]"`
+	Security bool   `cmd:",p,nop=true" help:"enable https serve and request"`
+	Port     uint16 `cmd:",p"          help:"server listen port"`
+	Tls      conftls.X509KeyPair
+}
 
-func (s *RunServer) Use() string { return "run" }
+var _ confcmd.Executor = (*ServerConfig)(nil)
 
-func (s *RunServer) Short() string { return "run a http server" }
+func (s *ServerConfig) Use() string { return "serve" }
 
-func (s *RunServer) Exec(cmd *cobra.Command, args ...string) error {
+func (s *ServerConfig) Short() string { return "start http server" }
+
+func (s *ServerConfig) Exec(cmd *cobra.Command, args ...string) error {
 	http.HandleFunc("/echo", func(w http.ResponseWriter, req *http.Request) {
 		if req.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -41,40 +49,30 @@ func (s *RunServer) Exec(cmd *cobra.Command, args ...string) error {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
 	})
-	for _, f := range s.Flags() {
-		cmd.Printf("%-12s %v\n", f.Name()+":", f.Value())
+
+	cmd.Println("Debug:   ", s.Debug)
+	cmd.Println("LogLevel:", s.LogLevel)
+	cmd.Println("Security:", s.Security)
+	cmd.Println("Port:    ", s.Port)
+
+	if !s.Debug {
+		log.SetOutput(io.Discard)
 	}
+
 	addr := fmt.Sprintf(":%d", s.Port)
 	cmd.Printf("server started, listening %s\n", addr)
-	if s.SecurityEnabled() {
-		return http.ListenAndServeTLS(addr, s.CertFile, s.KeyFile, nil)
-	} else {
-		return http.ListenAndServe(addr, nil)
+	if s.Security && !s.Tls.IsZero() {
+		if err := s.Tls.Init(); err != nil {
+			return err
+		}
+		return http.ListenAndServeTLS(addr, s.Tls.Crt, s.Tls.Key, nil)
 	}
+	return http.ListenAndServe(addr, nil)
 }
 
 var ServerCmd *cobra.Command
 
 func init() {
-	ServerCmd = &cobra.Command{
-		Use:   "server",
-		Short: "server sub command",
-	}
-	ServerCmd.AddCommand(
-		confcmd.NewCommand(&RunServer{
-			Global:          DefaultGlobal,
-			Port:            90,
-			FlagSet:         confcmd.NewFlagSet(),
-			MultiLangHelper: confcmd.NewDefaultMultiLangHelper(),
-		}),
-		&cobra.Command{
-			Use:   "version",
-			Short: "print server version",
-			Run: func(cmd *cobra.Command, args []string) {
-				cmd.Println("v0.0.1")
-			},
-		},
-	)
+	ServerCmd = confcmd.NewCommand(DefaultServerConfig, nil)
 }

@@ -2,9 +2,7 @@ package main
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/xoctopus/x/misc/must"
 
-	"github.com/xoctopus/confx/confcmd"
 	"github.com/xoctopus/confx/confcmd/example/cmds"
 )
 
@@ -14,16 +12,8 @@ var (
 
 func init() {
 	root = &cobra.Command{}
-
-	globals := confcmd.ParseFlags(cmds.DefaultGlobal)
-	for _, f := range globals {
-		must.NoErrorWrap(
-			f.Register(root, confcmd.LangEN, ""),
-			"failed to register global flag: %s", f.Name(),
-		)
-	}
-
 	root.AddCommand(cmds.ServerCmd)
+	root.AddCommand(cmds.VersionCmd)
 }
 
 func main() {
