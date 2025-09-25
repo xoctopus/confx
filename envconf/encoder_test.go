@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/xoctopus/x/textx/testdata"
 
 	"github.com/xoctopus/confx/envconf"
 )
@@ -76,7 +75,7 @@ func TestEncoder_Encode(t *testing.T) {
 			pos.Enter(0)
 			expect := envconf.NewError(pos, envconf.E_ENC__FAILED_MARSHAL)
 
-			target := enc.Encode(map[int]testdata.MustFailedArshaler{0: {}})
+			target := enc.Encode(map[int]MustFailedArshaler{0: {}})
 			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
 		})
 
@@ -145,7 +144,7 @@ func TestEncoder_Encode(t *testing.T) {
 			pos.Enter(0)
 
 			expect := envconf.NewError(pos, envconf.E_ENC__FAILED_MARSHAL)
-			target := enc.Encode([]testdata.MustFailedArshaler{{}})
+			target := enc.Encode([]MustFailedArshaler{{}})
 			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
 		})
 		grp := envconf.NewGroup("TEST")
@@ -164,9 +163,9 @@ func TestEncoder_Encode(t *testing.T) {
 
 			expect := envconf.NewError(pos, envconf.E_ENC__FAILED_MARSHAL)
 			target := enc.Encode(struct {
-				X testdata.MustFailedArshaler
+				X MustFailedArshaler
 			}{
-				X: testdata.MustFailedArshaler{},
+				X: MustFailedArshaler{},
 			})
 			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
 		})

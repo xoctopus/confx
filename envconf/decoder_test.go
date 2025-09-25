@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
-	"github.com/xoctopus/x/textx/testdata"
 
 	"github.com/xoctopus/confx/envconf"
 )
@@ -21,6 +20,18 @@ type DefaultSetter struct {
 
 func (v *DefaultSetter) SetDefault() {
 	v.Int = 101
+}
+
+type MustFailedArshaler struct {
+	V any
+}
+
+func (MustFailedArshaler) MarshalText() ([]byte, error) {
+	return nil, errors.New("MUST FAILED MARSHALER")
+}
+
+func (*MustFailedArshaler) UnmarshalText([]byte) error {
+	return errors.New("MUST FAILED UNMARSHALER")
 }
 
 func TestDecoder_Decode(t *testing.T) {
@@ -242,9 +253,9 @@ func TestDecoder_Decode(t *testing.T) {
 			expect := envconf.NewError(pos, envconf.E_DEC__FAILED_UNMARSHAL)
 			target := dec.Decode(&struct {
 				Endpoint   *datatypex.Endpoint
-				MustFailed testdata.MustFailedArshaler
+				MustFailed MustFailedArshaler
 			}{
-				MustFailed: testdata.MustFailedArshaler{},
+				MustFailed: MustFailedArshaler{},
 			})
 			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
 		})
