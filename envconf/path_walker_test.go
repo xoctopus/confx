@@ -17,45 +17,71 @@ func (v stringer) String() string {
 func TestPathWalker(t *testing.T) {
 	pw := envconf.NewPathWalker()
 
-	pw.Enter("name")
+	pw.Enter("Group")
 	{
-		NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"name"}))
-		NewWithT(t).Expect(pw.String()).To(Equal("name"))
+		NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group"}))
+		NewWithT(t).Expect(pw.String()).To(Equal("Group"))
 
 		pw.Enter(1)
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"name", 1}))
-			NewWithT(t).Expect(pw.String()).To(Equal("name_1"))
+			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", 1}))
+			NewWithT(t).Expect(pw.String()).To(Equal("Group_1"))
+			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-1"))
+			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_1"))
 
 			pw.Enter("prop")
 			{
-				NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"name", 1, "prop"}))
-				NewWithT(t).Expect(pw.String()).To(Equal("name_1_prop"))
+				NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", 1, "prop"}))
+				NewWithT(t).Expect(pw.String()).To(Equal("Group_1_prop"))
+				NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-1-prop"))
+				NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_1_prop"))
 			}
 			pw.Leave()
 		}
 		pw.Leave()
 
-		pw.Enter(2)
+		pw.Enter(stringer("Sub"))
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"name", 2}))
-			NewWithT(t).Expect(pw.String()).To(Equal("name_2"))
-
-			pw.Enter("prop")
-			{
-				NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"name", 2, "prop"}))
-				NewWithT(t).Expect(pw.String()).To(Equal("name_2_prop"))
-			}
-			pw.Leave()
+			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", stringer("Sub")}))
+			NewWithT(t).Expect(pw.String()).To(Equal("Group_Sub"))
+			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_Sub"))
+			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-sub"))
 		}
 		pw.Leave()
 
-		pw.Enter(stringer("3"))
+		pw.Enter("UpperCamelSub")
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"name", stringer("3")}))
-			NewWithT(t).Expect(pw.String()).To(Equal("name_3"))
-			NewWithT(t).Expect(pw.EnvKey()).To(Equal("NAME_3"))
-			NewWithT(t).Expect(pw.FlagKey()).To(Equal("name-3"))
+			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", "UpperCamelSub"}))
+			NewWithT(t).Expect(pw.String()).To(Equal("Group_UpperCamelSub"))
+			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_UpperCamelSub"))
+			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-upper-camel-sub"))
+		}
+		pw.Leave()
+
+		pw.Enter("lowerCamelSub")
+		{
+			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", "lowerCamelSub"}))
+			NewWithT(t).Expect(pw.String()).To(Equal("Group_lowerCamelSub"))
+			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_lowerCamelSub"))
+			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-lower-camel-sub"))
+		}
+		pw.Leave()
+
+		pw.Enter("Dash-Sub")
+		{
+			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", "Dash-Sub"}))
+			NewWithT(t).Expect(pw.String()).To(Equal("Group_Dash-Sub"))
+			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_Dash_Sub"))
+			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-dash-sub"))
+		}
+		pw.Leave()
+
+		pw.Enter("Underlined_Sub")
+		{
+			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", "Underlined_Sub"}))
+			NewWithT(t).Expect(pw.String()).To(Equal("Group_Underlined_Sub"))
+			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_Underlined_Sub"))
+			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-underlined-sub"))
 		}
 		pw.Leave()
 	}
@@ -63,7 +89,8 @@ func TestPathWalker(t *testing.T) {
 
 	pw.Enter([]byte("unsupported type"))
 	defer func() {
-		t.Log(recover())
+		e := recover().(error).Error()
+		NewWithT(t).Expect(e).To(HavePrefix("unsupported type in path walker:"))
 	}()
 	_ = pw.String()
 }

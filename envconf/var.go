@@ -10,36 +10,36 @@ import (
 	"golang.org/x/exp/maps"
 )
 
-type VarOptions struct {
-	Optional bool
-}
-
-func NewVar(name, value string) *Var {
-	return &Var{Name: name, Value: value}
-}
-
-type Var struct {
-	Name  string
-	Value string
-	Mask  string
-
-	VarOptions
-}
-
-func (v *Var) GroupName(prefix string) string {
-	return prefix + "__" + v.Name
-}
-
-func (v *Var) ParseOption(flag map[string]struct{}) {
-	if _, ok := flag["optional"]; ok {
-		v.Optional = true
+func NewVar(key, val string) *Var {
+	return &Var{
+		key: key,
+		val: val,
 	}
 }
 
+type Var struct {
+	key  string
+	val  string
+	mask string
+
+	optional bool
+}
+
+func (v *Var) Key() string {
+	return v.key
+}
+
+func (v *Var) Value() string {
+	return v.val
+}
+
 func NewGroup(name string) *Group {
+	if len(name) == 0 || !alphabet(name) {
+		panic("invalid group name: " + name)
+	}
 	return &Group{
-		Name:   name,
-		Values: make(map[string]*Var),
+		name: name,
+		vars: make(map[string]*Var),
 	}
 }
 
@@ -50,8 +50,8 @@ func ParseGroupFromEnv(prefix string) *Group {
 		if len(kv) == 2 {
 			if strings.HasPrefix(kv[0], prefix) {
 				g.Add(&Var{
-					Name:  strings.TrimPrefix(kv[0], prefix+"__"),
-					Value: kv[1],
+					key: strings.TrimPrefix(kv[0], prefix+"__"),
+					val: kv[1],
 				})
 			}
 		}
@@ -60,43 +60,47 @@ func ParseGroupFromEnv(prefix string) *Group {
 }
 
 type Group struct {
-	Name   string
-	Values map[string]*Var
+	name string
+	vars map[string]*Var
 }
 
 func (g *Group) MapEntries(k string) []string {
 	keys := make(map[string]struct{})
-	for _, v := range g.Values {
-		if !strings.HasPrefix(v.Name, k+"_") {
+	for _, v := range g.vars {
+		if !strings.HasPrefix(v.key, k) {
 			continue
 		}
-
-		if entry := strings.TrimPrefix(v.Name, k+"_"); len(entry) > 0 {
-			if index := strings.Index(entry, "_"); index > 0 {
-				entry = entry[:index]
-			}
+		// map key must be quoted with `_`
+		entry := strings.Trim(strings.TrimPrefix(v.key, k), "_")
+		index := strings.Index(entry, "_")
+		if index > 0 {
+			entry = strings.Trim(entry[:index], "_")
+		}
+		if len(entry) > 0 {
 			keys[entry] = struct{}{}
 		}
 	}
-	entries := maps.Keys(keys)
-	sort.Slice(entries, func(i, j int) bool {
-		return entries[i] < entries[j]
-	})
-	return entries
+	return maps.Keys(keys)
 }
 
 func (g *Group) SliceLength(k string) int {
 	size := -1
 
-	for _, v := range g.Values {
-		if !strings.HasPrefix(v.Name, k+"_") {
+	for _, v := range g.vars {
+		if !strings.HasPrefix(v.key, k) {
 			continue
 		}
 
-		suffix := strings.TrimPrefix(v.Name, k+"_")
-		idx, err := strconv.ParseInt(strings.Split(suffix, "_")[0], 10, 64)
-		if err == nil && int(idx) > size {
-			size = int(idx)
+		entry := strings.Trim(strings.TrimPrefix(v.key, k), "_")
+		index := strings.Index(entry, "_")
+		if index > 0 {
+			entry = strings.Trim(entry[:index], "_")
+		}
+		if len(entry) > 0 {
+			idx, err := strconv.ParseInt(entry, 10, 64)
+			if err == nil && int(idx) > size {
+				size = int(idx)
+			}
 		}
 	}
 
@@ -104,46 +108,39 @@ func (g *Group) SliceLength(k string) int {
 }
 
 func (g *Group) Len() int {
-	return len(g.Values)
+	return len(g.vars)
 }
 
-func (g *Group) Get(name string) *Var {
-	return g.Values[name]
+func (g *Group) Get(key string) *Var {
+	return g.vars[key]
 }
 
-func (g *Group) Add(v *Var) {
-	g.Values[v.Name] = v
+func (g *Group) Key(key string) string {
+	return g.name + "__" + key
 }
 
-func (g *Group) Del(name string) {
-	delete(g.Values, name)
-}
-
-func (g *Group) Reset() {
-	g.Values = make(map[string]*Var)
+func (g *Group) Add(v *Var) bool {
+	_, ok := g.vars[v.key]
+	g.vars[v.key] = v
+	return ok
 }
 
 func (g *Group) Bytes() []byte {
-	return g.DotEnv(nil)
+	return g.dotenv(nil)
 }
 
 func (g *Group) MaskBytes() []byte {
-	return g.DotEnv(func(v *Var) string {
-		if v.Mask != "" {
-			return v.Mask
-		}
-		return v.Value
-	})
+	return g.dotenv(func(v *Var) string { return v.mask })
 }
 
-func (g *Group) DotEnv(valuer func(*Var) string) []byte {
+func (g *Group) dotenv(valuer func(*Var) string) []byte {
 	values := make(map[string]string)
-	for _, v := range g.Values {
+	for _, v := range g.vars {
+		val := v.val
 		if valuer != nil {
-			values[v.GroupName(g.Name)] = valuer(v)
-		} else {
-			values[v.GroupName(g.Name)] = v.Value
+			val = valuer(v)
 		}
+		values[g.Key(v.key)] = val
 	}
 	return DotEnv(values)
 }

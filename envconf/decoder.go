@@ -2,6 +2,7 @@ package envconf
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/xoctopus/x/reflectx"
 	"github.com/xoctopus/x/textx"
@@ -22,15 +23,14 @@ func (d *Decoder) Decode(v any) error {
 	if !ok {
 		rv = reflect.ValueOf(v)
 	}
+	if !rv.IsValid() {
+		return NewError(pw, E_DEC__INVALID_VALUE)
+	}
 
 	return d.decode(pw, rv)
 }
 
 func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
-	if !rv.IsValid() {
-		return NewInvalidValueErr()
-	}
-
 	var (
 		rt   = rv.Type()
 		kind = rv.Kind()
@@ -44,18 +44,23 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 	}
 
 	if !rv.CanSet() {
-		return NewCannotSetErr(rt)
+		return NewError(pw, E_DEC__INVALID_VALUE_CANNOT_SET)
 	}
 
-	if setter, ok := rv.Addr().Interface().(interface {
-		SetDefault()
-	}); ok {
-		setter.SetDefault()
+	if dft, ok := rv.Addr().Interface().(interface{ SetDefault() }); ok {
+		dft.SetDefault()
 	}
 
-	if rt.Implements(rtTextUnmarshaller) || reflect.PointerTo(rt).Implements(rtTextMarshaller) {
+	if reflect.PointerTo(rt).Implements(TextUnmarshallerT) {
+		/*
+			If I need this value implements TextUnmarshaler directly, but not
+			through an embedded field which is a TextUnmarshaler implementation.
+			But I have no clue to check this case.😂.
+			So for avoiding this ambiguity, pls don't embed an TextMarshaler in
+			a struct directly as an env configuration
+		*/
 		if v := d.g.Get(pw.String()); v != nil {
-			return textx.UnmarshalText([]byte(v.Value), rv)
+			return NewErrorW(pw, E_DEC__FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv))
 		}
 		return nil
 	}
@@ -68,8 +73,8 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 	case reflect.Map:
 		krt := rt.Key()
 		vrt := rt.Elem()
-		if k := krt.Kind(); !(k >= reflect.Int && k <= reflect.Uint64 || k == reflect.String) {
-			return NewErrUnmarshalUnexpectMapKeyType(krt)
+		if k := krt.Kind(); !(reflectx.IsInteger(k) || k == reflect.String) {
+			return NewErrorf(pw, E_DEC__INVALID_MAP_KEY_TYPE, "`%s`", krt)
 		}
 
 		if rv.IsNil() {
@@ -78,9 +83,10 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		keys := d.g.MapEntries(pw.String())
 		for _, key := range keys {
 			krv := reflect.New(krt)
-			if err := textx.UnmarshalText([]byte(key), krv); err != nil {
-				return err
+			if err := textx.Unmarshal([]byte(key), krv); err != nil {
+				return NewErrorW(pw, E_DEC__FAILED_UNMARSHAL, err)
 			}
+			// key = strings.ToUpper(key)
 			pw.Enter(key)
 			vrv := reflect.New(vrt)
 			if err := d.decode(pw, vrv); err != nil {
@@ -90,24 +96,23 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 			rv.SetMapIndex(krv.Elem(), vrv.Elem())
 		}
 		return nil
-	case reflect.Slice:
+	case reflect.Slice, reflect.Array:
 		length := d.g.SliceLength(pw.String())
 		if length > 0 {
-			rv.Set(reflect.MakeSlice(rt, length, length))
+			if kind == reflect.Slice {
+				rv.Set(reflect.MakeSlice(rt, length, length))
+			} else {
+				if rv.Len() < length {
+					length = rv.Len()
+				}
+			}
 		}
 		for i := 0; i < length; i++ {
 			pw.Enter(i)
-			if err := d.decode(pw, rv.Index(i)); err != nil {
-				return err
-			}
-			pw.Leave()
-		}
-		return nil
-	case reflect.Array:
-		for i := 0; i < rv.Len(); i++ {
-			pw.Enter(i)
-			if err := d.decode(pw, rv.Index(i)); err != nil {
-				return err
+			if d.g.Get(pw.String()) != nil {
+				if err := d.decode(pw, rv.Index(i)); err != nil {
+					return err
+				}
 			}
 			pw.Leave()
 		}
@@ -119,33 +124,33 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 				continue
 			}
 			name := frt.Name
-			flags := map[string]struct{}{}
-			if tag, ok := frt.Tag.Lookup("env"); ok {
-				tagName := ""
-				tagName, flags = reflectx.ParseTagValue(tag)
-				if tagName == "-" {
+			flatten := frt.Anonymous && reflectx.Deref(frt.Type).Kind() == reflect.Struct
+
+			if flag := reflectx.ParseTag(frt.Tag).Get("env"); flag != nil {
+				flatten = false
+				if flag.Name() == "-" {
 					continue
 				}
-				if tagName != "" {
-					name = tagName
+				if flag.Name() != "" {
+					name = flag.Name()
+					name = strings.ToUpper(name)
 				}
 			}
-			inline := len(flags) == 0 && frt.Anonymous &&
-				reflectx.Deref(frt.Type).Kind() == reflect.Struct
-			if !inline {
+
+			if !flatten {
 				pw.Enter(name)
 			}
 			if err := d.decode(pw, rv.Field(i)); err != nil {
 				return err
 			}
-			if !inline {
+			if !flatten {
 				pw.Leave()
 			}
 		}
 		return nil
 	default:
 		if v := d.g.Get(pw.String()); v != nil {
-			return textx.UnmarshalText([]byte(v.Value), rv)
+			return NewErrorW(pw, E_DEC__FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv))
 		}
 		return nil
 	}

@@ -1,108 +1,190 @@
 package envconf_test
 
 import (
-	"reflect"
+	"fmt"
 	"testing"
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	"github.com/xoctopus/datatypex"
+
+	"github.com/xoctopus/x/textx/testdata"
 
 	"github.com/xoctopus/confx/envconf"
 )
 
 func TestEncoder_Encode(t *testing.T) {
-	grp := envconf.NewGroup("TEST")
-	enc := envconf.NewEncoder(grp)
-
 	t.Run("Invalid", func(t *testing.T) {
+		t.Run("InvalidGroupName", func(t *testing.T) {
+			defer func() {
+				err := recover().(string)
+				NewWithT(t).Expect(err).To(HavePrefix("invalid group name"))
+			}()
+			envconf.NewGroup("x.x")
+		})
+		grp := envconf.NewGroup("TEST")
+		enc := envconf.NewEncoder(grp)
+
 		err := enc.Encode(nil)
 		NewWithT(t).Expect(err).To(BeNil())
 		NewWithT(t).Expect(grp.Len()).To(Equal(0))
 	})
 
-	t.Run("SkippedKinds", func(t *testing.T) {
+	t.Run("IgnoredKinds", func(t *testing.T) {
+		grp := envconf.NewGroup("TEST")
+		enc := envconf.NewEncoder(grp)
+
 		err := enc.Encode(&struct {
 			Func func()
 			Chan chan struct{}
+			Any  any
 		}{})
 		NewWithT(t).Expect(err).To(BeNil())
 	})
 
 	t.Run("Map", func(t *testing.T) {
 		t.Run("UnexpectMapKeyType", func(t *testing.T) {
+			grp := envconf.NewGroup("TEST")
+			enc := envconf.NewEncoder(grp)
+			pos := envconf.NewPathWalker()
+
 			type Key struct{}
-			err := enc.Encode(map[Key]string{})
-			NewWithT(t).Expect(err).NotTo(BeNil())
-			NewWithT(t).Expect(envconf.NewErrMarshalUnexpectMapKeyType(reflect.TypeOf(Key{})).Is(err)).To(BeTrue())
+			target := enc.Encode(map[Key]string{})
+			expect := envconf.NewError(pos, envconf.E_ENC__INVALID_MAP_KEY_TYPE)
+			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
 		})
 		t.Run("UnexpectMapKeyValue", func(t *testing.T) {
-			err := enc.Encode(map[string]string{"": "any"})
-			NewWithT(t).Expect(err).NotTo(BeNil())
-			NewWithT(t).Expect(envconf.ErrUnexpectMapKeyValue("")).To(Equal(err))
+			grp := envconf.NewGroup("TEST")
+			enc := envconf.NewEncoder(grp)
+			pos := envconf.NewPathWalker()
+			expect := envconf.NewError(pos, envconf.E_ENC__INVALID_MAP_KEY_VALUE)
+			t.Run("InvalidInteger", func(t *testing.T) {
+				target := enc.Encode(map[int]string{-1: "any"})
+				NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
+			})
+			t.Run("InvalidString", func(t *testing.T) {
+				target := enc.Encode(map[string]string{"": "any"})
+				NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
 
-			err = enc.Encode(map[string]string{"a b c": "any"})
-			NewWithT(t).Expect(err).NotTo(BeNil())
-			NewWithT(t).Expect(envconf.ErrUnexpectMapKeyValue("a b c")).To(Equal(err))
+				target = enc.Encode(map[string]string{"a b c": "any"})
+				NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
+			})
 		})
 		t.Run("FailedToMarshal", func(t *testing.T) {
-			err := enc.Encode(map[int]MustFailed{0: {}})
-			NewWithT(t).Expect(err).NotTo(BeNil())
-			NewWithT(t).Expect(errors.Is(err, ErrMustMarshalFailed)).To(BeTrue())
+			grp := envconf.NewGroup("TEST")
+			enc := envconf.NewEncoder(grp)
+			pos := envconf.NewPathWalker()
+
+			pos.Enter(0)
+			expect := envconf.NewError(pos, envconf.E_ENC__FAILED_MARSHAL)
+
+			target := enc.Encode(map[int]testdata.MustFailedArshaler{0: {}})
+			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
 		})
+
 		t.Run("Success", func(t *testing.T) {
-			grp.Reset()
+			t.Run("StringKey", func(t *testing.T) {
+				grp := envconf.NewGroup("TEST")
+				enc := envconf.NewEncoder(grp)
+				val := map[string]int{"1": 1, "2": 2}
 
-			err := enc.Encode(map[string]string{
-				"Key1": "value1",
-				"Key2": "value2",
-				"Key3": "value3",
+				err := enc.Encode(val)
+				NewWithT(t).Expect(err).To(BeNil())
+				NewWithT(t).Expect(grp.Len()).To(Equal(2))
+				NewWithT(t).Expect(grp.Len()).To(Equal(len(val)))
+				for k := range val {
+					v := grp.Get(k)
+					NewWithT(t).Expect(fmt.Sprint(val[k])).To(Equal(v.Value()))
+					NewWithT(t).Expect(fmt.Sprint(k)).To(Equal(v.Key()))
+				}
 			})
-			NewWithT(t).Expect(err).To(BeNil())
+			t.Run("IntegerKey", func(t *testing.T) {
+				grp := envconf.NewGroup("TEST")
+				enc := envconf.NewEncoder(grp)
+				val := map[int]string{1: "1", 2: "2"}
 
-			grp.Reset()
-			err = enc.Encode(map[string]string(nil))
-			NewWithT(t).Expect(err).To(BeNil())
+				err := enc.Encode(val)
+				NewWithT(t).Expect(err).To(BeNil())
+				NewWithT(t).Expect(grp.Len()).To(Equal(2))
+				NewWithT(t).Expect(grp.Len()).To(Equal(len(val)))
+				for k := range val {
+					v := grp.Get(fmt.Sprint(k))
+					NewWithT(t).Expect(fmt.Sprint(val[k])).To(Equal(v.Value()))
+					NewWithT(t).Expect(fmt.Sprint(k)).To(Equal(v.Key()))
+				}
+			})
+			t.Run("MapMap", func(t *testing.T) {
+				grp := envconf.NewGroup("TEST")
+				enc := envconf.NewEncoder(grp)
+				val := map[int]map[string]int{
+					1: {"1": 1},
+					2: {"2": 2},
+				}
+
+				err := enc.Encode(val)
+				NewWithT(t).Expect(err).To(BeNil())
+				NewWithT(t).Expect(grp.Len()).To(Equal(2))
+				NewWithT(t).Expect(grp.Len()).To(Equal(len(val)))
+				NewWithT(t).Expect(grp.Get("1_1").Value()).To(Equal("1"))
+				NewWithT(t).Expect(grp.Get("2_2").Value()).To(Equal("2"))
+			})
+			t.Run("NilMap", func(t *testing.T) {
+				grp := envconf.NewGroup("TEST")
+				enc := envconf.NewEncoder(grp)
+				err := enc.Encode(map[int]int(nil))
+				NewWithT(t).Expect(err).To(BeNil())
+				NewWithT(t).Expect(grp.Len()).To(Equal(0))
+			})
 		})
 	})
 
 	t.Run("Slice", func(t *testing.T) {
-		grp.Reset()
+		t.Run("Failed", func(t *testing.T) {
+			grp := envconf.NewGroup("TEST")
+			enc := envconf.NewEncoder(grp)
+
+			pos := envconf.NewPathWalker()
+			pos.Enter(0)
+
+			expect := envconf.NewError(pos, envconf.E_ENC__FAILED_MARSHAL)
+			target := enc.Encode([]testdata.MustFailedArshaler{{}})
+			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
+		})
+		grp := envconf.NewGroup("TEST")
+		enc := envconf.NewEncoder(grp)
 
 		err := enc.Encode([]int{1, 2, 3})
 		NewWithT(t).Expect(err).To(BeNil())
-
-		err = enc.Encode([]MustFailed{{}})
-		NewWithT(t).Expect(err).NotTo(BeNil())
-		NewWithT(t).Expect(errors.Is(err, ErrMustMarshalFailed)).To(BeTrue())
 	})
 
 	t.Run("Struct", func(t *testing.T) {
-		grp.Reset()
+		t.Run("FailedEncodeField", func(t *testing.T) {
+			grp := envconf.NewGroup("TEST")
+			enc := envconf.NewEncoder(grp)
+			pos := envconf.NewPathWalker()
+			pos.Enter("X")
 
-		val := &struct {
-			unexported any
-			PtrIsNil   *int
-			HasTag     *datatypex.Address `env:"address,optional,upstream,copy,expose"`
-			SkipTag    datatypex.Endpoint `env:"-"`
-			Inline
-			datatypex.Password
-			// todo if anonymous field implements TextMarshaller will overwrite?
-			MustFailed MustFailed
-		}{
-			HasTag: datatypex.NewAddress("group", "filename.png"),
-			Inline: Inline{
-				String: "inline string",
-				Int:    100,
-			},
-			Password: datatypex.Password("password"),
-		}
-		err := enc.Encode(val)
-		NewWithT(t).Expect(err).NotTo(BeNil())
-		NewWithT(t).Expect(errors.Is(err, ErrMustMarshalFailed)).To(BeTrue())
+			expect := envconf.NewError(pos, envconf.E_ENC__FAILED_MARSHAL)
+			target := enc.Encode(struct {
+				X testdata.MustFailedArshaler
+			}{
+				X: testdata.MustFailedArshaler{},
+			})
+			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
+		})
+		t.Run("DuplicatedGroupKey", func(t *testing.T) {
+			grp := envconf.NewGroup("TEST")
+			enc := envconf.NewEncoder(grp)
+			pos := envconf.NewPathWalker()
 
-		v := grp.Get("address")
-		NewWithT(t).Expect(v).NotTo(BeNil())
-		NewWithT(t).Expect(v.Optional).To(BeTrue())
+			pos.Enter("X")
+
+			expect := envconf.NewError(pos, envconf.E_ENC__DUPLICATE_GROUP_KEY)
+			target := enc.Encode(struct {
+				NIL *int
+				X   int `env:"x"`
+				Y   int `env:"x"`
+			}{})
+			NewWithT(t).Expect(errors.Is(expect, target)).To(BeTrue())
+		})
 	})
 }

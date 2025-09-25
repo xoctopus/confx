@@ -2,50 +2,56 @@ package envconf
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/xoctopus/x/reflectx"
 	"github.com/xoctopus/x/textx"
 )
 
 func NewEncoder(g *Group) *Encoder {
-	return &Encoder{g: g, flags: make(map[string]map[string]struct{})}
+	return &Encoder{g: g, flags: make(map[string]*reflectx.Flag)}
 }
 
 type Encoder struct {
 	g     *Group
-	flags map[string]map[string]struct{}
+	flags map[string]*reflectx.Flag
 }
 
 func (d *Encoder) Encode(v any) error {
-	pw := NewPathWalker()
-
 	rv, ok := v.(reflect.Value)
 	if !ok {
 		rv = reflect.ValueOf(v)
 	}
 
-	return d.encode(pw, rv)
+	return d.encode(NewPathWalker(), rv)
 }
 
 func (d *Encoder) set(pw *PathWalker, rv reflect.Value) error {
-	v := &Var{Name: pw.String()}
+	v := &Var{key: pw.String()}
 
-	if flag := d.flags[v.Name]; len(flag) > 0 {
-		v.ParseOption(flag)
+	if flag, exists := d.flags[v.key]; exists && flag != nil {
+		for opt := range flag.Options() {
+			switch opt.Key() {
+			case "optional":
+				v.optional = true
+			}
+		}
 	}
 
-	if masker, ok := rv.Interface().(interface {
-		SecurityString() string
-	}); ok {
-		v.Mask = masker.SecurityString()
-	}
-	text, err := textx.MarshalText(rv)
+	text, err := textx.Marshal(rv)
 	if err != nil {
-		return err
+		return NewErrorW(pw, E_ENC__FAILED_MARSHAL, err)
 	}
-	v.Value = string(text)
+	v.val = string(text)
+	v.mask = v.val
 
-	d.g.Add(v)
+	if masker, ok := rv.Interface().(interface{ SecurityString() string }); ok {
+		v.mask = masker.SecurityString()
+	}
+
+	if d.g.Add(v) {
+		return NewErrorf(pw, E_ENC__DUPLICATE_GROUP_KEY, "`%s`", d.g.Key(v.key))
+	}
 	return nil
 }
 
@@ -66,8 +72,7 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 		return d.encode(pw, rv.Elem())
 	}
 
-	if rt.Implements(rtTextMarshaller) ||
-		rv.CanAddr() && rv.Addr().Type().Implements(rtTextMarshaller) {
+	if rt.Implements(TextMarshallerT) || reflect.PointerTo(rt).Implements(TextMarshallerT) {
 		return d.set(pw, rv)
 	}
 
@@ -77,22 +82,28 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 
 	switch kind {
 	case reflect.Map:
-		krt := rt.Key()
-		if k := krt.Kind(); !(k >= reflect.Int && k <= reflect.Uint64 || k == reflect.String) {
-			return NewErrMarshalUnexpectMapKeyType(krt)
-		}
 		if rv.IsNil() {
 			return nil
 		}
+		if k := rt.Key().Kind(); k != reflect.String && !reflectx.IsInteger(k) {
+			return NewErrorf(pw, E_ENC__INVALID_MAP_KEY_TYPE, "`%s`", k)
+		}
 		keys := rv.MapKeys()
 		for i := range keys {
-			key := keys[i].Interface()
-			if _key, ok := key.(string); ok {
-				if len(_key) == 0 || !alphabet(_key) {
-					return ErrUnexpectMapKeyValue(_key)
+			key := keys[i]
+			keyv := key.Interface()
+			switch {
+			case key.Kind() == reflect.String:
+				if x := key.String(); len(x) == 0 || !alphabet(x) {
+					return NewErrorf(pw, E_ENC__INVALID_MAP_KEY_VALUE, "`%s`", keyv)
+				}
+			case key.CanInt():
+				if key.Int() < 0 {
+					return NewErrorf(pw, E_ENC__INVALID_MAP_KEY_VALUE, "`%s`", keyv)
 				}
 			}
-			pw.Enter(key)
+			// keyv = strings.ToUpper(fmt.Sprint(keyv))
+			pw.Enter(keyv)
 			vrv := rv.MapIndex(keys[i])
 			if err := d.encode(pw, vrv); err != nil {
 				return err
@@ -116,27 +127,32 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 				continue
 			}
 			name := frt.Name
-			flags := make(map[string]struct{})
-			if tag, ok := frt.Tag.Lookup("env"); ok {
-				tagName := ""
-				tagName, flags = reflectx.ParseTagValue(tag)
-				if tagName == "-" {
+			flatten := frt.Anonymous && reflectx.Deref(frt.Type).Kind() == reflect.Struct
+
+			flag := reflectx.ParseTag(frt.Tag).Get("env")
+			if flag != nil {
+				flatten = false
+				if flag.Name() == "-" {
 					continue
 				}
-				if tagName != "" {
-					name = tagName
+				if flag.Name() != "" {
+					name = flag.Name()
+					name = strings.ToUpper(name)
 				}
 			}
-			inline := len(flags) == 0 && frt.Anonymous &&
-				reflectx.Deref(frt.Type).Kind() == reflect.Struct
-			if !inline {
+
+			if !flatten {
 				pw.Enter(name)
 			}
-			d.flags[pw.String()] = flags
+
+			if key := pw.String(); len(key) > 0 && !flatten && flag != nil {
+				d.flags[key] = flag
+			}
+
 			if err := d.encode(pw, rv.Field(i)); err != nil {
 				return err
 			}
-			if !inline {
+			if !flatten {
 				pw.Leave()
 			}
 		}
