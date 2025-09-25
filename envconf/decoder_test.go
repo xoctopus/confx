@@ -8,7 +8,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-
 	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/textx/testdata"

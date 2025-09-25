@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/pkg/errors"
-
 	"github.com/xoctopus/x/misc/must"
 
 	. "github.com/xoctopus/confx/envconf"

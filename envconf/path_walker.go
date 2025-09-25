@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
-
 	"github.com/xoctopus/x/stringsx"
 )
 

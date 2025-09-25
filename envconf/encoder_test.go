@@ -6,7 +6,6 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-
 	"github.com/xoctopus/x/textx/testdata"
 
 	"github.com/xoctopus/confx/envconf"
