@@ -147,7 +147,7 @@ func TestClientTimeout(t *testing.T) {
 	defer b.Close(c)
 
 	err = c.Subscribe(func(client mqtt.Client, message mqtt.Message) {
-		t.Logf(string(message.Payload()))
+		t.Log(string(message.Payload()))
 	})
 	NewWithT(t).Expect(err).To(BeNil())
 
@@ -244,7 +244,7 @@ func TestLocalSubscribing(t *testing.T) {
 	NewWithT(t).Expect(err).To(BeNil())
 
 	err = suber.Subscribe(func(client mqtt.Client, message mqtt.Message) {
-		t.Logf(string(message.Payload()))
+		t.Log(string(message.Payload()))
 	})
 	NewWithT(t).Expect(err).To(BeNil())
 
