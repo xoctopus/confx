@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/reflectx"
 	"github.com/xoctopus/x/textx"
 )
@@ -40,7 +41,7 @@ func (d *Encoder) set(pw *PathWalker, rv reflect.Value) error {
 
 	text, err := textx.Marshal(rv)
 	if err != nil {
-		return NewErrorW(pw, E_ENC__FAILED_MARSHAL, err)
+		return codex.Wrapf(E_ENC__FAILED_MARSHAL, err, "at %s", pw.String())
 	}
 	v.val = string(text)
 	v.mask = v.val
@@ -49,9 +50,11 @@ func (d *Encoder) set(pw *PathWalker, rv reflect.Value) error {
 		v.mask = masker.SecurityString()
 	}
 
-	if d.g.Add(v) {
-		return NewErrorf(pw, E_ENC__DUPLICATE_GROUP_KEY, "`%s`", d.g.Key(v.key))
-	}
+	// overwritten is allowed
+	// if d.g.Add(v) {
+	// 	return NewErrorf(pw, E_ENC__DUPLICATE_GROUP_KEY, "`%s`", d.g.Key(v.key))
+	// }
+	d.g.Add(v)
 	return nil
 }
 
@@ -86,7 +89,7 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 			return nil
 		}
 		if k := rt.Key().Kind(); k != reflect.String && !reflectx.IsInteger(k) {
-			return NewErrorf(pw, E_ENC__INVALID_MAP_KEY_TYPE, "`%s`", k)
+			return codex.Errorf(E_ENC__INVALID_MAP_KEY_TYPE, "at %s[%s]", pw, k)
 		}
 		keys := rv.MapKeys()
 		for i := range keys {
@@ -95,11 +98,11 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 			switch {
 			case key.Kind() == reflect.String:
 				if x := key.String(); len(x) == 0 || !alphabet(x) {
-					return NewErrorf(pw, E_ENC__INVALID_MAP_KEY_VALUE, "`%s`", keyv)
+					return codex.Errorf(E_ENC__INVALID_MAP_KEY_VALUE, "at %s[%s]", pw, keyv)
 				}
 			case key.CanInt():
 				if key.Int() < 0 {
-					return NewErrorf(pw, E_ENC__INVALID_MAP_KEY_VALUE, "`%s`", keyv)
+					return codex.Errorf(E_ENC__INVALID_MAP_KEY_VALUE, "at %s[%s]", pw, keyv)
 				}
 			}
 			// keyv = strings.ToUpper(fmt.Sprint(keyv))

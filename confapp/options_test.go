@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/gomega"
+	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/confapp"
 )
@@ -21,14 +21,14 @@ func TestMeta(t *testing.T) {
 	}
 
 	m1.Overwrite(m2)
-	NewWithT(t).Expect(m1.String()).To(Equal(m2.String()))
+	Expect(t, m1.String(), Equal(m2.String()))
 }
 
 func TestAppOption(t *testing.T) {
 	opt := confapp.AppOption{
 		Meta: confapp.DefaultMeta,
 	}
-	NewWithT(t).Expect(opt.NeedAttach()).To(BeFalse())
+	Expect(t, opt.NeedAttach(), BeFalse())
 	opt.AppendPreRunners(func() {})
 	opt.AppendBatchRunners(func() {})
 	opt.PreRun()

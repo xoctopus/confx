@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	. "github.com/onsi/gomega"
+	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/confapp"
 )
@@ -25,7 +25,7 @@ func TestGetRuntime(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		NewWithT(t).Expect(confapp.GetRuntime()).To(Equal(c.result))
+		Expect(t, confapp.GetRuntime(), Equal(c.result))
 
 		if err := os.Unsetenv(confapp.RuntimeKey); err != nil {
 			t.Fatal(err)

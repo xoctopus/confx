@@ -2,6 +2,7 @@ package confapp_test
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -10,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/onsi/gomega"
-	"github.com/pkg/errors"
 	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
+	. "github.com/xoctopus/x/testx"
 
 	. "github.com/xoctopus/confx/confapp"
+	"github.com/xoctopus/confx/envconf"
 )
 
 func ExampleNewAppContext() {
@@ -166,8 +167,8 @@ type MustInitFailed struct{}
 
 func (i *MustInitFailed) Init() error { return errors.New("must fail") }
 
-func ExampleInitFailed() {
-	os.Setenv("APP__SomeKey", "")
+func Example_init_failed() {
+	_ = os.Setenv("APP__SomeKey", "")
 
 	root := "./testdata2"
 	app := NewAppContext(
@@ -209,14 +210,14 @@ func TestAppCtx_Conf(t *testing.T) {
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntSlice []int }{}
 				app.Conf(v)
-				NewWithT(t).Expect(v.IntSlice).To(Equal([]int{10, 0, 12, 0, 14}))
+				Expect(t, v.IntSlice, Equal([]int{10, 0, 12, 0, 14}))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntSlice []int }{IntSlice: []int{1, 2, 3}}
 				app.Conf(v)
-				NewWithT(t).Expect(v.IntSlice).To(Equal([]int{10, 0, 12, 0, 14}))
+				Expect(t, v.IntSlice, Equal([]int{10, 0, 12, 0, 14}))
 			})
 		})
 		t.Run("NoEnvVars", func(t *testing.T) {
@@ -225,14 +226,14 @@ func TestAppCtx_Conf(t *testing.T) {
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntSlice []int }{}
 				app.Conf(v)
-				NewWithT(t).Expect(v.IntSlice).To(BeNil())
+				Expect(t, v.IntSlice, BeNil[[]int]())
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntSlice []int }{IntSlice: []int{1, 2, 3}}
 				app.Conf(v)
-				NewWithT(t).Expect(v.IntSlice).To(Equal([]int{1, 2, 3}))
+				Expect(t, v.IntSlice, Equal([]int{1, 2, 3}))
 			})
 		})
 	})
@@ -246,14 +247,14 @@ func TestAppCtx_Conf(t *testing.T) {
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntArray [3]int }{}
 				app.Conf(v)
-				NewWithT(t).Expect(v.IntArray).To(Equal([3]int{10, 0, 12}))
+				Expect(t, v.IntArray, Equal([3]int{10, 0, 12}))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntArray [3]int }{IntArray: [3]int{1, 2, 3}}
 				app.Conf(v)
-				NewWithT(t).Expect(v.IntArray).To(Equal([3]int{10, 2, 12}))
+				Expect(t, v.IntArray, Equal([3]int{10, 2, 12}))
 			})
 		})
 		t.Run("NoEnvVars", func(t *testing.T) {
@@ -262,14 +263,14 @@ func TestAppCtx_Conf(t *testing.T) {
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntArray [3]int }{}
 				app.Conf(v)
-				NewWithT(t).Expect(v.IntArray).To(Equal([3]int{}))
+				Expect(t, v.IntArray, Equal([3]int{}))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntArray [3]int }{IntArray: [3]int{1, 2, 3}}
 				app.Conf(v)
-				NewWithT(t).Expect(v.IntArray).To(Equal([3]int{1, 2, 3}))
+				Expect(t, v.IntArray, Equal([3]int{1, 2, 3}))
 			})
 		})
 	})
@@ -287,8 +288,8 @@ func TestAppCtx_Conf(t *testing.T) {
 					SimpleMap2 map[string]int
 				}{}
 				app.Conf(v)
-				NewWithT(t).Expect(v.SimpleMap1).To(Equal(map[int]string{1: "1", 2: "2"}))
-				NewWithT(t).Expect(v.SimpleMap2).To(Equal(map[string]int{"a": 10, "b": 20}))
+				Expect(t, v.SimpleMap1, Equal(map[int]string{1: "1", 2: "2"}))
+				Expect(t, v.SimpleMap2, Equal(map[string]int{"a": 10, "b": 20}))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
@@ -301,8 +302,8 @@ func TestAppCtx_Conf(t *testing.T) {
 					SimpleMap2: map[string]int{"a": 1, "b": 2, "c": 3},
 				}
 				app.Conf(v)
-				NewWithT(t).Expect(v.SimpleMap1).To(Equal(map[int]string{1: "1", 2: "2", 3: "30"}))
-				NewWithT(t).Expect(v.SimpleMap2).To(Equal(map[string]int{"a": 10, "b": 20, "c": 3}))
+				Expect(t, v.SimpleMap1, Equal(map[int]string{1: "1", 2: "2", 3: "30"}))
+				Expect(t, v.SimpleMap2, Equal(map[string]int{"a": 10, "b": 20, "c": 3}))
 			})
 		})
 		t.Run("NoEnvVars", func(t *testing.T) {
@@ -313,11 +314,11 @@ func TestAppCtx_Conf(t *testing.T) {
 					SimpleMap1 map[int]string
 					SimpleMap2 map[string]int
 				}{}
-				NewWithT(t).Expect(v.SimpleMap1).To(BeNil())
-				NewWithT(t).Expect(v.SimpleMap2).To(BeNil())
+				Expect(t, v.SimpleMap1, BeNil[map[int]string]())
+				Expect(t, v.SimpleMap2, BeNil[map[string]int]())
 				app.Conf(v)
-				NewWithT(t).Expect(v.SimpleMap1).To(HaveLen(0))
-				NewWithT(t).Expect(v.SimpleMap2).To(HaveLen(0))
+				Expect(t, v.SimpleMap1, HaveLen[map[int]string](0))
+				Expect(t, v.SimpleMap2, HaveLen[map[string]int](0))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
@@ -330,8 +331,8 @@ func TestAppCtx_Conf(t *testing.T) {
 					SimpleMap2: map[string]int{"a": 1, "b": 2, "c": 3},
 				}
 				app.Conf(v)
-				NewWithT(t).Expect(v.SimpleMap1).To(Equal(map[int]string{1: "10", 2: "20", 3: "30"}))
-				NewWithT(t).Expect(v.SimpleMap2).To(Equal(map[string]int{"a": 1, "b": 2, "c": 3}))
+				Expect(t, v.SimpleMap1, Equal(map[int]string{1: "10", 2: "20", 3: "30"}))
+				Expect(t, v.SimpleMap2, Equal(map[string]int{"a": 1, "b": 2, "c": 3}))
 			})
 		})
 	})
@@ -346,10 +347,10 @@ func TestAppCtx_Conf(t *testing.T) {
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &config{}
 				app.Conf(v)
-				NewWithT(t).Expect(v.Map["1"].Number.Int64()).To(Equal(int64(100)))
-				NewWithT(t).Expect(v.Map["1"].String).To(Equal("100"))
-				NewWithT(t).Expect(v.Map["2"].Number.Int64()).To(Equal(int64(200)))
-				NewWithT(t).Expect(v.Map["2"].String).To(Equal("200"))
+				Expect(t, v.Map["1"].Number.Int64(), Equal(int64(100)))
+				Expect(t, v.Map["1"].String, Equal("100"))
+				Expect(t, v.Map["2"].Number.Int64(), Equal(int64(200)))
+				Expect(t, v.Map["2"].String, Equal("200"))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
@@ -362,12 +363,12 @@ func TestAppCtx_Conf(t *testing.T) {
 					},
 				}
 				app.Conf(v)
-				NewWithT(t).Expect(v.Map["1"].Number.Int64()).To(Equal(int64(100)))
-				NewWithT(t).Expect(v.Map["1"].String).To(Equal("100"))
-				NewWithT(t).Expect(v.Map["2"].Number.Int64()).To(Equal(int64(200)))
-				NewWithT(t).Expect(v.Map["2"].String).To(Equal("200"))
-				NewWithT(t).Expect(v.Map["3"].Number.Int64()).To(Equal(int64(300)))
-				NewWithT(t).Expect(v.Map["3"].String).To(Equal("300"))
+				Expect(t, v.Map["1"].Number.Int64(), Equal(int64(100)))
+				Expect(t, v.Map["1"].String, Equal("100"))
+				Expect(t, v.Map["2"].Number.Int64(), Equal(int64(200)))
+				Expect(t, v.Map["2"].String, Equal("200"))
+				Expect(t, v.Map["3"].Number.Int64(), Equal(int64(300)))
+				Expect(t, v.Map["3"].String, Equal("300"))
 			})
 		})
 		t.Run("NoEnvVars", func(t *testing.T) {
@@ -387,10 +388,10 @@ func TestAppCtx_Conf(t *testing.T) {
 					},
 				}
 				app.Conf(v)
-				NewWithT(t).Expect(v.Map["k1"].Number.Int64()).To(Equal(int64(10)))
-				NewWithT(t).Expect(v.Map["k1"].String).To(Equal("10"))
-				NewWithT(t).Expect(v.Map["k2"].Number.Int64()).To(Equal(int64(20)))
-				NewWithT(t).Expect(v.Map["k2"].String).To(Equal("20"))
+				Expect(t, v.Map["k1"].Number.Int64(), Equal(int64(10)))
+				Expect(t, v.Map["k1"].String, Equal("10"))
+				Expect(t, v.Map["k2"].Number.Int64(), Equal(int64(20)))
+				Expect(t, v.Map["k2"].String, Equal("20"))
 			})
 			t.Run("InvalidKeyType", func(t *testing.T) {
 				type invalid struct {
@@ -399,13 +400,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				v := &invalid{}
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
-				defer func() {
-					r := recover()
-					err, ok := r.(error)
-					NewWithT(t).Expect(ok).To(BeTrue())
-					NewWithT(t).Expect(err.Error()).To(ContainSubstring("unexpected map key type"))
-				}()
-				app.Conf(v)
+				ExpectPanic[error](t, func() { app.Conf(v) }, IsCodeError(envconf.E_DEC__INVALID_MAP_KEY_TYPE))
 			})
 			t.Run("InvalidKeyValue", func(t *testing.T) {
 				v := &config{
@@ -413,13 +408,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				}
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
-				defer func() {
-					r := recover()
-					err, ok := r.(error)
-					NewWithT(t).Expect(ok).To(BeTrue())
-					NewWithT(t).Expect(err.Error()).To(ContainSubstring("unexpected map key"))
-				}()
-				app.Conf(v)
+				ExpectPanic[error](t, func() { app.Conf(v) }, IsCodeError(envconf.E_ENC__INVALID_MAP_KEY_VALUE))
 			})
 		})
 	})

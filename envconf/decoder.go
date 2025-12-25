@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/reflectx"
 	"github.com/xoctopus/x/textx"
 )
@@ -24,7 +25,7 @@ func (d *Decoder) Decode(v any) error {
 		rv = reflect.ValueOf(v)
 	}
 	if !rv.IsValid() {
-		return NewError(pw, E_DEC__INVALID_VALUE)
+		return codex.Errorf(E_DEC__INVALID_VALUE, "at %s", pw.String())
 	}
 
 	return d.decode(pw, rv)
@@ -44,7 +45,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 	}
 
 	if !rv.CanSet() {
-		return NewError(pw, E_DEC__INVALID_VALUE_CANNOT_SET)
+		return codex.Errorf(E_DEC__INVALID_VALUE_CANNOT_SET, "at %s", pw.String())
 	}
 
 	if dft, ok := rv.Addr().Interface().(interface{ SetDefault() }); ok {
@@ -60,7 +61,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 			a struct directly as an env configuration
 		*/
 		if v := d.g.Get(pw.String()); v != nil {
-			return NewErrorW(pw, E_DEC__FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv))
+			return codex.Wrapf(E_DEC__FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv), "at %s", pw.String())
 		}
 		return nil
 	}
@@ -74,7 +75,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		krt := rt.Key()
 		vrt := rt.Elem()
 		if k := krt.Kind(); !(reflectx.IsInteger(k) || k == reflect.String) {
-			return NewErrorf(pw, E_DEC__INVALID_MAP_KEY_TYPE, "`%s`", krt)
+			return codex.Errorf(E_DEC__INVALID_MAP_KEY_TYPE, "at %s[%s]", pw.String(), krt)
 		}
 
 		if rv.IsNil() {
@@ -84,7 +85,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		for _, key := range keys {
 			krv := reflect.New(krt)
 			if err := textx.Unmarshal([]byte(key), krv); err != nil {
-				return NewErrorW(pw, E_DEC__FAILED_UNMARSHAL, err)
+				return codex.Wrapf(E_DEC__FAILED_UNMARSHAL, err, "at %s", pw.String())
 			}
 			// key = strings.ToUpper(key)
 			pw.Enter(key)
@@ -150,7 +151,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		return nil
 	default:
 		if v := d.g.Get(pw.String()); v != nil {
-			return NewErrorW(pw, E_DEC__FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv))
+			return codex.Wrapf(E_DEC__FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv), "at %s", pw.String())
 		}
 		return nil
 	}

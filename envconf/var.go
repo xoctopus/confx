@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/xoctopus/x/stringsx"
 	"golang.org/x/exp/maps"
 )
 
@@ -33,8 +34,12 @@ func (v *Var) Value() string {
 	return v.val
 }
 
+func (v *Var) Optional() bool {
+	return v.optional
+}
+
 func NewGroup(name string) *Group {
-	if len(name) == 0 || !alphabet(name) {
+	if len(name) == 0 || !stringsx.ValidIdentifier(name) {
 		panic("invalid group name: " + name)
 	}
 	return &Group{
@@ -62,6 +67,14 @@ func ParseGroupFromEnv(prefix string) *Group {
 type Group struct {
 	name string
 	vars map[string]*Var
+}
+
+func (g *Group) Name() string {
+	return g.name
+}
+
+func (g *Group) Values() map[string]*Var {
+	return g.vars
 }
 
 func (g *Group) MapEntries(k string) []string {

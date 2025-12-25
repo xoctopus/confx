@@ -11,11 +11,11 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/initializer"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/reflectx"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 
-	"github.com/xoctopus/confx/confapp/initializer"
 	"github.com/xoctopus/confx/envconf"
 )
 
@@ -131,10 +131,10 @@ func (app *AppCtx) Conf(configurations ...any) {
 		name := reflectx.Indirect(rv).Type().Name()
 
 		_, ok := names[name]
-		must.BeTrueWrap(!ok, "config name conflicted")
+		must.BeTrueF(!ok, "config name conflicted")
 
 		if len(configurations) > 1 {
-			must.BeTrueWrap(name != "", "anonymous config when more than one")
+			must.BeTrueF(name != "", "anonymous config when more than one")
 		}
 
 		group := app.group(name)
@@ -167,24 +167,24 @@ func (app *AppCtx) injectLocalConfig() {
 // marshalDefaults encode default vars
 func (app *AppCtx) marshalDefaults(group string, v any) *envconf.Group {
 	dft := envconf.NewGroup(group)
-	must.NoErrorWrap(envconf.NewDecoder(dft).Decode(v), "failed to decode default")
-	must.NoErrorWrap(envconf.NewEncoder(dft).Encode(v), "failed to encode default")
+	must.NoErrorF(envconf.NewDecoder(dft).Decode(v), "failed to decode default")
+	must.NoErrorF(envconf.NewEncoder(dft).Encode(v), "failed to encode default")
 	return dft
 }
 
 // scanEnvironment scan vars from environment
 func (app *AppCtx) scanEnvironment(group string, v any) *envconf.Group {
 	vars := envconf.ParseGroupFromEnv(group)
-	must.NoErrorWrap(envconf.NewDecoder(vars).Decode(v), "failed to decode env")
-	must.NoErrorWrap(envconf.NewEncoder(vars).Encode(v), "failed to encode env")
+	must.NoErrorF(envconf.NewDecoder(vars).Decode(v), "failed to decode env")
+	must.NoErrorF(envconf.NewEncoder(vars).Encode(v), "failed to encode env")
 	return vars
 }
 
 func initialize(v reflect.Value, g *envconf.Group, field string) {
 	if initializer.CanBeInitialized(v) {
-		must.NoErrorWrap(
+		must.NoErrorF(
 			initializer.Init(v),
-			"failed to init [group:%s] [field:%s]", g.Name, field,
+			"failed to init [group:%s] [field:%s]", g.Name(), field,
 		)
 		return
 	}
@@ -208,11 +208,11 @@ func (app *AppCtx) log() {
 	app.option.Meta.Print()
 
 	sort.Slice(app.vars, func(i, j int) bool {
-		return app.vars[i].Name < app.vars[j].Name
+		return app.vars[i].Name() < app.vars[j].Name()
 	})
 
 	for i := range app.vars {
-		fmt.Printf(color.HiBlueString("%s", app.vars[i].MaskBytes()))
+		fmt.Print(color.HiBlueString("%s", app.vars[i].MaskBytes()))
 	}
 	fmt.Println("")
 }
@@ -227,25 +227,25 @@ func (app *AppCtx) group(name string) string {
 func (app *AppCtx) mustWriteDefault() {
 	dir := filepath.Join(app.root, "config")
 
-	must.NoErrorWrap(
+	must.NoErrorF(
 		os.MkdirAll(dir, os.ModePerm),
 		"failed to create output dir",
 	)
 
 	m := make(map[string]string)
 	for _, g := range app.dfts {
-		for _, v := range g.Values {
-			if !v.Optional {
-				m[v.GroupName(g.Name)] = v.Value
+		for _, v := range g.Values() {
+			if !v.Optional() {
+				m[g.Key(v.Key())] = v.Value()
 			}
 		}
 	}
 
 	content, err := yaml.Marshal(m)
-	must.NoErrorWrap(err, "failed to marshal default vars")
+	must.NoErrorF(err, "failed to marshal default vars")
 
 	filename := filepath.Join(dir, "default.yml")
-	must.NoErrorWrap(
+	must.NoErrorF(
 		os.WriteFile(filename, content, os.ModePerm),
 		"failed to write default config file",
 	)

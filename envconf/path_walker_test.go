@@ -3,7 +3,7 @@ package envconf_test
 import (
 	"testing"
 
-	. "github.com/onsi/gomega"
+	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/envconf"
 )
@@ -19,22 +19,22 @@ func TestPathWalker(t *testing.T) {
 
 	pw.Enter("Group")
 	{
-		NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group"}))
-		NewWithT(t).Expect(pw.String()).To(Equal("Group"))
+		Expect(t, pw.Paths(), Equal([]any{"Group"}))
+		Expect(t, pw.String(), Equal("Group"))
 
 		pw.Enter(1)
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", 1}))
-			NewWithT(t).Expect(pw.String()).To(Equal("Group_1"))
-			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-1"))
-			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_1"))
+			Expect(t, pw.Paths(), Equal([]any{"Group", 1}))
+			Expect(t, pw.String(), Equal("Group_1"))
+			Expect(t, pw.CmdKey(), Equal("group-1"))
+			Expect(t, pw.EnvKey(), Equal("Group_1"))
 
 			pw.Enter("prop")
 			{
-				NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", 1, "prop"}))
-				NewWithT(t).Expect(pw.String()).To(Equal("Group_1_prop"))
-				NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-1-prop"))
-				NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_1_prop"))
+				Expect(t, pw.Paths(), Equal([]any{"Group", 1, "prop"}))
+				Expect(t, pw.String(), Equal("Group_1_prop"))
+				Expect(t, pw.CmdKey(), Equal("group-1-prop"))
+				Expect(t, pw.EnvKey(), Equal("Group_1_prop"))
 			}
 			pw.Leave()
 		}
@@ -42,55 +42,51 @@ func TestPathWalker(t *testing.T) {
 
 		pw.Enter(stringer("Sub"))
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", stringer("Sub")}))
-			NewWithT(t).Expect(pw.String()).To(Equal("Group_Sub"))
-			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_Sub"))
-			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-sub"))
+			Expect(t, pw.Paths(), Equal([]any{"Group", stringer("Sub")}))
+			Expect(t, pw.String(), Equal("Group_Sub"))
+			Expect(t, pw.EnvKey(), Equal("Group_Sub"))
+			Expect(t, pw.CmdKey(), Equal("group-sub"))
 		}
 		pw.Leave()
 
 		pw.Enter("UpperCamelSub")
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", "UpperCamelSub"}))
-			NewWithT(t).Expect(pw.String()).To(Equal("Group_UpperCamelSub"))
-			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_UpperCamelSub"))
-			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-upper-camel-sub"))
+			Expect(t, pw.Paths(), Equal([]any{"Group", "UpperCamelSub"}))
+			Expect(t, pw.String(), Equal("Group_UpperCamelSub"))
+			Expect(t, pw.EnvKey(), Equal("Group_UpperCamelSub"))
+			Expect(t, pw.CmdKey(), Equal("group-upper-camel-sub"))
 		}
 		pw.Leave()
 
 		pw.Enter("lowerCamelSub")
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", "lowerCamelSub"}))
-			NewWithT(t).Expect(pw.String()).To(Equal("Group_lowerCamelSub"))
-			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_lowerCamelSub"))
-			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-lower-camel-sub"))
+			Expect(t, pw.Paths(), Equal([]any{"Group", "lowerCamelSub"}))
+			Expect(t, pw.String(), Equal("Group_lowerCamelSub"))
+			Expect(t, pw.EnvKey(), Equal("Group_lowerCamelSub"))
+			Expect(t, pw.CmdKey(), Equal("group-lower-camel-sub"))
 		}
 		pw.Leave()
 
 		pw.Enter("Dash-Sub")
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", "Dash-Sub"}))
-			NewWithT(t).Expect(pw.String()).To(Equal("Group_Dash-Sub"))
-			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_Dash_Sub"))
-			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-dash-sub"))
+			Expect(t, pw.Paths(), Equal([]any{"Group", "Dash-Sub"}))
+			Expect(t, pw.String(), Equal("Group_Dash-Sub"))
+			Expect(t, pw.EnvKey(), Equal("Group_Dash_Sub"))
+			Expect(t, pw.CmdKey(), Equal("group-dash-sub"))
 		}
 		pw.Leave()
 
 		pw.Enter("Underlined_Sub")
 		{
-			NewWithT(t).Expect(pw.Paths()).To(Equal([]any{"Group", "Underlined_Sub"}))
-			NewWithT(t).Expect(pw.String()).To(Equal("Group_Underlined_Sub"))
-			NewWithT(t).Expect(pw.EnvKey()).To(Equal("Group_Underlined_Sub"))
-			NewWithT(t).Expect(pw.CmdKey()).To(Equal("group-underlined-sub"))
+			Expect(t, pw.Paths(), Equal([]any{"Group", "Underlined_Sub"}))
+			Expect(t, pw.String(), Equal("Group_Underlined_Sub"))
+			Expect(t, pw.EnvKey(), Equal("Group_Underlined_Sub"))
+			Expect(t, pw.CmdKey(), Equal("group-underlined-sub"))
 		}
 		pw.Leave()
 	}
 	pw.Leave()
 
 	pw.Enter([]byte("unsupported type"))
-	defer func() {
-		e := recover().(error).Error()
-		NewWithT(t).Expect(e).To(HavePrefix("unsupported type in path walker:"))
-	}()
-	_ = pw.String()
+	ExpectPanic[error](t, func() { _ = pw.String() }, ErrorContains("unsupported type in path walker:"))
 }

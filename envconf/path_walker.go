@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/xoctopus/x/stringsx"
 )
 
@@ -64,7 +63,7 @@ func stringify(h func(string) string, jointer rune, paths ...any) string {
 		case fmt.Stringer:
 			s = v.String()
 		default:
-			panic(errors.Errorf("unsupported type in path walker: %T", path))
+			panic(fmt.Errorf("unsupported type in path walker: %T", path))
 		}
 		if h != nil {
 			s = h(s)
