@@ -85,11 +85,17 @@ cover: dep tidy hack_dep_run
 	@$(GOTEST) test ./... -failfast -parallel 1 -gcflags="all=-N -l" -covermode=count -coverprofile=cover.out
 	@grep -vE $(TEST_IGNORES) cover.out > cover2.out && mv cover2.out cover.out
 
+## hack_dep_run:
+## 	@cd hack && (PODMAN_COMPOSE_WARNING_LOGS=false podman compose up -d --remove-orphans || docker compose up -d)
+##
+## hack_dep_stop:
+## 	@cd hack && (PODMAN_COMPOSE_WARNING_LOGS=false podman compose down -v || docker compose down -v )
+
 hack_dep_run:
-	@cd hack && (PODMAN_COMPOSE_WARNING_LOGS=false podman compose up -d --remove-orphans || docker compose up -d)
+	@cd hack && docker compose up -d --remove-orphans
 
 hack_dep_stop:
-	@cd hack && (PODMAN_COMPOSE_WARNING_LOGS=false podman compose down -v || docker compose down -v )
+	@cd hack && docker compose down -v
 
 ci-cover: cover
 
