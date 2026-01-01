@@ -56,5 +56,4 @@ linters:
       min-complexity: 50
     errcheck:
       exclude-functions:
-        - io.Closer.Close
         - (*net/http.Request).Body.Close

@@ -5,6 +5,7 @@ go 1.25.5
 require (
 	github.com/xoctopus/datatypex v0.2.1
 	github.com/xoctopus/genx v0.1.11
+	github.com/xoctopus/logx v0.1.1
 	github.com/xoctopus/pkgx v0.1.7 // indirect
 	github.com/xoctopus/typx v0.3.4 // indirect
 	github.com/xoctopus/x v0.2.8
@@ -16,6 +17,9 @@ require (
 	github.com/spf13/cobra v1.10.2
 	gopkg.in/yaml.v3 v3.0.1
 )
+
+// middlewares
+require github.com/gomodule/redigo v1.9.3
 
 require (
 	github.com/google/go-cmp v0.7.0 // indirect

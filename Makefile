@@ -82,15 +82,21 @@ update:
 	@GOWORK=off go get -u all
 	@GOWORK=off go mod tidy
 
+hack_dep_run:
+	@cd hack && (PODMAN_COMPOSE_WARNING_LOGS=false podman compose up -d --remove-orphans || docker compose up -d --remove-orphans)
+
+hack_dep_stop:
+	@cd hack && (PODMAN_COMPOSE_WARNING_LOGS=false podman compose down -v || docker compose down -v )
+
 tidy:
 	@echo "==> tidy"
 	@GOWORK=off go mod tidy
 
-test: dep tidy
+test: dep tidy hack_dep_run
 	@echo "==> run unit test"
 	GOWORK=off $(GOTEST) test ./... -race -failfast -parallel 1 -gcflags="all=-N -l"
 
-cover: dep tidy
+cover: dep tidy hack_dep_run
 	@echo "==> run unit test with coverage"
 	@GOWORK=off $(GOTEST) test ./... -failfast -parallel 1 -gcflags="all=-N -l" -covermode=count -coverprofile=cover.out
 	@grep -vE '_gen.go|.pb.go|_mock.go|_genx_|pkg/envx/errors.go|example/|envconf/errors.go' cover.out > cover2.out && mv cover2.out cover.out

@@ -1,0 +1,6 @@
+package runtime
+
+const (
+	TARGET_PROJECT     = "PROJECT"
+	DEPLOY_ENVIRONMENT = "DEPLOY_ENVIRONMENT"
+)
