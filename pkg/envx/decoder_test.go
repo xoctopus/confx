@@ -7,11 +7,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 type DefaultSetter struct {
@@ -222,9 +222,9 @@ func TestDecoder_Decode(t *testing.T) {
 				grp.Add(envx.NewVar("Array_4", "4"))               // skipped: out of capacity
 				grp.Add(envx.NewVar("Array_INVALID_INDEX", "any")) // skipped
 
-				target := struct{ Array [3]*datatypex.Endpoint }{}
-				expect := struct{ Array [3]*datatypex.Endpoint }{
-					Array: [3]*datatypex.Endpoint{
+				target := struct{ Array [3]*types.Endpoint }{}
+				expect := struct{ Array [3]*types.Endpoint }{
+					Array: [3]*types.Endpoint{
 						nil,
 						{Scheme: "http", Host: "localhost", Port: 9999, Param: url.Values{}},
 						nil,
@@ -246,7 +246,7 @@ func TestDecoder_Decode(t *testing.T) {
 			grp.Add(envx.NewVar("MustFailed", "any"))
 
 			err := dec.Decode(&struct {
-				Endpoint   *datatypex.Endpoint
+				Endpoint   *types.Endpoint
 				MustFailed MustFailedArshaler
 			}{
 				MustFailed: MustFailedArshaler{},
@@ -262,22 +262,22 @@ type TestData struct {
 	// expect skipped because field is a nil pointer
 	NilPointer *int
 	// expect is optional and name overwritten to `address`
-	HasTag *datatypex.Address `env:"address,optional"`
+	HasTag *types.Endpoint `env:"address,optional"`
 	// expect skipped
-	SkipTag datatypex.Endpoint `env:"-"`
+	SkipTag types.Endpoint `env:"-"`
 	// expect marshaled as a single string and password field will be masked
-	Endpoint *datatypex.Endpoint
+	Endpoint *types.Endpoint
 	// expect masked
-	datatypex.Password
-	RedisInstances map[string]*datatypex.Endpoint `env:"redis"`
-	MysqlInstances [2]*datatypex.Endpoint         `env:"database"`
+	types.Password
+	RedisInstances map[string]*types.Endpoint `env:"redis"`
+	MysqlInstances [2]*types.Endpoint         `env:"database"`
 }
 
 var x = &TestData{
 	unexported: "any",
-	HasTag:     datatypex.NewAddress("group", "filename.png"),
-	SkipTag:    datatypex.Endpoint{Scheme: "http", Host: "localhost"},
-	Endpoint: &datatypex.Endpoint{
+	HasTag:     &types.Endpoint{Scheme: "http", Host: "localhost"},
+	SkipTag:    types.Endpoint{Scheme: "http", Host: "localhost"},
+	Endpoint: &types.Endpoint{
 		Scheme:   "http",
 		Host:     "localhost",
 		Port:     8888,
@@ -287,13 +287,13 @@ var x = &TestData{
 		Param:    url.Values{"key": []string{"value1", "value2"}},
 	},
 	Password: "password",
-	RedisInstances: map[string]*datatypex.Endpoint{
-		"instance1": must.NoErrorV(datatypex.ParseEndpoint("redis://u1:p1@host1:3306/1")),
-		"instance2": must.NoErrorV(datatypex.ParseEndpoint("redis://u2:p2@host2:3306/2")),
+	RedisInstances: map[string]*types.Endpoint{
+		"instance1": must.NoErrorV(types.ParseEndpoint("redis://u1:p1@host1:3306/1")),
+		"instance2": must.NoErrorV(types.ParseEndpoint("redis://u2:p2@host2:3306/2")),
 	},
-	MysqlInstances: [2]*datatypex.Endpoint{
-		must.NoErrorV(datatypex.ParseEndpoint("mysql://u:p@host1:3306/db1?ssl=off")),
-		must.NoErrorV(datatypex.ParseEndpoint("mysql://u:p@host2:3306/db2?ssl=off")),
+	MysqlInstances: [2]*types.Endpoint{
+		must.NoErrorV(types.ParseEndpoint("mysql://u:p@host1:3306/db1?ssl=off")),
+		must.NoErrorV(types.ParseEndpoint("mysql://u:p@host2:3306/db2?ssl=off")),
 	},
 }
 

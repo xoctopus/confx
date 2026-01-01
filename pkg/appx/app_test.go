@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
 
 	. "github.com/xoctopus/confx/pkg/appx"
 	"github.com/xoctopus/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 func ExampleNewAppContext() {
@@ -138,12 +138,12 @@ APP__CONFIG2__ClientEndpoint: http://localhost:8888/demo`), os.ModePerm))
 
 type Config1 struct {
 	WorkerID int
-	Endpoint datatypex.Endpoint
+	Endpoint types.Endpoint
 }
 
 type Config2 struct {
 	ServerPort     uint16
-	ClientEndpoint datatypex.Endpoint
+	ClientEndpoint types.Endpoint
 
 	server *http.Server
 	client *http.Client

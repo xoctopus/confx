@@ -4,14 +4,14 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/xoctopus/confx/pkg/comp/confredis"
-	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
+	"github.com/xoctopus/confx/pkg/comp/confredis"
 	redisv1 "github.com/xoctopus/confx/pkg/comp/confredis/v1"
 	"github.com/xoctopus/confx/pkg/comp/runtime"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 func TestEndpoint(t *testing.T) {
@@ -41,15 +41,11 @@ func TestEndpoint(t *testing.T) {
 					"&writeTimeout=10"))
 		})
 		t.Run("InvalidParam", func(t *testing.T) {
-			ep2 := &redisv1.Endpoint{Endpoint: *must.NoErrorV(datatypex.ParseEndpoint("tcp://localhost:100/1"))}
+			ep2 := &redisv1.Endpoint{Endpoint: *must.NoErrorV(types.ParseEndpoint("tcp://localhost:100/1"))}
 			ep2.Param = url.Values{"connTimeout": []string{"abc"}}
 			Expect(t, ep2.Init(), Failed())
 		})
 	})
-}
-
-type LivenessChecker interface {
-	LivenessCheck() map[string]string
 }
 
 func TestEndpoint_Hack(t *testing.T) {
@@ -73,15 +69,15 @@ func TestEndpoint_Hack(t *testing.T) {
 		// )
 		// Expect(t, v, Equal[any]([]any{[]byte("1"), nil}))
 
-		m := op.(LivenessChecker).LivenessCheck()
-		Expect(t, m["127.0.0.1:16379"], Equal("true"))
+		m := op.(types.LivenessChecker).LivenessCheck()
+		Expect(t, m["redis://127.0.0.1:16379/0"], Equal("true"))
 	})
 	t.Run("Lost", func(t *testing.T) {
 		op := confredis.MustFrom(ctx2)
 		_, err := op.Exec("set", op.Key("abc"), 1)
 		Expect(t, err, Failed())
 
-		m := op.(LivenessChecker).LivenessCheck()
-		Expect(t, m["127.0.0.1:16380"], Equal("false"))
+		m := op.(types.LivenessChecker).LivenessCheck()
+		Expect(t, m["redis://127.0.0.1:16380/0"], Equal("false"))
 	})
 }

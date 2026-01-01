@@ -6,12 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/xoctopus/datatypex"
-
 	"github.com/xoctopus/confx/example/appx/pkg/modules/module1"
 	"github.com/xoctopus/confx/example/appx/pkg/modules/module2"
 	"github.com/xoctopus/confx/example/appx/pkg/modules/module3"
 	"github.com/xoctopus/confx/pkg/appx"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 var (
@@ -24,7 +23,7 @@ var (
 	app    *appx.AppCtx
 	config = &struct {
 		WorkerID uint64
-		Endpoint datatypex.Endpoint
+		Endpoint types.Endpoint
 	}{
 		WorkerID: 100,
 	}
