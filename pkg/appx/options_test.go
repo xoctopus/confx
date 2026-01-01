@@ -1,4 +1,4 @@
-package confapp_test
+package appx_test
 
 import (
 	"testing"
@@ -6,12 +6,12 @@ import (
 
 	. "github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/confapp"
+	"github.com/xoctopus/confx/pkg/appx"
 )
 
 func TestMeta(t *testing.T) {
-	m1 := confapp.DefaultMeta
-	m2 := confapp.Meta{
+	m1 := appx.DefaultMeta
+	m2 := appx.Meta{
 		Name:     "test",
 		Feature:  "test/abc",
 		Version:  "v1.1.1",
@@ -25,8 +25,8 @@ func TestMeta(t *testing.T) {
 }
 
 func TestAppOption(t *testing.T) {
-	opt := confapp.AppOption{
-		Meta: confapp.DefaultMeta,
+	opt := appx.AppOption{
+		Meta: appx.DefaultMeta,
 	}
 	Expect(t, opt.NeedAttach(), BeFalse())
 	opt.AppendPreRunners(func() {})

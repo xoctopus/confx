@@ -1,4 +1,4 @@
-package confapp
+package appx
 
 import "os"
 

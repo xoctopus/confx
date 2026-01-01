@@ -1,4 +1,4 @@
-package envconf
+package envx
 
 import (
 	"encoding"

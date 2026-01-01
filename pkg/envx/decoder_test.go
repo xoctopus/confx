@@ -1,4 +1,4 @@
-package envconf_test
+package envx_test
 
 import (
 	"errors"
@@ -11,7 +11,7 @@ import (
 	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/envconf"
+	"github.com/xoctopus/confx/pkg/envx"
 )
 
 type DefaultSetter struct {
@@ -36,25 +36,25 @@ func (*MustFailedArshaler) UnmarshalText([]byte) error {
 
 func TestDecoder_Decode(t *testing.T) {
 	t.Run("Invalid", func(t *testing.T) {
-		grp := envconf.NewGroup("TEST")
+		grp := envx.NewGroup("TEST")
 		Expect(t, grp.Name(), Equal("TEST"))
-		Expect(t, grp.Values(), HaveLen[map[string]*envconf.Var](0))
+		Expect(t, grp.Values(), HaveLen[map[string]*envx.Var](0))
 
-		dec := envconf.NewDecoder(grp)
+		dec := envx.NewDecoder(grp)
 
 		t.Run("InvalidValue", func(t *testing.T) {
 			err := dec.Decode(nil)
-			Expect(t, err, IsCodeError(envconf.E_DEC__INVALID_VALUE))
+			Expect(t, err, IsCodeError(envx.E_DEC__INVALID_VALUE))
 		})
 		t.Run("CannotSet", func(t *testing.T) {
 			err := dec.Decode(struct{}{})
-			Expect(t, err, IsCodeError(envconf.E_DEC__INVALID_VALUE_CANNOT_SET))
+			Expect(t, err, IsCodeError(envx.E_DEC__INVALID_VALUE_CANNOT_SET))
 		})
 	})
 
 	t.Run("DefaultSetter", func(t *testing.T) {
-		grp := envconf.NewGroup("TEST")
-		dec := envconf.NewDecoder(grp)
+		grp := envx.NewGroup("TEST")
+		dec := envx.NewDecoder(grp)
 
 		// no var for decoding, set as default
 		val := &DefaultSetter{}
@@ -62,14 +62,14 @@ func TestDecoder_Decode(t *testing.T) {
 		Expect(t, val.Int, Equal(101))
 
 		// overwritten by env var
-		grp.Add(envconf.NewVar("Int", "200"))
+		grp.Add(envx.NewVar("Int", "200"))
 		Expect(t, dec.Decode(val), Succeed())
 		Expect(t, val.Int, Equal(200))
 	})
 
 	t.Run("SkippedTypes", func(t *testing.T) {
-		grp := envconf.NewGroup("TEST")
-		dec := envconf.NewDecoder(grp)
+		grp := envx.NewGroup("TEST")
+		dec := envx.NewDecoder(grp)
 
 		err := dec.Decode(&struct {
 			Chan chan struct{}
@@ -85,9 +85,9 @@ func TestDecoder_Decode(t *testing.T) {
 
 	t.Run("Map", func(t *testing.T) {
 		t.Run("InvalidMapKeyType", func(t *testing.T) {
-			grp := envconf.NewGroup("TEST")
-			dec := envconf.NewDecoder(grp)
-			pos := envconf.NewPathWalker()
+			grp := envx.NewGroup("TEST")
+			dec := envx.NewDecoder(grp)
+			pos := envx.NewPathWalker()
 
 			type Key struct{}
 
@@ -95,43 +95,43 @@ func TestDecoder_Decode(t *testing.T) {
 			err := dec.Decode(&struct {
 				Map map[Key]any
 			}{})
-			Expect(t, err, IsCodeError(envconf.E_DEC__INVALID_MAP_KEY_TYPE))
+			Expect(t, err, IsCodeError(envx.E_DEC__INVALID_MAP_KEY_TYPE))
 		})
 		t.Run("FailedToUnmarshalMapKey", func(t *testing.T) {
-			grp := envconf.NewGroup("TEST")
-			dec := envconf.NewDecoder(grp)
-			pos := envconf.NewPathWalker()
+			grp := envx.NewGroup("TEST")
+			dec := envx.NewDecoder(grp)
+			pos := envx.NewPathWalker()
 
-			grp.Add(envconf.NewVar("Map_INVALIDINT", "any"))
-			grp.Add(envconf.NewVar("OTHER_VAR_KEY", "any"))
+			grp.Add(envx.NewVar("Map_INVALIDINT", "any"))
+			grp.Add(envx.NewVar("OTHER_VAR_KEY", "any"))
 			pos.Enter("Map")
 
 			err := dec.Decode(&struct {
 				Map map[int]string
 			}{})
-			Expect(t, err, IsCodeError(envconf.E_DEC__FAILED_UNMARSHAL))
+			Expect(t, err, IsCodeError(envx.E_DEC__FAILED_UNMARSHAL))
 		})
 		t.Run("FailedToDecodeMapValue", func(t *testing.T) {
-			grp := envconf.NewGroup("TEST")
-			dec := envconf.NewDecoder(grp)
-			pos := envconf.NewPathWalker()
+			grp := envx.NewGroup("TEST")
+			dec := envx.NewDecoder(grp)
+			pos := envx.NewPathWalker()
 
 			pos.Enter("Map")
 			pos.Enter("KEY1")
-			grp.Add(envconf.NewVar("Map_KEY1", "invalid integer string"))
+			grp.Add(envx.NewVar("Map_KEY1", "invalid integer string"))
 
 			err := dec.Decode(&struct {
 				Map map[string]int
 			}{})
-			Expect(t, err, IsCodeError(envconf.E_DEC__FAILED_UNMARSHAL))
+			Expect(t, err, IsCodeError(envx.E_DEC__FAILED_UNMARSHAL))
 		})
 		t.Run("Success", func(t *testing.T) {
 			t.Run("RawMap", func(t *testing.T) {
-				grp := envconf.NewGroup("TEST")
-				dec := envconf.NewDecoder(grp)
+				grp := envx.NewGroup("TEST")
+				dec := envx.NewDecoder(grp)
 
-				grp.Add(envconf.NewVar("1", "1"))
-				grp.Add(envconf.NewVar("2", "2"))
+				grp.Add(envx.NewVar("1", "1"))
+				grp.Add(envx.NewVar("2", "2"))
 
 				target := map[int]string{}
 				expect := map[int]string{1: "1", 2: "2"}
@@ -141,11 +141,11 @@ func TestDecoder_Decode(t *testing.T) {
 				Expect(t, expect, Equal(target))
 			})
 			t.Run("PrefixedMap", func(t *testing.T) {
-				grp := envconf.NewGroup("TEST")
-				dec := envconf.NewDecoder(grp)
+				grp := envx.NewGroup("TEST")
+				dec := envx.NewDecoder(grp)
 
-				grp.Add(envconf.NewVar("Map_1", "1"))
-				grp.Add(envconf.NewVar("Map_2", "2"))
+				grp.Add(envx.NewVar("Map_1", "1"))
+				grp.Add(envx.NewVar("Map_2", "2"))
 
 				target := struct{ Map map[int]string }{}
 				expect := struct{ Map map[int]string }{
@@ -157,11 +157,11 @@ func TestDecoder_Decode(t *testing.T) {
 				Expect(t, expect, Equal(target))
 			})
 			t.Run("PrefixedAndSuffixedMap", func(t *testing.T) {
-				grp := envconf.NewGroup("TEST")
-				dec := envconf.NewDecoder(grp)
+				grp := envx.NewGroup("TEST")
+				dec := envx.NewDecoder(grp)
 
-				grp.Add(envconf.NewVar("Map_1_1", "1"))
-				grp.Add(envconf.NewVar("Map_2_2", "2"))
+				grp.Add(envx.NewVar("Map_1_1", "1"))
+				grp.Add(envx.NewVar("Map_2_2", "2"))
 
 				target := struct{ Map map[int]map[string]int }{}
 				expect := struct{ Map map[int]map[string]int }{
@@ -177,24 +177,24 @@ func TestDecoder_Decode(t *testing.T) {
 
 	t.Run("ArrayAndSlice", func(t *testing.T) {
 		t.Run("FailedToDecodeElem", func(t *testing.T) {
-			grp := envconf.NewGroup("TEST")
-			dec := envconf.NewDecoder(grp)
-			pos := envconf.NewPathWalker()
+			grp := envx.NewGroup("TEST")
+			dec := envx.NewDecoder(grp)
+			pos := envx.NewPathWalker()
 
 			pos.Enter("0")
-			grp.Add(envconf.NewVar("0", "invalid integer string"))
+			grp.Add(envx.NewVar("0", "invalid integer string"))
 
 			err := dec.Decode(&([]int{}))
-			Expect(t, err, IsCodeError(envconf.E_DEC__FAILED_UNMARSHAL))
+			Expect(t, err, IsCodeError(envx.E_DEC__FAILED_UNMARSHAL))
 		})
 		t.Run("Success", func(t *testing.T) {
 			t.Run("RawSlice", func(t *testing.T) {
-				grp := envconf.NewGroup("TEST")
-				dec := envconf.NewDecoder(grp)
+				grp := envx.NewGroup("TEST")
+				dec := envx.NewDecoder(grp)
 
-				grp.Add(envconf.NewVar("2", "2"))
-				grp.Add(envconf.NewVar("4", "4"))
-				grp.Add(envconf.NewVar("INVALID_INDEX", "any")) // skipped
+				grp.Add(envx.NewVar("2", "2"))
+				grp.Add(envx.NewVar("4", "4"))
+				grp.Add(envx.NewVar("INVALID_INDEX", "any")) // skipped
 
 				target := make([]int, 0)
 				expect := []int{0, 0, 2, 0, 4}
@@ -202,12 +202,12 @@ func TestDecoder_Decode(t *testing.T) {
 				Expect(t, expect, Equal(target))
 			})
 			t.Run("PrefixedArray", func(t *testing.T) {
-				grp := envconf.NewGroup("TEST")
-				dec := envconf.NewDecoder(grp)
+				grp := envx.NewGroup("TEST")
+				dec := envx.NewDecoder(grp)
 
-				grp.Add(envconf.NewVar("Array_2", "2"))
-				grp.Add(envconf.NewVar("Array_4", "4"))               // skipped: out of capacity
-				grp.Add(envconf.NewVar("Array_INVALID_INDEX", "any")) // skipped
+				grp.Add(envx.NewVar("Array_2", "2"))
+				grp.Add(envx.NewVar("Array_4", "4"))               // skipped: out of capacity
+				grp.Add(envx.NewVar("Array_INVALID_INDEX", "any")) // skipped
 
 				target := struct{ Array [3]int }{}
 				expect := struct{ Array [3]int }{Array: [3]int{0, 0, 2}}
@@ -215,12 +215,12 @@ func TestDecoder_Decode(t *testing.T) {
 				Expect(t, expect, Equal(target))
 			})
 			t.Run("PrefixedAndSuffixedArray", func(t *testing.T) {
-				grp := envconf.NewGroup("TEST")
-				dec := envconf.NewDecoder(grp)
+				grp := envx.NewGroup("TEST")
+				dec := envx.NewDecoder(grp)
 
-				grp.Add(envconf.NewVar("Array_1", "http://localhost:9999"))
-				grp.Add(envconf.NewVar("Array_4", "4"))               // skipped: out of capacity
-				grp.Add(envconf.NewVar("Array_INVALID_INDEX", "any")) // skipped
+				grp.Add(envx.NewVar("Array_1", "http://localhost:9999"))
+				grp.Add(envx.NewVar("Array_4", "4"))               // skipped: out of capacity
+				grp.Add(envx.NewVar("Array_INVALID_INDEX", "any")) // skipped
 
 				target := struct{ Array [3]*datatypex.Endpoint }{}
 				expect := struct{ Array [3]*datatypex.Endpoint }{
@@ -238,12 +238,12 @@ func TestDecoder_Decode(t *testing.T) {
 
 	t.Run("Struct", func(t *testing.T) {
 		t.Run("FailedToDecodeField", func(t *testing.T) {
-			grp := envconf.NewGroup("TEST")
-			dec := envconf.NewDecoder(grp)
-			pos := envconf.NewPathWalker()
+			grp := envx.NewGroup("TEST")
+			dec := envx.NewDecoder(grp)
+			pos := envx.NewPathWalker()
 
 			pos.Enter("MustFailed")
-			grp.Add(envconf.NewVar("MustFailed", "any"))
+			grp.Add(envx.NewVar("MustFailed", "any"))
 
 			err := dec.Decode(&struct {
 				Endpoint   *datatypex.Endpoint
@@ -251,7 +251,7 @@ func TestDecoder_Decode(t *testing.T) {
 			}{
 				MustFailed: MustFailedArshaler{},
 			})
-			Expect(t, err, IsCodeError(envconf.E_DEC__FAILED_UNMARSHAL))
+			Expect(t, err, IsCodeError(envx.E_DEC__FAILED_UNMARSHAL))
 		})
 	})
 }
@@ -320,12 +320,12 @@ func Example_env() {
 	target := TestData{}
 
 	// read configurations from env vars and decode to target
-	dec := envconf.NewDecoder(envconf.ParseGroupFromEnv("EXAMPLE"))
+	dec := envx.NewDecoder(envx.ParseGroupFromEnv("EXAMPLE"))
 	must.NoError(dec.Decode(&target))
 
 	// encode target
-	grp := envconf.NewGroup("EXAMPLE")
-	enc := envconf.NewEncoder(grp)
+	grp := envx.NewGroup("EXAMPLE")
+	enc := envx.NewEncoder(grp)
 	must.NoError(enc.Encode(target))
 
 	// output dotenv raw and masked

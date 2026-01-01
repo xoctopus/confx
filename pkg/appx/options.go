@@ -1,4 +1,4 @@
-package confapp
+package appx
 
 import (
 	"fmt"
@@ -85,8 +85,8 @@ func (o *AppOption) AppendBatchRunners(runners ...func()) {
 }
 
 func (o *AppOption) PreRun() {
-	BatchRun(o.PreRunners...)
-	go BatchRun(o.BatchRunners...)
+	BatchRunSync(o.PreRunners...)
+	BatchRun(o.BatchRunners...)
 }
 
 func BatchRun(runners ...func()) {
@@ -101,4 +101,10 @@ func BatchRun(runners ...func()) {
 		}()
 	}
 	wg.Wait()
+}
+
+func BatchRunSync(runners ...func()) {
+	for i := range runners {
+		runners[i]()
+	}
 }

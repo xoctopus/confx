@@ -1,4 +1,4 @@
-package confapp_test
+package appx_test
 
 import (
 	"bytes"
@@ -15,8 +15,8 @@ import (
 	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
 
-	. "github.com/xoctopus/confx/confapp"
-	"github.com/xoctopus/confx/envconf"
+	. "github.com/xoctopus/confx/pkg/appx"
+	"github.com/xoctopus/confx/pkg/envx"
 )
 
 func ExampleNewAppContext() {
@@ -400,7 +400,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				v := &invalid{}
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
-				ExpectPanic[error](t, func() { app.Conf(v) }, IsCodeError(envconf.E_DEC__INVALID_MAP_KEY_TYPE))
+				ExpectPanic[error](t, func() { app.Conf(v) }, IsCodeError(envx.E_DEC__INVALID_MAP_KEY_TYPE))
 			})
 			t.Run("InvalidKeyValue", func(t *testing.T) {
 				v := &config{
@@ -408,7 +408,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				}
 				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
-				ExpectPanic[error](t, func() { app.Conf(v) }, IsCodeError(envconf.E_ENC__INVALID_MAP_KEY_VALUE))
+				ExpectPanic[error](t, func() { app.Conf(v) }, IsCodeError(envx.E_ENC__INVALID_MAP_KEY_VALUE))
 			})
 		})
 	})

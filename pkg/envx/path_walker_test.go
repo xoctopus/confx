@@ -1,11 +1,11 @@
-package envconf_test
+package envx_test
 
 import (
 	"testing"
 
 	. "github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/envconf"
+	"github.com/xoctopus/confx/pkg/envx"
 )
 
 type stringer string
@@ -15,7 +15,7 @@ func (v stringer) String() string {
 }
 
 func TestPathWalker(t *testing.T) {
-	pw := envconf.NewPathWalker()
+	pw := envx.NewPathWalker()
 
 	pw.Enter("Group")
 	{
@@ -26,15 +26,11 @@ func TestPathWalker(t *testing.T) {
 		{
 			Expect(t, pw.Paths(), Equal([]any{"Group", 1}))
 			Expect(t, pw.String(), Equal("Group_1"))
-			Expect(t, pw.CmdKey(), Equal("group-1"))
-			Expect(t, pw.EnvKey(), Equal("Group_1"))
 
 			pw.Enter("prop")
 			{
 				Expect(t, pw.Paths(), Equal([]any{"Group", 1, "prop"}))
 				Expect(t, pw.String(), Equal("Group_1_prop"))
-				Expect(t, pw.CmdKey(), Equal("group-1-prop"))
-				Expect(t, pw.EnvKey(), Equal("Group_1_prop"))
 			}
 			pw.Leave()
 		}
@@ -44,8 +40,6 @@ func TestPathWalker(t *testing.T) {
 		{
 			Expect(t, pw.Paths(), Equal([]any{"Group", stringer("Sub")}))
 			Expect(t, pw.String(), Equal("Group_Sub"))
-			Expect(t, pw.EnvKey(), Equal("Group_Sub"))
-			Expect(t, pw.CmdKey(), Equal("group-sub"))
 		}
 		pw.Leave()
 
@@ -53,8 +47,6 @@ func TestPathWalker(t *testing.T) {
 		{
 			Expect(t, pw.Paths(), Equal([]any{"Group", "UpperCamelSub"}))
 			Expect(t, pw.String(), Equal("Group_UpperCamelSub"))
-			Expect(t, pw.EnvKey(), Equal("Group_UpperCamelSub"))
-			Expect(t, pw.CmdKey(), Equal("group-upper-camel-sub"))
 		}
 		pw.Leave()
 
@@ -62,8 +54,6 @@ func TestPathWalker(t *testing.T) {
 		{
 			Expect(t, pw.Paths(), Equal([]any{"Group", "lowerCamelSub"}))
 			Expect(t, pw.String(), Equal("Group_lowerCamelSub"))
-			Expect(t, pw.EnvKey(), Equal("Group_lowerCamelSub"))
-			Expect(t, pw.CmdKey(), Equal("group-lower-camel-sub"))
 		}
 		pw.Leave()
 
@@ -71,8 +61,6 @@ func TestPathWalker(t *testing.T) {
 		{
 			Expect(t, pw.Paths(), Equal([]any{"Group", "Dash-Sub"}))
 			Expect(t, pw.String(), Equal("Group_Dash-Sub"))
-			Expect(t, pw.EnvKey(), Equal("Group_Dash_Sub"))
-			Expect(t, pw.CmdKey(), Equal("group-dash-sub"))
 		}
 		pw.Leave()
 
@@ -80,8 +68,6 @@ func TestPathWalker(t *testing.T) {
 		{
 			Expect(t, pw.Paths(), Equal([]any{"Group", "Underlined_Sub"}))
 			Expect(t, pw.String(), Equal("Group_Underlined_Sub"))
-			Expect(t, pw.EnvKey(), Equal("Group_Underlined_Sub"))
-			Expect(t, pw.CmdKey(), Equal("group-underlined-sub"))
 		}
 		pw.Leave()
 	}

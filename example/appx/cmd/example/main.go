@@ -8,10 +8,10 @@ import (
 
 	"github.com/xoctopus/datatypex"
 
-	"github.com/xoctopus/confx/confapp"
-	"github.com/xoctopus/confx/confapp/example/pkg/modules/module1"
-	"github.com/xoctopus/confx/confapp/example/pkg/modules/module2"
-	"github.com/xoctopus/confx/confapp/example/pkg/modules/module3"
+	"github.com/xoctopus/confx/example/appx/pkg/modules/module1"
+	"github.com/xoctopus/confx/example/appx/pkg/modules/module2"
+	"github.com/xoctopus/confx/example/appx/pkg/modules/module3"
+	"github.com/xoctopus/confx/pkg/appx"
 )
 
 var (
@@ -21,7 +21,7 @@ var (
 	CommitID string
 	Date     string
 
-	app    *confapp.AppCtx
+	app    *appx.AppCtx
 	config = &struct {
 		WorkerID uint64
 		Endpoint datatypex.Endpoint
@@ -31,21 +31,21 @@ var (
 )
 
 func init() {
-	app = confapp.NewAppContext(
-		confapp.WithBuildMeta(confapp.Meta{
+	app = appx.NewAppContext(
+		appx.WithBuildMeta(appx.Meta{
 			Name:     Name,
 			Feature:  Feature,
 			Version:  Version,
 			CommitID: CommitID,
 			Date:     Date,
 		}),
-		confapp.WithMainRoot("."),
-		confapp.WithMainExecutor(Main),
-		confapp.WithPreRunner(
+		appx.WithMainRoot("."),
+		appx.WithMainExecutor(Main),
+		appx.WithPreRunner(
 			module1.InitRunner(context.Background()),
-		),
-		confapp.WithBatchRunner(
 			module2.InitRunner(context.Background()),
+		),
+		appx.WithBatchRunner(
 			module3.InitRunner(context.Background()),
 		),
 	)

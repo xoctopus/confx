@@ -1,12 +1,9 @@
-package envconf
+package envx
 
 import (
 	"bytes"
 	"fmt"
 	"strconv"
-	"strings"
-
-	"github.com/xoctopus/x/stringsx"
 )
 
 func NewPathWalker() *PathWalker {
@@ -30,23 +27,10 @@ func (pw *PathWalker) Paths() []any {
 }
 
 func (pw *PathWalker) String() string {
-	return stringify(nil, '_', pw.paths...)
+	return stringify('_', pw.paths...)
 }
 
-func (pw *PathWalker) CmdKey() string {
-	return stringify(func(x string) string {
-		x = strings.Replace(x, "_", "-", -1)
-		return stringsx.LowerDashJoint(x)
-	}, '-', pw.paths...)
-}
-
-func (pw *PathWalker) EnvKey() string {
-	return stringify(func(x string) string {
-		return strings.Replace(x, "-", "_", -1)
-	}, '_', pw.paths...)
-}
-
-func stringify(h func(string) string, jointer rune, paths ...any) string {
+func stringify(jointer rune, paths ...any) string {
 	buf := bytes.NewBuffer(nil)
 
 	for idx, path := range paths {
@@ -64,9 +48,6 @@ func stringify(h func(string) string, jointer rune, paths ...any) string {
 			s = v.String()
 		default:
 			panic(fmt.Errorf("unsupported type in path walker: %T", path))
-		}
-		if h != nil {
-			s = h(s)
 		}
 		buf.WriteString(s)
 	}

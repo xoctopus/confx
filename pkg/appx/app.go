@@ -1,4 +1,4 @@
-package confapp
+package appx
 
 import (
 	"fmt"
@@ -14,9 +14,9 @@ import (
 	"github.com/xoctopus/x/initializer"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/reflectx"
-	yaml "gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v3"
 
-	"github.com/xoctopus/confx/envconf"
+	"github.com/xoctopus/confx/pkg/envx"
 )
 
 type Option func(*AppCtx)
@@ -100,10 +100,10 @@ func NewAppContext(options ...Option) *AppCtx {
 
 type AppCtx struct {
 	*cobra.Command
-	root   string           // root main.go path
-	dfts   []*envconf.Group // dfts app default config var groups
-	vars   []*envconf.Group // vars app config var groups
-	option AppOption        // option application options
+	root   string        // root main.go path
+	dfts   []*envx.Group // dfts app default config var groups
+	vars   []*envx.Group // vars app config var groups
+	option AppOption     // option application options
 }
 
 func (app *AppCtx) Name() string {
@@ -121,8 +121,8 @@ func (app *AppCtx) MainRoot() string {
 func (app *AppCtx) Conf(configurations ...any) {
 	app.injectLocalConfig()
 
-	app.dfts = make([]*envconf.Group, 0, len(configurations))
-	app.vars = make([]*envconf.Group, 0, len(configurations))
+	app.dfts = make([]*envx.Group, 0, len(configurations))
+	app.vars = make([]*envx.Group, 0, len(configurations))
 	vars := make([]reflect.Value, 0, len(configurations))
 	names := map[string]struct{}{}
 
@@ -165,22 +165,22 @@ func (app *AppCtx) injectLocalConfig() {
 }
 
 // marshalDefaults encode default vars
-func (app *AppCtx) marshalDefaults(group string, v any) *envconf.Group {
-	dft := envconf.NewGroup(group)
-	must.NoErrorF(envconf.NewDecoder(dft).Decode(v), "failed to decode default")
-	must.NoErrorF(envconf.NewEncoder(dft).Encode(v), "failed to encode default")
+func (app *AppCtx) marshalDefaults(group string, v any) *envx.Group {
+	dft := envx.NewGroup(group)
+	must.NoErrorF(envx.NewDecoder(dft).Decode(v), "failed to decode default")
+	must.NoErrorF(envx.NewEncoder(dft).Encode(v), "failed to encode default")
 	return dft
 }
 
 // scanEnvironment scan vars from environment
-func (app *AppCtx) scanEnvironment(group string, v any) *envconf.Group {
-	vars := envconf.ParseGroupFromEnv(group)
-	must.NoErrorF(envconf.NewDecoder(vars).Decode(v), "failed to decode env")
-	must.NoErrorF(envconf.NewEncoder(vars).Encode(v), "failed to encode env")
+func (app *AppCtx) scanEnvironment(group string, v any) *envx.Group {
+	vars := envx.ParseGroupFromEnv(group)
+	must.NoErrorF(envx.NewDecoder(vars).Decode(v), "failed to decode env")
+	must.NoErrorF(envx.NewEncoder(vars).Encode(v), "failed to encode env")
 	return vars
 }
 
-func initialize(v reflect.Value, g *envconf.Group, field string) {
+func initialize(v reflect.Value, g *envx.Group, field string) {
 	if initializer.CanBeInitialized(v) {
 		must.NoErrorF(
 			initializer.Init(v),
