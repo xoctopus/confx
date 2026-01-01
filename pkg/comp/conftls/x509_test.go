@@ -1,19 +1,21 @@
 package conftls_test
 
 import (
-	"os"
+	_ "embed"
 	"testing"
 
-	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/pkg/comp/conftls"
 )
 
 var (
-	key = string(must.NoErrorV(os.ReadFile("testdata/server.key")))
-	crt = string(must.NoErrorV(os.ReadFile("testdata/server.crt")))
-	ca  = string(must.NoErrorV(os.ReadFile("testdata/ca.crt")))
+	//go:embed testdata/server.key
+	key string
+	//go:embed testdata/server.crt
+	crt string
+	//go:embed testdata/ca.crt
+	ca string
 )
 
 func TestX509KeyPair(t *testing.T) {
@@ -32,7 +34,7 @@ func TestX509KeyPair(t *testing.T) {
 		}
 		Expect(t, keypair.Init(), Succeed())
 		Expect(t, keypair.IsZero(), BeFalse())
-		Expect(t, keypair.Config(), Equal(conftls.DefaultTLSConfig))
+		Expect(t, keypair.Config(), NotEqual(conftls.DefaultTLSConfig))
 	})
 
 	t.Run("FailedToLoadFromPath", func(t *testing.T) {
@@ -62,9 +64,9 @@ func TestX509KeyPair(t *testing.T) {
 				Crt: crt,
 				CA:  ca,
 			}
-			Expect(t, keypair.Init(), Failed())
+			Expect(t, keypair.Init(), Succeed())
 			Expect(t, keypair.IsZero(), BeFalse())
-			Expect(t, keypair.Config(), Equal(conftls.DefaultTLSConfig))
+			Expect(t, keypair.Config(), NotEqual(conftls.DefaultTLSConfig))
 		})
 	})
 

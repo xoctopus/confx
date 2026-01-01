@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/xoctopus/confx/pkg/comp/conftls"
-	"github.com/xoctopus/confx/pkg/comp/runtime"
 	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/textx"
+
+	"github.com/xoctopus/confx/pkg/comp/conftls"
+	"github.com/xoctopus/confx/pkg/comp/runtime"
 )
 
 type Endpoint struct {
@@ -21,12 +22,12 @@ type Endpoint struct {
 
 	prefix string
 	index  int
-	opt    options
+	opt    Options
 
 	pool *redis.Pool
 }
 
-type options struct {
+type Options struct {
 	Prefix        string `url:""`
 	ConnTimeout   int    `url:",default=10"`
 	WriteTimeout  int    `url:",default=10"`
@@ -41,16 +42,12 @@ type options struct {
 }
 
 func (r *Endpoint) LivenessCheck() map[string]string {
-	m := map[string]string{}
+	m := map[string]string{r.Hostname(): "false"}
 
-	conn := r.Get()
-	defer func() { _ = conn.Close() }()
-
-	_, err := conn.Do("PING")
-	if err != nil {
-		m[r.Endpoint.Hostname()] = err.Error()
-	} else {
-		m[r.Endpoint.Hostname()] = "ok"
+	if conn := r.Get(); conn != nil {
+		defer func() { _ = conn.Close() }()
+		_, err := conn.Do("PING")
+		m[r.Endpoint.Hostname()] = fmt.Sprint(err == nil)
 	}
 
 	return m
@@ -118,46 +115,59 @@ func (r *Endpoint) Init() error {
 			Wait:            r.opt.Wait,
 		}
 	}
+	if _, err := r.Exec("PING"); err != nil {
+		_ = r.pool.Close()
+		r.pool = nil
+		return err
+	}
 
-	_, err := r.Exec(Command("PING"))
-
-	return err
+	return nil
 }
 
-func (r *Endpoint) Exec(cmd *Cmd, others ...*Cmd) (any, error) {
+func (r *Endpoint) Exec(cmd string, args ...any) (any, error) {
 	c := r.Get()
-	if c == nil || c.Err() != nil {
-		return nil, errors.Join(errors.New("redis: lost connection"), c.Err())
+	if c == nil {
+		return nil, errors.New("redis: lost connection")
 	}
 	defer func() { _ = c.Close() }()
 
-	if (len(others)) == 0 {
-		return c.Do(cmd.Name, cmd.Args...)
-	}
-
-	err := c.Send("MULTI")
-	if err != nil {
-		return nil, err
-	}
-
-	err = c.Send(cmd.Name, cmd.Args...)
-	if err != nil {
-		return nil, err
-	}
-
-	for i := range others {
-		o := others[i]
-		if o == nil {
-			continue
-		}
-		err := c.Send(o.Name, o.Args...)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return c.Do("EXEC")
+	return c.Do(cmd, args...)
 }
+
+// func (r *Endpoint) Exec(cmd *Cmd, others ...*Cmd) (any, error) {
+// 	c := r.Get()
+// 	if c == nil || c.Err() != nil {
+// 		return nil, errors.Join(errors.New("redis: lost connection"), c.Err())
+// 	}
+// 	defer func() { _ = c.Close() }()
+//
+// 	if (len(others)) == 0 {
+// 		return c.Do(cmd.Name, cmd.Args...)
+// 	}
+//
+// 	err := c.Send("MULTI")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	err = c.Send(cmd.Name, cmd.Args...)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	for i := range others {
+// 		o := others[i]
+// 		if o == nil {
+// 			continue
+// 		}
+// 		err := c.Send(o.Name, o.Args...)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 	}
+//
+// 	return c.Do("EXEC")
+// }
 
 func (r *Endpoint) Close() error {
 	if r.pool != nil {

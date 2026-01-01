@@ -4,16 +4,18 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/xoctopus/confx/hack"
-	. "github.com/xoctopus/confx/pkg/comp/confredis"
-	"github.com/xoctopus/confx/pkg/comp/runtime"
+	"github.com/xoctopus/confx/pkg/comp/confredis"
 	"github.com/xoctopus/datatypex"
 	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
+
+	"github.com/xoctopus/confx/hack"
+	redisv1 "github.com/xoctopus/confx/pkg/comp/confredis/v1"
+	"github.com/xoctopus/confx/pkg/comp/runtime"
 )
 
 func TestEndpoint(t *testing.T) {
-	ep := &Endpoint{}
+	ep := &redisv1.Endpoint{}
 
 	t.Run("SetDefault", func(t *testing.T) {
 		ep.SetDefault()
@@ -39,7 +41,7 @@ func TestEndpoint(t *testing.T) {
 					"&writeTimeout=10"))
 		})
 		t.Run("InvalidParam", func(t *testing.T) {
-			ep2 := &Endpoint{Endpoint: *must.NoErrorV(datatypex.ParseEndpoint("tcp://localhost:100/1"))}
+			ep2 := &redisv1.Endpoint{Endpoint: *must.NoErrorV(datatypex.ParseEndpoint("tcp://localhost:100/1"))}
 			ep2.Param = url.Values{"connTimeout": []string{"abc"}}
 			Expect(t, ep2.Init(), Failed())
 		})
@@ -54,28 +56,32 @@ func TestEndpoint_Hack(t *testing.T) {
 	ctx1 := hack.WithRedis(hack.Context(t), t, "redis://:123456@127.0.0.1:16379/0")
 	ctx2 := hack.WithRedisLost(hack.Context(t), t, "redis://:123456@127.0.0.1:16380/0")
 	t.Run("Hack", func(t *testing.T) {
-		op := MustFrom(ctx1)
-		_, err := op.Exec(Command("set", op.Key("abc"), 1))
+		op := confredis.MustFrom(ctx1)
+		_, err := op.Exec("set", op.Key("abc"), 1)
 		Expect(t, err, Succeed())
 
-		v, _ := op.Exec(Command("get", op.Key("abc")))
+		conn := op.(*redisv1.Endpoint).MustGet()
+		Expect(t, conn != nil, BeTrue())
+		Expect(t, conn.Err() == nil, BeTrue())
+
+		v, _ := op.Exec("get", op.Key("abc"))
 		Expect(t, v, Equal[any]([]byte("1")))
 
-		v, _ = op.Exec(
-			Command("get", op.Key("abc")),
-			Command("get", op.Key("def")),
-		)
-		Expect(t, v, Equal[any]([]any{[]byte("1"), nil}))
+		// v, _ = op.ExecCmd(
+		// 	Command("get", op.Key("abc")),
+		// 	Command("get", op.Key("def")),
+		// )
+		// Expect(t, v, Equal[any]([]any{[]byte("1"), nil}))
 
 		m := op.(LivenessChecker).LivenessCheck()
-		Expect(t, m["127.0.0.1:16379"], Equal("ok"))
+		Expect(t, m["127.0.0.1:16379"], Equal("true"))
 	})
 	t.Run("Lost", func(t *testing.T) {
-		op := MustFrom(ctx2)
-		_, err := op.Exec(Command("set", op.Key("abc"), 1))
+		op := confredis.MustFrom(ctx2)
+		_, err := op.Exec("set", op.Key("abc"), 1)
 		Expect(t, err, Failed())
 
 		m := op.(LivenessChecker).LivenessCheck()
-		Expect(t, m["127.0.0.1:16380"], NotEqual("ok"))
+		Expect(t, m["127.0.0.1:16380"], Equal("false"))
 	})
 }

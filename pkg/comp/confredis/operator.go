@@ -13,8 +13,17 @@ type Operator interface {
 	Key(key string) string
 	// Get redis connection
 	Get() redis.Conn
-	// Exec to execute redis command
-	Exec(cmd *Cmd, others ...*Cmd) (interface{}, error)
+
+	Executor
+}
+
+type Executor interface {
+	Exec(string, ...any) (any, error)
+}
+
+type MultiExecutor interface {
+	// ExecCmd to execute multi redis command
+	// ExecCmd(cmd *Cmd, others ...*Cmd) (any, error)
 }
 
 type tCtxOperator struct{}

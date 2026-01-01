@@ -9,10 +9,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xoctopus/confx/pkg/comp/confredis"
-	"github.com/xoctopus/confx/pkg/comp/runtime"
 	"github.com/xoctopus/logx"
 	. "github.com/xoctopus/x/testx"
+
+	"github.com/xoctopus/confx/pkg/comp/confredis"
+	redisv1 "github.com/xoctopus/confx/pkg/comp/confredis/v1"
+	"github.com/xoctopus/confx/pkg/comp/runtime"
 )
 
 var once sync.Once
@@ -42,7 +44,7 @@ func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
 	_, err := url.Parse(dsn)
 	Expect(t, err, Succeed())
 
-	ep := &confredis.Endpoint{}
+	ep := &redisv1.Endpoint{}
 	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
 	Expect(t, ep.Init(), Succeed())
 
@@ -57,7 +59,7 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 	_, err := url.Parse(dsn)
 	Expect(t, err, Succeed())
 
-	ep := &confredis.Endpoint{}
+	ep := &redisv1.Endpoint{}
 	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
 	Expect(t, ep.Init(), Failed())
 
@@ -65,5 +67,5 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 		_ = ep.Close()
 	})
 
-	return confredis.With(ctx, ep)
+	return confredis.Carrier(ep)(ctx)
 }

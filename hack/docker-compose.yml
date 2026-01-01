@@ -7,3 +7,12 @@ services:
     command: redis-server --requirepass "123456"
     ports:
       - "16379:6379"
+
+  pulsar:
+    image: apachepulsar/pulsar:4.1.0
+    container_name: pulsar_confx
+    platform: linux/amd64
+    restart: always
+    command: bin/pulsar standalone
+    ports:
+      - "16650:6650"
