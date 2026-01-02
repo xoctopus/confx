@@ -1,6 +1,7 @@
 package appx
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -118,7 +119,7 @@ func (app *AppCtx) MainRoot() string {
 	return app.root
 }
 
-func (app *AppCtx) Conf(configurations ...any) {
+func (app *AppCtx) Conf(ctx context.Context, configurations ...any) {
 	app.injectLocalConfig()
 
 	app.dfts = make([]*envx.Group, 0, len(configurations))
@@ -145,7 +146,7 @@ func (app *AppCtx) Conf(configurations ...any) {
 	}
 
 	app.mustWriteDefault()
-	app.initial(vars)
+	app.initial(ctx, vars)
 	if app.option.NeedAttach() {
 		app.attachSubCommands()
 	}
@@ -180,10 +181,10 @@ func (app *AppCtx) scanEnvironment(group string, v any) *envx.Group {
 	return vars
 }
 
-func initialize(v reflect.Value, g *envx.Group, field string) {
+func initialize(ctx context.Context, v reflect.Value, g *envx.Group, field string) {
 	if initializer.CanBeInitialized(v) {
 		must.NoErrorF(
-			initializer.Init(v),
+			initializer.InitByContext(ctx, v),
 			"failed to init [group:%s] [field:%s]", g.Name(), field,
 		)
 		return
@@ -192,15 +193,15 @@ func initialize(v reflect.Value, g *envx.Group, field string) {
 	if v.Kind() == reflect.Struct {
 		for i := 0; i < v.NumField(); i++ {
 			if v.Type().Field(i).IsExported() {
-				initialize(v.Field(i), g, v.Type().Field(i).Name)
+				initialize(ctx, v.Field(i), g, v.Type().Field(i).Name)
 			}
 		}
 	}
 }
 
-func (app *AppCtx) initial(vars []reflect.Value) {
+func (app *AppCtx) initial(ctx context.Context, vars []reflect.Value) {
 	for i := range vars {
-		initialize(vars[i], app.vars[i], "")
+		initialize(ctx, vars[i], app.vars[i], "")
 	}
 }
 

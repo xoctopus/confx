@@ -49,7 +49,7 @@ func init() {
 		),
 	)
 
-	app.Conf(config)
+	app.Conf(context.Background(), config)
 }
 
 func Main() error {
