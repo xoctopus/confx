@@ -76,7 +76,7 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 		_ = ep.Close()
 	})
 
-	return confredis.Carrier(ep)(ctx)
+	return confredis.Carry(ep)(ctx)
 }
 
 func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -115,5 +115,5 @@ func WithPulsarLost(ctx context.Context, t testing.TB, dsn string) context.Conte
 		_ = ep.Close()
 	})
 
-	return confmq.Carrier(ep)(ctx)
+	return confmq.Carry(ep)(ctx)
 }

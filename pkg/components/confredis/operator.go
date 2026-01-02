@@ -41,7 +41,7 @@ func With(ctx context.Context, o Operator) context.Context {
 	return context.WithValue(ctx, tCtxOperator{}, o)
 }
 
-func Carrier(o Operator) contextx.Carrier {
+func Carry(o Operator) contextx.Carrier {
 	return func(ctx context.Context) context.Context {
 		return With(ctx, o)
 	}

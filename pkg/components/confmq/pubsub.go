@@ -34,7 +34,7 @@ func With(ctx context.Context, ps PubSub) context.Context {
 	return context.WithValue(ctx, tCtxPubSub{}, ps)
 }
 
-func Carrier(ps PubSub) contextx.Carrier {
+func Carry(ps PubSub) contextx.Carrier {
 	return func(ctx context.Context) context.Context {
 		return With(ctx, ps)
 	}
