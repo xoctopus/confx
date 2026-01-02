@@ -6,7 +6,7 @@ import (
 
 	. "github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/pkg/comp/conftls"
+	"github.com/xoctopus/confx/pkg/components/conftls"
 )
 
 var (

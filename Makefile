@@ -116,7 +116,7 @@ lint: dep
 	@golangci-lint run
 	@echo "done"
 
-pre-commit: dep update lint fmt view-cover
+pre-commit: dep lint fmt view-cover
 
 clean:
 	@find . -name cover.out | xargs rm -rf

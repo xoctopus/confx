@@ -100,3 +100,7 @@ func (e *Endpoint) Key() string {
 	}
 	return key
 }
+
+func (e *Endpoint) Options() url.Values {
+	return e.Param
+}

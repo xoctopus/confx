@@ -9,12 +9,16 @@ import (
 	"time"
 
 	"github.com/xoctopus/logx"
+	"github.com/xoctopus/sfid/pkg/sfid"
+	"github.com/xoctopus/x/contextx"
 	"github.com/xoctopus/x/misc/retry"
 	. "github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/pkg/comp/confredis"
-	redisv1 "github.com/xoctopus/confx/pkg/comp/confredis/v1"
-	"github.com/xoctopus/confx/pkg/comp/runtime"
+	"github.com/xoctopus/confx/pkg/components/confmq"
+	pulsarv1 "github.com/xoctopus/confx/pkg/components/confpulsar/v1"
+	"github.com/xoctopus/confx/pkg/components/confredis"
+	redisv1 "github.com/xoctopus/confx/pkg/components/confredis/v1"
+	"github.com/xoctopus/confx/pkg/components/runtime"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
@@ -32,7 +36,10 @@ func Context(t testing.TB) context.Context {
 	t.Setenv(runtime.DEPLOY_ENVIRONMENT, "test_hack")
 	t.Setenv(runtime.TARGET_PROJECT, "test_local")
 
-	return logx.With(context.Background(), logx.Std(logx.NewHandler()))
+	return contextx.Compose(
+		logx.Carry(logx.DefaultStd()),
+		sfid.Carry(sfid.NewDefaultIDGen(100)),
+	)(context.Background())
 }
 
 func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -45,16 +52,14 @@ func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
 	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
 
 	err = (&retry.Retry{
-		Repeats:  5,
+		Repeats:  3,
 		Interval: time.Second * 3,
 	}).Do(func() error {
 		return ep.Init()
 	})
 	Expect(t, err, Succeed())
 
-	t.Cleanup(func() {
-		_ = ep.Close()
-	})
+	t.Cleanup(func() { _ = ep.Close() })
 
 	return confredis.With(ctx, ep)
 }
@@ -72,4 +77,43 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 	})
 
 	return confredis.Carrier(ep)(ctx)
+}
+
+func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
+	Check(t)
+
+	_, err := url.Parse(dsn)
+	Expect(t, err, Succeed())
+
+	ep := &pulsarv1.Endpoint{}
+	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
+	ep.SetDefault()
+
+	err = (&retry.Retry{
+		Repeats:  3,
+		Interval: time.Second * 3,
+	}).Do(func() error {
+		return ep.Init(ctx)
+	})
+	Expect(t, err, Succeed())
+
+	t.Cleanup(func() { _ = ep.Close() })
+	return confmq.With(ctx, ep)
+}
+
+func WithPulsarLost(ctx context.Context, t testing.TB, dsn string) context.Context {
+	_, err := url.Parse(dsn)
+	Expect(t, err, Succeed())
+
+	ep := &pulsarv1.Endpoint{}
+	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
+
+	ep.SetDefault()
+	Expect(t, ep.Init(ctx), Failed())
+
+	t.Cleanup(func() {
+		_ = ep.Close()
+	})
+
+	return confmq.Carrier(ep)(ctx)
 }

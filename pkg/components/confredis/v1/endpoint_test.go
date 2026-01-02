@@ -8,9 +8,9 @@ import (
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
-	"github.com/xoctopus/confx/pkg/comp/confredis"
-	redisv1 "github.com/xoctopus/confx/pkg/comp/confredis/v1"
-	"github.com/xoctopus/confx/pkg/comp/runtime"
+	"github.com/xoctopus/confx/pkg/components/confredis"
+	redisv1 "github.com/xoctopus/confx/pkg/components/confredis/v1"
+	"github.com/xoctopus/confx/pkg/components/runtime"
 	"github.com/xoctopus/confx/pkg/types"
 )
 

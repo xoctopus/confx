@@ -51,6 +51,16 @@ func TestParseEndpoint(t *testing.T) {
 				Base: "path/to/resource",
 			},
 		},
+		// TODO
+		// "Unescaped": {
+		// 	uri: "http+ssl://hostname:1234/path",
+		// 	expect: &Endpoint{
+		// 		Scheme: "http+ssl",
+		// 		Host:   "hostname",
+		// 		Port:   1234,
+		// 		Base:   "path",
+		// 	},
+		// },
 	}
 
 	for name, c := range cases {
@@ -81,5 +91,7 @@ func TestParseEndpoint(t *testing.T) {
 		Expect(t, err, Failed())
 	})
 
-	Expect(t, cases["Postgres"].expect.Key(), Equal("postgres://hostname:5432/database_name"))
+	ep := cases["Postgres"].expect
+	Expect(t, ep.Key(), Equal("postgres://hostname:5432/database_name"))
+	Expect(t, ep.Options(), Equal(url.Values{"sslmode": {"disable"}}))
 }

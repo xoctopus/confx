@@ -12,8 +12,8 @@ import (
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/textx"
 
-	"github.com/xoctopus/confx/pkg/comp/conftls"
-	"github.com/xoctopus/confx/pkg/comp/runtime"
+	"github.com/xoctopus/confx/pkg/components/conftls"
+	"github.com/xoctopus/confx/pkg/components/runtime"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
