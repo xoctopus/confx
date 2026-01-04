@@ -3,7 +3,7 @@ module github.com/xoctopus/confx
 go 1.25.5
 
 require (
-	github.com/xoctopus/genx v0.1.13
+	github.com/xoctopus/genx v0.1.14
 	github.com/xoctopus/logx v0.1.1
 	github.com/xoctopus/sfid v0.0.3
 	github.com/xoctopus/x v0.2.10
@@ -65,7 +65,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.10
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xoctopus/pkgx v0.1.9 // indirect
+	github.com/xoctopus/pkgx v0.1.10 // indirect
 	github.com/xoctopus/typx v0.3.4 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.46.0 // indirect
