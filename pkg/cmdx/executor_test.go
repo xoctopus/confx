@@ -134,6 +134,15 @@ func (t *TestExecutor) DocOf(names ...string) ([]string, bool) {
 	if len(names) == 0 {
 		return []string{"Test Executor"}, true
 	}
+	switch names[0] {
+	case "Global":
+		return []string{"global string"}, true
+	case "Inline":
+		return []string{"TextArshaler"}, true
+	}
+	if names[0] == "Global" {
+	}
+
 	return []string{}, false
 }
 
