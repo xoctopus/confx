@@ -28,7 +28,6 @@ func TestAppOption(t *testing.T) {
 	opt := appx.AppOption{
 		Meta: appx.DefaultMeta,
 	}
-	Expect(t, opt.NeedAttach(), BeFalse())
 	opt.AppendPreRunners(func() {})
 	opt.AppendBatchRunners(func() {})
 	opt.PreRun()

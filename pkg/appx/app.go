@@ -36,18 +36,6 @@ func WithBuildMeta(meta Meta) Option {
 	}
 }
 
-func WithMakefileGenerator() Option {
-	return func(app *AppCtx) {
-		app.option.GenMakefile = true
-	}
-}
-
-func WithDockerfileGenerator() Option {
-	return func(app *AppCtx) {
-		app.option.GenDockerfile = true
-	}
-}
-
 func WithMainExecutor(main func() error) Option {
 	return func(app *AppCtx) {
 		app.Command.AddCommand(&cobra.Command{
@@ -147,9 +135,6 @@ func (app *AppCtx) Conf(ctx context.Context, configurations ...any) {
 
 	app.mustWriteDefault()
 	app.initial(ctx, vars)
-	if app.option.NeedAttach() {
-		app.attachSubCommands()
-	}
 }
 
 // injectLocalConfig try parse vars in local.yaml, and inject vars to environment
@@ -250,19 +235,4 @@ func (app *AppCtx) mustWriteDefault() {
 		os.WriteFile(filename, content, os.ModePerm),
 		"failed to write default config file",
 	)
-}
-
-func (app *AppCtx) attachSubCommands() {
-	gen := &cobra.Command{
-		Use:   "gen",
-		Short: "generator templates files for makefile, dockerfile and default config",
-	}
-
-	if app.option.GenDockerfile {
-	}
-
-	if app.option.GenMakefile {
-	}
-
-	app.Command.AddCommand(gen)
 }

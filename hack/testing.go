@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/url"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -21,8 +20,6 @@ import (
 	"github.com/xoctopus/confx/pkg/components/runtime"
 	"github.com/xoctopus/confx/pkg/types"
 )
-
-var once sync.Once
 
 func Check(t testing.TB, deps ...types.LivenessChecker) {
 	if os.Getenv("HACK_TEST") != "true" {

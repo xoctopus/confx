@@ -59,8 +59,6 @@ func ExampleNewAppContext() {
 				return nil
 			},
 		),
-		WithDockerfileGenerator(),
-		WithMakefileGenerator(),
 	)
 
 	must.NoError(os.MkdirAll(filepath.Join(app.MainRoot(), "config"), os.ModePerm))
@@ -90,14 +88,6 @@ APP__CONFIG2__ClientEndpoint: http://localhost:8888/demo`), os.ModePerm))
 		fmt.Println(buf.String())
 	}
 	{
-		fmt.Println("exec `app gen defaults`")
-		buf.Reset()
-		cmd.SetArgs([]string{"gen", "defaults"})
-		must.NoError(cmd.Execute())
-		content, _ := os.ReadFile(filepath.Join(app.MainRoot(), "config/default.yml"))
-		fmt.Println(string(content))
-	}
-	{
 		fmt.Println("exec `app run`")
 		buf.Reset()
 		cmd.SetArgs([]string{"run"})
@@ -108,12 +98,6 @@ APP__CONFIG2__ClientEndpoint: http://localhost:8888/demo`), os.ModePerm))
 	// Output:
 	// exec `app version`
 	// app:main@v0.0.1#efbecda_200601021504(DEV)
-	//
-	// exec `app gen defaults`
-	// APP__CONFIG1__Endpoint: ""
-	// APP__CONFIG1__WorkerID: "0"
-	// APP__CONFIG2__ClientEndpoint: http://localhost:80/demo
-	// APP__CONFIG2__ServerPort: "80"
 	//
 	// exec `app run`
 	// app:main@v0.0.1#efbecda_200601021504(DEV)

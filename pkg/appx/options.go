@@ -63,17 +63,10 @@ func (m *Meta) Overwrite(meta Meta) {
 
 type AppOption struct {
 	Meta
-	GenMakefile   bool
-	GenDockerfile bool
-
 	// PreRunner must run before main
 	PreRunners []func()
 	// BatchRunner routines need pre-run before enter main, e.g. modules initializations
 	BatchRunners []func()
-}
-
-func (o *AppOption) NeedAttach() bool {
-	return o.GenMakefile || o.GenDockerfile
 }
 
 func (o *AppOption) AppendPreRunners(runners ...func()) {

@@ -27,10 +27,9 @@ type Endpoint struct {
 }
 
 type options struct {
-	OperationTimeout  int `url:",default=10"`
+	OperationTimeout  int `url:",default=1"`
 	ConnTimeout       int `url:",default=5"`
 	KeepAliveInterval int `url:",default=3600"`
-	MaxRetry          int `url:",default=3"`
 	MaxConnector      int `url:",default=10"`
 	conftls.X509KeyPair
 }
@@ -139,8 +138,13 @@ func (e *Endpoint) producer(topic string) (pulsar.Producer, error) {
 	}
 
 	opt := pulsar.ProducerOptions{
-		Topic:       topic,
-		SendTimeout: time.Duration(e.opt.OperationTimeout) * time.Second,
+		Topic:                   topic,
+		SendTimeout:             time.Duration(e.opt.OperationTimeout) * time.Second,
+		MaxPendingMessages:      500,
+		DisableBatching:         false,
+		BatchingMaxPublishDelay: 1 * time.Millisecond,
+		BatchingMaxMessages:     50,
+		DisableBlockIfQueueFull: false,
 	}
 
 	producer, err := e.client.CreateProducer(opt)
@@ -162,11 +166,6 @@ func (e *Endpoint) Subscribe(ctx context.Context, topic string) (Subscriber, err
 		RetryEnable:      true,
 		SubscriptionName: topic,
 	}
-	if e.opt.MaxRetry > 0 {
-		opt.RetryEnable = true
-		opt.MaxReconnectToBroker = new(uint)
-		*opt.MaxReconnectToBroker = uint(e.opt.MaxRetry)
-	}
 
 	c, err := e.client.Subscribe(opt)
 	if err != nil {
@@ -179,22 +178,48 @@ func (e *Endpoint) Subscribe(ctx context.Context, topic string) (Subscriber, err
 	}, nil
 }
 
-func (e *Endpoint) Publish(ctx context.Context, msg Message) error {
+func (e *Endpoint) Publish(ctx context.Context, msg Message, callback ...func(Message, error)) (err error) {
+	var cb func(msg Message, err error)
+	if len(callback) > 0 && callback[0] != nil {
+		cb = callback[0]
+	}
+
+	defer func() {
+		if cb != nil {
+			cb(msg, err)
+		}
+	}()
+
 	if e.closed.Load() || e.client == nil {
 		return errors.New("endpoint is closed")
 	}
 
-	data, err := msg.(MessageArshaler).Marshal()
+	var data []byte
+	data, err = msg.(MessageArshaler).Marshal()
 	if err != nil {
 		return err
 	}
 
-	pub, err := e.producer(msg.Topic())
+	var (
+		pub pulsar.Producer
+		raw = &pulsar.ProducerMessage{Payload: data}
+	)
+	pub, err = e.producer(msg.Topic())
 	if err != nil {
 		return err
 	}
-	_, err = pub.Send(ctx, &pulsar.ProducerMessage{Payload: data})
-	return err
+
+	if cb == nil {
+		_, err = pub.Send(ctx, raw)
+		return err
+	}
+	pub.SendAsync(
+		ctx, raw,
+		func(_ pulsar.MessageID, _ *pulsar.ProducerMessage, err error) {
+			cb(msg, err)
+		},
+	)
+	return nil
 }
 
 func (e *Endpoint) Close() error {

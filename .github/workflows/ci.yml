@@ -2,29 +2,32 @@ name: ci
 
 on:
   push:
-    branches: [ "main" ]
-    tags: [ "v*.*.*" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+      - feat/*
+    tags:
+      - v*.*.*
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '^1.25.4'
-        check-latest: 'true'
+      - name: setup-go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '^1.25.5'
+          check-latest: 'true'
 
-    - name: Test
-      run: make ci-cover
+      - name: test
+        run: make ci-cover
 
-    - name: Coverage report
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{secrets.CODECOV_TOKEN}}
-        file: ./cover.out
+      - name: report-coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+          file: ./cover.out

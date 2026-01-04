@@ -15,7 +15,7 @@ type Subscriber interface {
 }
 
 type PubSub interface {
-	Publish(ctx context.Context, msg Message) error
+	Publish(ctx context.Context, msg Message, callback ...func(Message, error)) error
 	Subscribe(ctx context.Context, topic string) (Subscriber, error)
 }
 
