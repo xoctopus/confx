@@ -56,5 +56,4 @@ func (s *Server) Exec(cmd *cobra.Command, args ...string) error {
 	return http.ListenAndServe(addr, nil)
 }
 
-var ServerCmd = cmdx.NewCommand("server", &Server{}).
-	WithShort("start echo http server")
+var CmdServer = cmdx.NewCommand("server", &Server{}).Cmd()

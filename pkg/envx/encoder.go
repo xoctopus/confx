@@ -41,7 +41,7 @@ func (d *Encoder) set(pw *PathWalker, rv reflect.Value) error {
 
 	text, err := textx.Marshal(rv)
 	if err != nil {
-		return codex.Wrapf(E_ENC__FAILED_MARSHAL, err, "at %s", pw.String())
+		return codex.Wrapf(CODE__ENC_FAILED_MARSHAL, err, "at %s", pw.String())
 	}
 	v.val = string(text)
 	v.mask = v.val
@@ -89,7 +89,7 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 			return nil
 		}
 		if k := rt.Key().Kind(); k != reflect.String && !reflectx.IsInteger(k) {
-			return codex.Errorf(E_ENC__INVALID_MAP_KEY_TYPE, "at %s[%s]", pw, k)
+			return codex.Errorf(CODE__ENC_INVALID_MAP_KEY_TYPE, "at %s[%s]", pw, k)
 		}
 		keys := rv.MapKeys()
 		for i := range keys {
@@ -98,11 +98,11 @@ func (d *Encoder) encode(pw *PathWalker, rv reflect.Value) error {
 			switch {
 			case key.Kind() == reflect.String:
 				if x := key.String(); len(x) == 0 || !alphabet(x) {
-					return codex.Errorf(E_ENC__INVALID_MAP_KEY_VALUE, "at %s[%s]", pw, keyv)
+					return codex.Errorf(CODE__ENC_INVALID_MAP_KEY_VALUE, "at %s[%s]", pw, keyv)
 				}
 			case key.CanInt():
 				if key.Int() < 0 {
-					return codex.Errorf(E_ENC__INVALID_MAP_KEY_VALUE, "at %s[%s]", pw, keyv)
+					return codex.Errorf(CODE__ENC_INVALID_MAP_KEY_VALUE, "at %s[%s]", pw, keyv)
 				}
 			}
 			// keyv = strings.ToUpper(fmt.Sprint(keyv))

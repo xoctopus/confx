@@ -5,20 +5,20 @@ func (v *Server) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Debug":
-			return []string{"Debug enable debug mode 1-enable"}, true
+			return []string{"enable debug mode 1-enable"}, true
 		case "LogLevel":
-			return []string{"LogLevel set log level [debug info warn error]"}, true
+			return []string{"set log level [debug info warn error]"}, true
 		case "Port":
-			return []string{"Port server listen port"}, true
+			return []string{"server listen port"}, true
 		}
 		return []string{}, false
 	}
-	return []string{"Server start an echo server"}, true
+	return []string{"start an echo server"}, true
 }
 
 func (v *Version) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}
-	return []string{"Version output command version"}, true
+	return []string{"output command version"}, true
 }

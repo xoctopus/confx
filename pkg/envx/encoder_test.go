@@ -43,13 +43,13 @@ func TestEncoder_Encode(t *testing.T) {
 
 			type Key struct{}
 			err := enc.Encode(map[Key]string{})
-			Expect(t, err, IsCodeError(envx.E_ENC__INVALID_MAP_KEY_TYPE))
+			Expect(t, err, IsCodeError(envx.CODE__ENC_INVALID_MAP_KEY_TYPE))
 		})
 		t.Run("UnexpectMapKeyValue", func(t *testing.T) {
 			grp := envx.NewGroup("TEST")
 			enc := envx.NewEncoder(grp)
 			// pos := envconf.NewPathWalker()
-			expect := envx.E_ENC__INVALID_MAP_KEY_VALUE
+			expect := envx.CODE__ENC_INVALID_MAP_KEY_VALUE
 			t.Run("InvalidInteger", func(t *testing.T) {
 				target := enc.Encode(map[int]string{-1: "any"})
 				Expect(t, target, IsCodeError(expect))
@@ -68,7 +68,7 @@ func TestEncoder_Encode(t *testing.T) {
 			pos := envx.NewPathWalker()
 
 			pos.Enter(0)
-			expect := envx.E_ENC__FAILED_MARSHAL
+			expect := envx.CODE__ENC_FAILED_MARSHAL
 			target := enc.Encode(map[int]MustFailedArshaler{0: {}})
 			Expect(t, target, IsCodeError(expect))
 		})
@@ -137,7 +137,7 @@ func TestEncoder_Encode(t *testing.T) {
 			pos := envx.NewPathWalker()
 			pos.Enter(0)
 
-			expect := envx.E_ENC__FAILED_MARSHAL
+			expect := envx.CODE__ENC_FAILED_MARSHAL
 			target := enc.Encode([]MustFailedArshaler{{}})
 			Expect(t, target, IsCodeError(expect))
 		})
@@ -155,7 +155,7 @@ func TestEncoder_Encode(t *testing.T) {
 			pos := envx.NewPathWalker()
 			pos.Enter("X")
 
-			expect := envx.E_ENC__FAILED_MARSHAL
+			expect := envx.CODE__ENC_FAILED_MARSHAL
 			target := enc.Encode(struct {
 				X MustFailedArshaler
 			}{

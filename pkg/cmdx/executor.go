@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/docx"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/stringsx"
 
@@ -59,6 +60,12 @@ func NewCommand(use string, executor Executor) Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return executor.Exec(cmd, args...)
 		},
+	}
+
+	if d, ok := executor.(docx.Doc); ok {
+		if lines, _ := d.DocOf(); len(lines) > 0 {
+			e.WithShort(strings.Join(lines, "\n"))
+		}
 	}
 
 	for _, f := range flags {

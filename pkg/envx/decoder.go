@@ -25,7 +25,7 @@ func (d *Decoder) Decode(v any) error {
 		rv = reflect.ValueOf(v)
 	}
 	if !rv.IsValid() {
-		return codex.Errorf(E_DEC__INVALID_VALUE, "at %s", pw.String())
+		return codex.Errorf(CODE__DEC_INVALID_VALUE, "at %s", pw.String())
 	}
 
 	return d.decode(pw, rv)
@@ -45,7 +45,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 	}
 
 	if !rv.CanSet() {
-		return codex.Errorf(E_DEC__INVALID_VALUE_CANNOT_SET, "at %s", pw.String())
+		return codex.Errorf(CODE__DEC_INVALID_VALUE_CANNOT_SET, "at %s", pw.String())
 	}
 
 	if dft, ok := rv.Addr().Interface().(interface{ SetDefault() }); ok {
@@ -61,7 +61,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 			a struct directly as an env configuration
 		*/
 		if v := d.g.Get(pw.String()); v != nil {
-			return codex.Wrapf(E_DEC__FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv), "at %s", pw.String())
+			return codex.Wrapf(CODE__DEC_FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv), "at %s", pw.String())
 		}
 		return nil
 	}
@@ -75,7 +75,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		krt := rt.Key()
 		vrt := rt.Elem()
 		if k := krt.Kind(); !(reflectx.IsInteger(k) || k == reflect.String) {
-			return codex.Errorf(E_DEC__INVALID_MAP_KEY_TYPE, "at %s[%s]", pw.String(), krt)
+			return codex.Errorf(CODE__DEC_INVALID_MAP_KEY_TYPE, "at %s[%s]", pw.String(), krt)
 		}
 
 		if rv.IsNil() {
@@ -85,7 +85,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		for _, key := range keys {
 			krv := reflect.New(krt)
 			if err := textx.Unmarshal([]byte(key), krv); err != nil {
-				return codex.Wrapf(E_DEC__FAILED_UNMARSHAL, err, "at %s", pw.String())
+				return codex.Wrapf(CODE__DEC_FAILED_UNMARSHAL, err, "at %s", pw.String())
 			}
 			// key = strings.ToUpper(key)
 			pw.Enter(key)
@@ -151,7 +151,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		return nil
 	default:
 		if v := d.g.Get(pw.String()); v != nil {
-			return codex.Wrapf(E_DEC__FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv), "at %s", pw.String())
+			return codex.Wrapf(CODE__DEC_FAILED_UNMARSHAL, textx.Unmarshal([]byte(v.val), rv), "at %s", pw.String())
 		}
 		return nil
 	}

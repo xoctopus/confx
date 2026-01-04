@@ -2,7 +2,7 @@
 PACKAGES       := $(shell go list ./...)
 MODULE_PATH    := $(shell cat go.mod | grep ^module -m 1 | awk '{ print $$2; }' || '')
 MODULE_NAME    := $(shell basename $(MODULE_PATH))
-TEST_IGNORES   := "_gen.go|.pb.go|_mock.go|_genx_|main.go|hack/testing.go|example/|envx/errors.go"
+TEST_IGNORES   := "_gen.go|.pb.go|_mock.go|_genx_|main.go|hack/testing.go|example/"
 FORMAT_IGNORES := ".git/,.xgo/,*.pb.go,*_generated.go"
 
 ## global env vars

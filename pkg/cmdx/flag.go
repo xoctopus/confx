@@ -29,10 +29,21 @@ var (
 )
 
 const (
-	OPTION_REQUIRE   = "require" // OPTION_REQUIRE marks flag as required
-	OPTION_PERSIST   = "persist" // OPTION_PERSIST marks flag persistent
-	OPTION_DEFAULT   = "default" // OPTION_DEFAULT marks flag default value, if flag has no option
-	OPTION_SHORTHAND = "short"   // OPTION_SHORTHAND marks flag short
+	// OPTION_REQUIRE marks flag as required
+	OPTION_REQUIRE = "require"
+
+	// OPTION_PERSIST marks flag persistent to all sub commands
+	OPTION_PERSIST = "persist"
+
+	// OPTION_DEFAULT marks flag default value when flag is not presented
+	OPTION_DEFAULT = "default"
+
+	// OPTION_NOOP_DEFAULT marks flag default value when flag is presented but no option
+	// eg: cmd --flag
+	OPTION_NOOP_DEFAULT = "noopdef"
+
+	// OPTION_SHORTHAND marks flag shorthand
+	OPTION_SHORTHAND = "short"
 )
 
 // parseFlags parses flag from rv
@@ -40,6 +51,7 @@ func parseFlags(rv reflect.Value, pw *envx.PathWalker, walked map[string]map[str
 	if rv.Kind() == reflect.Pointer {
 		rv = reflectx.IndirectNew(rv)
 	}
+	rt := rv.Type()
 
 	must.BeTrueF(rv.IsValid(), "expect valid value")
 	must.BeTrueF(rv.Kind() == reflect.Struct, "expect a struct value, but got %s", rv.Type())
@@ -85,7 +97,6 @@ func parseFlags(rv reflect.Value, pw *envx.PathWalker, walked map[string]map[str
 
 		frv := rv.Field(i)
 		f := &Flag{
-			typ:   rv.Type(),
 			fname: frt.Name,
 			name:  pw.String(),
 			value: reflectx.IndirectNew(frv),
@@ -111,19 +122,24 @@ func parseFlags(rv reflect.Value, pw *envx.PathWalker, walked map[string]map[str
 						must.BeTrueF(
 							len(v) == 1,
 							"shorthand options must be on letter: %s.%s",
-							f.typ.Name(), f.fname, v,
+							rt.Name(), f.fname, v,
 						)
 						f.short = v
 					}
 				}
 			}
+			if o := flag.Option(OPTION_NOOP_DEFAULT); o != nil {
+				f.noOptDef = ptrx.Ptr(o.Unquoted())
+			} else {
+				f.noOptDef = f.defaults
+			}
 		}
 
 		_, ok := walked["cmd"][f.name]
-		must.BeTrueF(!ok, "flag name conflict %s.%s [%s]", f.typ, f.fname, f.name)
+		must.BeTrueF(!ok, "flag name conflict %s.%s [%s]", rt.Name(), f.fname, f.name)
 		walked["cmd"][f.name] = f
 		_, ok = walked["short"][f.short]
-		must.BeTrueF(len(f.short) == 0 || !ok, "flag shorthand conflict %s.%s [%s]", f.typ, f.fname, f.short)
+		must.BeTrueF(len(f.short) == 0 || !ok, "flag shorthand conflict %s.%s [%s]", rt.Name(), f.fname, f.short)
 		walked["short"][f.short] = f
 
 		flags = append(flags, f)
@@ -139,7 +155,6 @@ func parseFlags(rv reflect.Value, pw *envx.PathWalker, walked map[string]map[str
 // implement encoding.Unmarshaller/Marshaller.
 // it is also acceptable if they are elements of a one-dimensional slice.
 type Flag struct {
-	typ        reflect.Type
 	fname      string
 	name       string
 	short      string
@@ -147,6 +162,7 @@ type Flag struct {
 	required   bool
 	persistent bool
 	defaults   *string
+	noOptDef   *string
 	value      reflect.Value
 }
 
@@ -177,6 +193,13 @@ func (f *Flag) Defaults() string {
 	return ""
 }
 
+func (f *Flag) NoOptDefaults() string {
+	if f.noOptDef == nil {
+		return ""
+	}
+	return *f.noOptDef
+}
+
 func (f *Flag) Register(cmd *cobra.Command, envPrefix string) {
 	f.name = stringsx.LowerDashJoint(f.name)
 
@@ -197,7 +220,7 @@ func (f *Flag) Register(cmd *cobra.Command, envPrefix string) {
 	}
 
 	flag.Usage = f.usage
-	flag.NoOptDefVal = f.Defaults()
+	flag.NoOptDefVal = f.NoOptDefaults()
 
 	if len(f.short) == 1 {
 		flag.Shorthand = f.Short()

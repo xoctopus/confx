@@ -403,7 +403,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				ExpectPanic[error](
 					t, func() { app.Conf(context.Background(), v) },
-					IsCodeError(envx.E_DEC__INVALID_MAP_KEY_TYPE),
+					IsCodeError(envx.CODE__DEC_INVALID_MAP_KEY_TYPE),
 				)
 			})
 			t.Run("InvalidKeyValue", func(t *testing.T) {
@@ -414,7 +414,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				ExpectPanic[error](
 					t, func() { app.Conf(context.Background(), v) },
-					IsCodeError(envx.E_ENC__INVALID_MAP_KEY_VALUE),
+					IsCodeError(envx.CODE__ENC_INVALID_MAP_KEY_VALUE),
 				)
 			})
 		})

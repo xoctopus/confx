@@ -14,5 +14,4 @@ func (*Version) Exec(cmd *cobra.Command, args ...string) error {
 	return nil
 }
 
-var VersionCmd = cmdx.NewCommand("version", &Version{}).
-	WithShort("output command version")
+var CmdVersion = cmdx.NewCommand("version", &Version{}).Cmd()

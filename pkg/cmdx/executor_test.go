@@ -66,9 +66,10 @@ func (c *Composited) DocOf(names ...string) ([]string, bool) {
 }
 
 type Prefixed struct {
-	Required   string   `cmd:",require"`
-	Persistent *float32 `cmd:",persist"`
-	HasDefault string   `cmd:",default='100 101 102'"`
+	Required    string   `cmd:",require"`
+	Persistent  *float32 `cmd:",persist"`
+	HasDefault  string   `cmd:",default='100 101 102'"`
+	HasNoOptDef []string `cmd:",noopdef='103 104 105'"`
 }
 
 func (c *Prefixed) DocOf(names ...string) ([]string, bool) {
@@ -82,6 +83,8 @@ func (c *Prefixed) DocOf(names ...string) ([]string, bool) {
 		return []string{"*float32", "case [prefixed,persistent]"}, true
 	case "HasDefault":
 		return []string{"string", "case [prefixed,default]"}, true
+	case "HasNoOptDef":
+		return []string{"[]string", "case [prefixed,no option default]"}, true
 	}
 	return []string{}, false
 }
@@ -127,6 +130,13 @@ type TestExecutor struct {
 	Global string
 }
 
+func (t *TestExecutor) DocOf(names ...string) ([]string, bool) {
+	if len(names) == 0 {
+		return []string{"Test Executor"}, true
+	}
+	return []string{}, false
+}
+
 func (*TestExecutor) Exec(cmd *cobra.Command, args ...string) error {
 	cmd.Println("args:")
 	for _, arg := range args {
@@ -150,6 +160,7 @@ func (*TestExecutor) Exec(cmd *cobra.Command, args ...string) error {
 		"prefixed-required",
 		"prefixed-persistent",
 		"prefixed-has-default",
+		"prefixed-has-no-opt-def",
 		// TestInline
 		"inline",
 		// Global
@@ -161,14 +172,14 @@ func (*TestExecutor) Exec(cmd *cobra.Command, args ...string) error {
 		f := cmd.Flag(name)
 
 		if f == nil {
-			cmd.Printf("    %-21s flag is not registered\n", name+":")
+			cmd.Printf("    %-24s flag is not registered\n", name+":")
 			continue
 		}
 		v := f.Value.String()
 		if v == "" {
 			v = f.NoOptDefVal
 		}
-		cmd.Printf("    %-21s %s\n", name+":", v)
+		cmd.Printf("    %-24s %s\n", name+":", v)
 	}
 
 	return nil
@@ -209,6 +220,7 @@ func ExampleExecutor() {
 		"--prefixed-required", "prefixed required",
 		"--prefixed-persistent", "100.02",
 		"--prefixed-has-default", "overwrite default",
+		"--prefixed-has-no-opt-def",
 		// TestInline
 		"--inline", `{"required": "required", "persistent": 100.002, "hasDefault": "default string"}`,
 		// Global
@@ -231,19 +243,20 @@ func ExampleExecutor() {
 	//     arg2
 	//
 	// flags
-	//     required:             required
-	//     persistent:           100.001
-	//     has-default:          has-default
-	//     short-hand:           101
-	//     string-array:         [str1 str2 str3]
-	//     integer-array:        [100 101 102]
-	//     big-int:              1111111111111111111111111111111111
-	//     prefixed-required:    prefixed required
-	//     prefixed-persistent:  100.02
-	//     prefixed-has-default: 100 101 102
-	//     inline:               {"required":"required","persistent":100.002,"hasDefault":"default string"}
-	//     global:               global string
-	//     must-not-found:       flag is not registered
+	//     required:                required
+	//     persistent:              100.001
+	//     has-default:             has-default
+	//     short-hand:              101
+	//     string-array:            [str1 str2 str3]
+	//     integer-array:           [100 101 102]
+	//     big-int:                 1111111111111111111111111111111111
+	//     prefixed-required:       prefixed required
+	//     prefixed-persistent:     100.02
+	//     prefixed-has-default:    100 101 102
+	//     prefixed-has-no-opt-def: [103 104 105]
+	//     inline:                  {"required":"required","persistent":100.002,"hasDefault":"default string"}
+	//     global:                  global string
+	//     must-not-found:          flag is not registered
 }
 
 func ExampleExecutor_help() {

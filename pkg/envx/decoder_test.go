@@ -44,11 +44,11 @@ func TestDecoder_Decode(t *testing.T) {
 
 		t.Run("InvalidValue", func(t *testing.T) {
 			err := dec.Decode(nil)
-			Expect(t, err, IsCodeError(envx.E_DEC__INVALID_VALUE))
+			Expect(t, err, IsCodeError(envx.CODE__DEC_INVALID_VALUE))
 		})
 		t.Run("CannotSet", func(t *testing.T) {
 			err := dec.Decode(struct{}{})
-			Expect(t, err, IsCodeError(envx.E_DEC__INVALID_VALUE_CANNOT_SET))
+			Expect(t, err, IsCodeError(envx.CODE__DEC_INVALID_VALUE_CANNOT_SET))
 		})
 	})
 
@@ -95,7 +95,7 @@ func TestDecoder_Decode(t *testing.T) {
 			err := dec.Decode(&struct {
 				Map map[Key]any
 			}{})
-			Expect(t, err, IsCodeError(envx.E_DEC__INVALID_MAP_KEY_TYPE))
+			Expect(t, err, IsCodeError(envx.CODE__DEC_INVALID_MAP_KEY_TYPE))
 		})
 		t.Run("FailedToUnmarshalMapKey", func(t *testing.T) {
 			grp := envx.NewGroup("TEST")
@@ -109,7 +109,7 @@ func TestDecoder_Decode(t *testing.T) {
 			err := dec.Decode(&struct {
 				Map map[int]string
 			}{})
-			Expect(t, err, IsCodeError(envx.E_DEC__FAILED_UNMARSHAL))
+			Expect(t, err, IsCodeError(envx.CODE__DEC_FAILED_UNMARSHAL))
 		})
 		t.Run("FailedToDecodeMapValue", func(t *testing.T) {
 			grp := envx.NewGroup("TEST")
@@ -123,7 +123,7 @@ func TestDecoder_Decode(t *testing.T) {
 			err := dec.Decode(&struct {
 				Map map[string]int
 			}{})
-			Expect(t, err, IsCodeError(envx.E_DEC__FAILED_UNMARSHAL))
+			Expect(t, err, IsCodeError(envx.CODE__DEC_FAILED_UNMARSHAL))
 		})
 		t.Run("Success", func(t *testing.T) {
 			t.Run("RawMap", func(t *testing.T) {
@@ -185,7 +185,7 @@ func TestDecoder_Decode(t *testing.T) {
 			grp.Add(envx.NewVar("0", "invalid integer string"))
 
 			err := dec.Decode(&([]int{}))
-			Expect(t, err, IsCodeError(envx.E_DEC__FAILED_UNMARSHAL))
+			Expect(t, err, IsCodeError(envx.CODE__DEC_FAILED_UNMARSHAL))
 		})
 		t.Run("Success", func(t *testing.T) {
 			t.Run("RawSlice", func(t *testing.T) {
@@ -251,7 +251,7 @@ func TestDecoder_Decode(t *testing.T) {
 			}{
 				MustFailed: MustFailedArshaler{},
 			})
-			Expect(t, err, IsCodeError(envx.E_DEC__FAILED_UNMARSHAL))
+			Expect(t, err, IsCodeError(envx.CODE__DEC_FAILED_UNMARSHAL))
 		})
 	})
 }

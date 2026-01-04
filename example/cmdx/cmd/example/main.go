@@ -12,8 +12,8 @@ var (
 
 func init() {
 	root = &cobra.Command{}
-	root.AddCommand(cmds.ServerCmd.Cmd())
-	root.AddCommand(cmds.VersionCmd.Cmd())
+	root.AddCommand(cmds.CmdVersion)
+	root.AddCommand(cmds.CmdServer)
 }
 
 func main() {
