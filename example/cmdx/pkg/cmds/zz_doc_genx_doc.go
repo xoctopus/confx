@@ -5,7 +5,7 @@ func (v *Server) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Debug":
-			return []string{"enable debug mode 1-enable"}, true
+			return []string{"enable debug mode"}, true
 		case "LogLevel":
 			return []string{"set log level [debug info warn error]"}, true
 		case "Port":

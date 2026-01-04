@@ -238,7 +238,6 @@ func ExampleExecutor() {
 	// command: demo
 	//
 	// args:
-	//     overwrite default
 	//     arg1
 	//     arg2
 	//
@@ -252,7 +251,7 @@ func ExampleExecutor() {
 	//     big-int:                 1111111111111111111111111111111111
 	//     prefixed-required:       prefixed required
 	//     prefixed-persistent:     100.02
-	//     prefixed-has-default:    100 101 102
+	//     prefixed-has-default:    overwrite default
 	//     prefixed-has-no-opt-def: [103 104 105]
 	//     inline:                  {"required":"required","persistent":100.002,"hasDefault":"default string"}
 	//     global:                  global string

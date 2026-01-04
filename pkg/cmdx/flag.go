@@ -130,8 +130,6 @@ func parseFlags(rv reflect.Value, pw *envx.PathWalker, walked map[string]map[str
 			}
 			if o := flag.Option(OPTION_NOOP_DEFAULT); o != nil {
 				f.noOptDef = ptrx.Ptr(o.Unquoted())
-			} else {
-				f.noOptDef = f.defaults
 			}
 		}
 

@@ -13,8 +13,8 @@ import (
 
 // Server start an echo server
 type Server struct {
-	// Debug enable debug mode 1-enable
-	Debug bool `cmd:",default=1"`
+	// Debug enable debug mode
+	Debug bool `cmd:",default=true"`
 	// LogLevel set log level [debug info warn error]
 	LogLevel string `cmd:",default=debug"`
 	// Port server listen port
