@@ -1,4 +1,23 @@
 
+<a name="v0.2.5"></a>
+## [v0.2.5](https://github.com/xoctopus/confx/compare/v0.2.4...v0.2.5)
+
+> 2026-01-05
+
+### Build
+
+* **deps:** bump codecov/codecov-action from 4 to 5 ([#1](https://github.com/xoctopus/confx/issues/1))
+* **deps:** bump actions/setup-go from 5 to 6 ([#2](https://github.com/xoctopus/confx/issues/2))
+* **deps:** bump actions/checkout from 4 to 6 ([#3](https://github.com/xoctopus/confx/issues/3))
+* **deps:** bump github.com/xoctopus/x from 0.2.10 to 0.2.11 ([#4](https://github.com/xoctopus/confx/issues/4))
+* **deps:** bump github.com/xoctopus/genx from 0.1.14 to 0.1.15 ([#5](https://github.com/xoctopus/confx/issues/5))
+
+### Feat
+
+* **confpulsar:** endpoint options
+* **types:** duration for url values
+
+
 <a name="v0.2.4"></a>
 ## [v0.2.4](https://github.com/xoctopus/confx/compare/v0.2.3...v0.2.4)
 
