@@ -78,6 +78,7 @@ func (e *Endpoint) Init(ctx context.Context) error {
 	e.client = client
 	if r := e.LivenessCheck(ctx); !r[e].Reachable {
 		e.client = nil
+		client.Close()
 		return errors.New(r[e].Msg)
 	}
 
