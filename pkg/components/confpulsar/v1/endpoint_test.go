@@ -20,7 +20,9 @@ func TestEndpoint_Hack(t *testing.T) {
 
 	t.Run("Init", func(t *testing.T) {
 		t.Run("Lost", func(t *testing.T) {
-			ctx := hack.WithPulsarLost(hack.Context(t), t, "pulsar://localhost:6650")
+			dsn := "pulsar://localhost:6650"
+
+			ctx := hack.WithPulsarLost(hack.Context(t), t, dsn)
 			ep := confmq.Must(ctx)
 			Expect(t, ep, NotBeNil[confmq.PubSub]())
 
@@ -32,7 +34,9 @@ func TestEndpoint_Hack(t *testing.T) {
 		})
 
 		t.Run("Established", func(t *testing.T) {
-			ctx := hack.WithPulsar(hack.Context(t), t, "pulsar://localhost:16650")
+			dsn := "pulsar://localhost:16650?connTimeout=30s"
+
+			ctx := hack.WithPulsar(hack.Context(t), t, dsn)
 			ep := confmq.Must(ctx)
 			Expect(t, ep, NotBeNil[confmq.PubSub]())
 		})

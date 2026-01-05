@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -18,13 +19,18 @@ import (
 	"github.com/xoctopus/confx/pkg/components/confredis"
 	redisv1 "github.com/xoctopus/confx/pkg/components/confredis/v1"
 	"github.com/xoctopus/confx/pkg/components/runtime"
-	"github.com/xoctopus/confx/pkg/types"
 )
 
-func Check(t testing.TB, deps ...types.LivenessChecker) {
+var once sync.Once
+
+func Check(t testing.TB) {
 	if os.Getenv("HACK_TEST") != "true" {
 		t.Skip("HACK_TEST=false skip hack testing")
 	}
+	once.Do(func() {
+		t.Log("waiting dependencies...in 30s")
+		time.Sleep(30 * time.Second)
+	})
 }
 
 func Context(t testing.TB) context.Context {
@@ -77,6 +83,8 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 }
 
 func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
+	t.Logf("try connecting %s", dsn)
+
 	Check(t)
 
 	_, err := url.Parse(dsn)
@@ -101,6 +109,8 @@ func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
 func WithPulsarLost(ctx context.Context, t testing.TB, dsn string) context.Context {
 	_, err := url.Parse(dsn)
 	Expect(t, err, Succeed())
+
+	t.Logf("try connecting %s", dsn)
 
 	ep := &pulsarv1.Endpoint{}
 	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())

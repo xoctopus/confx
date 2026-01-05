@@ -28,7 +28,7 @@ type Endpoint struct {
 
 type options struct {
 	OperationTimeout  types.Duration `url:",default=100ms"`
-	ConnTimeout       types.Duration `url:",default=10s"`
+	ConnTimeout       types.Duration `url:",default=5s"`
 	KeepAliveInterval types.Duration `url:",default=1h"`
 	MaxConnector      int            `url:",default=10"`
 	MaxPending        int            `url:",default=100"`
@@ -70,15 +70,15 @@ func (e *Endpoint) Init(ctx context.Context) error {
 		}).String()
 	}
 
-	client, err := pulsar.NewClient(opt)
-	if err != nil {
-		return err
+	if e.client == nil {
+		client, err := pulsar.NewClient(opt)
+		if err != nil {
+			return err
+		}
+		e.client = client
 	}
 
-	e.client = client
 	if r := e.LivenessCheck(ctx); !r[e].Reachable {
-		e.client = nil
-		client.Close()
 		return errors.New(r[e].Msg)
 	}
 
@@ -100,7 +100,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (r map[types.Component]typ
 	m := NewMessage(ctx, "liveness", nil)
 	span := types.Cost()
 
-	if err := e.Publish(ctx, m); err != nil {
+	if err := e.Publish(ctx, m, WithPublishSync()); err != nil {
 		d.Msg = err.Error()
 		return
 	}
@@ -140,22 +140,12 @@ func (e *Endpoint) Options() url.Values {
 	return param
 }
 
-func (e *Endpoint) producer(topic string) (pulsar.Producer, error) {
+func (e *Endpoint) producer(topic string, opt *pulsar.ProducerOptions) (pulsar.Producer, error) {
 	if p, ok := e.producers.Load(topic); ok {
 		return p, nil
 	}
 
-	opt := pulsar.ProducerOptions{
-		Topic:                   topic,
-		SendTimeout:             time.Duration(e.opt.OperationTimeout),
-		MaxReconnectToBroker:    nil,
-		BatchingMaxMessages:     e.opt.MaxBatching,
-		MaxPendingMessages:      e.opt.MaxPending,
-		DisableBlockIfQueueFull: true,
-		CompressionType:         pulsar.NoCompression,
-	}
-
-	producer, err := e.client.CreateProducer(opt)
+	producer, err := e.client.CreateProducer(*opt)
 	if err != nil {
 		return nil, err
 	}
@@ -186,17 +176,11 @@ func (e *Endpoint) Subscribe(ctx context.Context, topic string) (Subscriber, err
 	}, nil
 }
 
-func (e *Endpoint) Publish(ctx context.Context, msg Message, callback ...func(Message, error)) (err error) {
-	var cb func(msg Message, err error)
-	if len(callback) > 0 && callback[0] != nil {
-		cb = callback[0]
+func (e *Endpoint) Publish(ctx context.Context, msg Message, options ...OptionApplier) (err error) {
+	var opt = newDefaultProducerOption(e.opt, msg.Topic())
+	for _, applier := range options {
+		applier.Apply(opt)
 	}
-
-	defer func() {
-		if cb != nil {
-			cb(msg, err)
-		}
-	}()
 
 	if e.closed.Load() || e.client == nil {
 		return errors.New("endpoint is closed")
@@ -212,12 +196,12 @@ func (e *Endpoint) Publish(ctx context.Context, msg Message, callback ...func(Me
 		pub pulsar.Producer
 		raw = &pulsar.ProducerMessage{Payload: data}
 	)
-	pub, err = e.producer(msg.Topic())
+	pub, err = e.producer(msg.Topic(), &opt.options)
 	if err != nil {
 		return err
 	}
 
-	if cb == nil {
+	if opt.sync {
 		_, err = pub.Send(ctx, raw)
 		return err
 	}
@@ -227,7 +211,9 @@ func (e *Endpoint) Publish(ctx context.Context, msg Message, callback ...func(Me
 		ctx, raw,
 		func(_ pulsar.MessageID, _ *pulsar.ProducerMessage, err error) {
 			if done.CompareAndSwap(false, true) {
-				cb(msg, err)
+				if opt.callback != nil {
+					opt.callback(msg, err)
+				}
 			}
 		},
 	)
