@@ -1,4 +1,3 @@
-
 # go package info
 MODULE_PATH    := $(shell cat go.mod | grep ^module -m 1 | awk '{ print $$2; }' || '')
 MODULE_NAME    := $(shell basename $(MODULE_PATH))
@@ -104,7 +103,7 @@ test: dep tidy hack_dep_run
 
 cover: dep tidy hack_dep_run
 	@echo "==> run unit test with coverage"
-	@$(GOTEST) test ./... -failfast -parallel 1 -gcflags="all=-N -l" -covermode=count -coverprofile=cover.out
+	@$(GOTEST) test -v ./... -failfast -parallel 1 -gcflags="all=-N -l" -covermode=count -coverprofile=cover.out
 	@grep -vE $(TEST_IGNORES) cover.out > cover2.out && mv cover2.out cover.out
 
 view-cover: cover
@@ -112,7 +111,6 @@ view-cover: cover
 	@$(GOBUILD) tool cover -html cover.out
 
 ci-cover: cover
-
 
 fmt: dep clean
 	@echo "==> formating code"
