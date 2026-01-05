@@ -1,13 +1,16 @@
 package confpulsar_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
 	"github.com/xoctopus/confx/pkg/components/confmq"
 	"github.com/xoctopus/confx/pkg/components/confpulsar/v1"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 func TestEndpoint_Hack(t *testing.T) {
@@ -34,11 +37,37 @@ func TestEndpoint_Hack(t *testing.T) {
 		})
 
 		t.Run("Established", func(t *testing.T) {
-			dsn := "pulsar://localhost:16650?connTimeout=30s"
+			dsn := "pulsar://localhost:16650"
 
 			ctx := hack.WithPulsar(hack.Context(t), t, dsn)
 			ep := confmq.Must(ctx)
 			Expect(t, ep, NotBeNil[confmq.PubSub]())
+
+			msg := confmq.NewMessage(ctx, "liveness", "any")
+			ret := make(<-chan error)
+
+			sub, err := ep.Subscribe(ctx, "liveness")
+			Expect(t, err, Succeed())
+
+			go func() {
+				ret = sub.Run(ctx, func(ctx context.Context, rec confmq.Message) {
+					Expect(t, rec.Topic(), Equal(msg.Topic()))
+					Expect(t, rec.ID(), Equal(msg.ID()))
+					_ = sub.Close()
+				})
+			}()
+
+			time.Sleep(time.Second)
+			err = ep.Publish(ctx, msg, confpulsar.WithPublishSync())
+			Expect(t, err, Succeed())
+			t.Log(<-ret)
+
+			t.Run("LivenessCheck", func(t *testing.T) {
+				c, ok := ep.(types.ComponentLivenessChecker)
+				Expect(t, ok, BeTrue())
+				res := c.LivenessCheck(ctx)
+				t.Log(res[ep.(types.Component)])
+			})
 		})
 	})
 }

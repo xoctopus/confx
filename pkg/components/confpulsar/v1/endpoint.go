@@ -97,41 +97,14 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (r map[types.Component]typ
 		return
 	}
 
-	m := NewMessage(ctx, "liveness", nil)
 	span := types.Cost()
-
-	if err := e.Publish(ctx, m, WithPublishSync()); err != nil {
-		d.Msg = err.Error()
-		return
-	}
-
-	sub, err := e.Subscribe(ctx, "liveness")
+	_, err := e.producer(ctx, &pulsar.ProducerOptions{Topic: "liveness"})
+	d.TTL = span()
 	if err != nil {
 		d.Msg = err.Error()
 		return
 	}
-	defer func() { _ = sub.Close() }()
-
-	sig := sub.Run(ctx, func(ctx context.Context, msg Message) {
-		if msg.Topic() == m.Topic() && msg.ID() == m.ID() {
-			d.Reachable = true
-			_ = sub.Close()
-		}
-	})
-
-	select {
-	case err = <-sig:
-		d.TTL = span()
-		if d.Reachable {
-			return
-		}
-		if err != nil && !errors.Is(err, context.Canceled) {
-			d.Msg = err.Error()
-		}
-	case <-time.NewTimer(time.Duration(e.opt.OperationTimeout) * time.Second).C:
-		d.Msg = "read timeout"
-	}
-
+	d.Reachable = true
 	return
 }
 
@@ -140,8 +113,10 @@ func (e *Endpoint) Options() url.Values {
 	return param
 }
 
-func (e *Endpoint) producer(topic string, opt *pulsar.ProducerOptions) (pulsar.Producer, error) {
-	if p, ok := e.producers.Load(topic); ok {
+func (e *Endpoint) producer(ctx context.Context, opt *pulsar.ProducerOptions) (pulsar.Producer, error) {
+	must.BeTrueF(opt.Topic != "", "producer topic is required but got empty")
+
+	if p, ok := e.producers.Load(opt.Topic); ok {
 		return p, nil
 	}
 
@@ -150,11 +125,13 @@ func (e *Endpoint) producer(topic string, opt *pulsar.ProducerOptions) (pulsar.P
 		return nil, err
 	}
 
-	actual, _ := e.producers.LoadOrStore(topic, producer)
+	actual, _ := e.producers.LoadOrStore(opt.Topic, producer)
 	return actual, nil
 }
 
 func (e *Endpoint) Subscribe(ctx context.Context, topic string) (Subscriber, error) {
+	must.BeTrueF(topic != "", "consumer topic is required but got empty")
+
 	if e.closed.Load() || e.client == nil {
 		return nil, errors.New("endpoint is closed")
 	}
@@ -177,6 +154,8 @@ func (e *Endpoint) Subscribe(ctx context.Context, topic string) (Subscriber, err
 }
 
 func (e *Endpoint) Publish(ctx context.Context, msg Message, options ...OptionApplier) (err error) {
+	must.BeTrueF(msg.Topic() != "", "publish topic is required but got empty")
+
 	var opt = newDefaultProducerOption(e.opt, msg.Topic())
 	for _, applier := range options {
 		applier.Apply(opt)
@@ -196,7 +175,7 @@ func (e *Endpoint) Publish(ctx context.Context, msg Message, options ...OptionAp
 		pub pulsar.Producer
 		raw = &pulsar.ProducerMessage{Payload: data}
 	)
-	pub, err = e.producer(msg.Topic(), &opt.options)
+	pub, err = e.producer(ctx, &opt.options)
 	if err != nil {
 		return err
 	}

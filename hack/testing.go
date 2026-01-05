@@ -28,8 +28,8 @@ func Check(t testing.TB) {
 		t.Skip("HACK_TEST=false skip hack testing")
 	}
 	once.Do(func() {
-		t.Log("waiting dependencies...in 30s")
-		time.Sleep(30 * time.Second)
+		// t.Log("waiting dependencies...in 30s")
+		// time.Sleep(30 * time.Second)
 	})
 }
 
@@ -95,8 +95,8 @@ func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
 	ep.SetDefault()
 
 	err = (&retry.Retry{
-		Repeats:  3,
-		Interval: time.Second * 3,
+		Repeats:  5,
+		Interval: time.Second * 5,
 	}).Do(func() error {
 		return ep.Init(ctx)
 	})
@@ -118,9 +118,7 @@ func WithPulsarLost(ctx context.Context, t testing.TB, dsn string) context.Conte
 	ep.SetDefault()
 	Expect(t, ep.Init(ctx), Failed())
 
-	t.Cleanup(func() {
-		_ = ep.Close()
-	})
+	t.Cleanup(func() { _ = ep.Close() })
 
 	return confmq.Carry(ep)(ctx)
 }
