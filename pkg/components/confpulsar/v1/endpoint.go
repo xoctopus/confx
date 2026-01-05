@@ -28,7 +28,7 @@ type Endpoint struct {
 
 type options struct {
 	OperationTimeout  types.Duration `url:",default=100ms"`
-	ConnTimeout       types.Duration `url:",default=1s"`
+	ConnTimeout       types.Duration `url:",default=10s"`
 	KeepAliveInterval types.Duration `url:",default=1h"`
 	MaxConnector      int            `url:",default=10"`
 	MaxPending        int            `url:",default=100"`
@@ -220,10 +220,14 @@ func (e *Endpoint) Publish(ctx context.Context, msg Message, callback ...func(Me
 		_, err = pub.Send(ctx, raw)
 		return err
 	}
+
+	var done atomic.Bool
 	pub.SendAsync(
 		ctx, raw,
 		func(_ pulsar.MessageID, _ *pulsar.ProducerMessage, err error) {
-			cb(msg, err)
+			if done.CompareAndSwap(false, true) {
+				cb(msg, err)
+			}
 		},
 	)
 	return nil
