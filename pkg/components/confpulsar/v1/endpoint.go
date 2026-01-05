@@ -27,10 +27,12 @@ type Endpoint struct {
 }
 
 type options struct {
-	OperationTimeout  int `url:",default=1"`
-	ConnTimeout       int `url:",default=5"`
-	KeepAliveInterval int `url:",default=3600"`
-	MaxConnector      int `url:",default=10"`
+	OperationTimeout  types.Duration `url:",default=100ms"`
+	ConnTimeout       types.Duration `url:",default=1s"`
+	KeepAliveInterval types.Duration `url:",default=1h"`
+	MaxConnector      int            `url:",default=10"`
+	MaxPending        int            `url:",default=100"`
+	MaxBatching       uint           `url:",default=100"`
 	conftls.X509KeyPair
 }
 
@@ -52,9 +54,9 @@ func (e *Endpoint) Init(ctx context.Context) error {
 	}
 	opt := pulsar.ClientOptions{
 		URL:                     e.Endpoint.String(),
-		ConnectionTimeout:       time.Duration(e.opt.ConnTimeout) * time.Second,
-		OperationTimeout:        time.Duration(e.opt.OperationTimeout) * time.Second,
-		KeepAliveInterval:       time.Duration(e.opt.KeepAliveInterval) * time.Second,
+		ConnectionTimeout:       time.Duration(e.opt.ConnTimeout),
+		OperationTimeout:        time.Duration(e.opt.OperationTimeout),
+		KeepAliveInterval:       time.Duration(e.opt.KeepAliveInterval),
 		MaxConnectionsPerBroker: e.opt.MaxConnector,
 	}
 	if !e.opt.X509KeyPair.IsZero() {
@@ -132,6 +134,11 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (r map[types.Component]typ
 	return
 }
 
+func (e *Endpoint) Options() url.Values {
+	param, _ := textx.MarshalURL(&e.opt)
+	return param
+}
+
 func (e *Endpoint) producer(topic string) (pulsar.Producer, error) {
 	if p, ok := e.producers.Load(topic); ok {
 		return p, nil
@@ -139,12 +146,12 @@ func (e *Endpoint) producer(topic string) (pulsar.Producer, error) {
 
 	opt := pulsar.ProducerOptions{
 		Topic:                   topic,
-		SendTimeout:             time.Duration(e.opt.OperationTimeout) * time.Second,
-		MaxPendingMessages:      500,
-		DisableBatching:         false,
-		BatchingMaxPublishDelay: 1 * time.Millisecond,
-		BatchingMaxMessages:     50,
-		DisableBlockIfQueueFull: false,
+		SendTimeout:             time.Duration(e.opt.OperationTimeout),
+		MaxReconnectToBroker:    nil,
+		BatchingMaxMessages:     e.opt.MaxBatching,
+		MaxPendingMessages:      e.opt.MaxPending,
+		DisableBlockIfQueueFull: true,
+		CompressionType:         pulsar.NoCompression,
 	}
 
 	producer, err := e.client.CreateProducer(opt)
