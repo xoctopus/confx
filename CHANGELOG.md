@@ -1,4 +1,32 @@
 
+<a name="v0.2.6"></a>
+## [v0.2.6](https://github.com/xoctopus/confx/compare/v0.2.5...v0.2.6)
+
+> 2026-01-07
+
+### Ci
+
+* update Makefile
+
+### Doc
+
+* update changelog
+
+### Feat
+
+* async call with once callback
+* **confpulsar:** producer options
+* **types:** universal Endpoint with custom Option and LivenessChecker
+
+### Fix
+
+* close client if init failed
+
+### Test
+
+* **confpulsar:** fix pulsar liveness check and optimize testing
+
+
 <a name="v0.2.5"></a>
 ## [v0.2.5](https://github.com/xoctopus/confx/compare/v0.2.4...v0.2.5)
 
