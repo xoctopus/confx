@@ -63,10 +63,11 @@ func ExampleNewAppContext() {
 
 	must.NoError(os.MkdirAll(filepath.Join(app.MainRoot(), "config"), os.ModePerm))
 	must.NoError(os.WriteFile(filepath.Join(app.MainRoot(), "config/local.yml"), []byte(`
-APP__CONFIG1__WorkerID: 200
-APP__CONFIG1__Endpoint: postgres://username:password@hostname:5432/base?sslmode=disable
-APP__CONFIG2__ServerPort: 8888
-APP__CONFIG2__ClientEndpoint: http://localhost:8888/demo`), os.ModePerm))
+APP__CONFIG1__Endpoint_Address: "postgres://hostname:5432/base"
+APP__CONFIG1__WorkerID: "100"
+APP__CONFIG2__ClientEndpoint_Address: http://localhost:80/demo
+APP__CONFIG2__ServerPort: "8080"
+`), os.ModePerm))
 
 	defer os.RemoveAll(root)
 
@@ -109,10 +110,22 @@ APP__CONFIG2__ClientEndpoint: http://localhost:8888/demo`), os.ModePerm))
 	// date:     200601021504
 	// runtime:  DEV
 	//
-	// APP__CONFIG1__Endpoint=postgres://username:--------@hostname:5432/base?sslmode=disable
-	// APP__CONFIG1__WorkerID=200
-	// APP__CONFIG2__ClientEndpoint=http://localhost:8888/demo
-	// APP__CONFIG2__ServerPort=8888
+	// APP__CONFIG1__Endpoint_Address=postgres://hostname:5432/base
+	// APP__CONFIG1__Endpoint_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// APP__CONFIG1__Endpoint_Auth_Password=--------
+	// APP__CONFIG1__Endpoint_Auth_Username=
+	// APP__CONFIG1__Endpoint_Cert_CA=
+	// APP__CONFIG1__Endpoint_Cert_Crt=
+	// APP__CONFIG1__Endpoint_Cert_Key=
+	// APP__CONFIG1__WorkerID=100
+	// APP__CONFIG2__ClientEndpoint_Address=http://localhost:80/demo
+	// APP__CONFIG2__ClientEndpoint_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// APP__CONFIG2__ClientEndpoint_Auth_Password=--------
+	// APP__CONFIG2__ClientEndpoint_Auth_Username=
+	// APP__CONFIG2__ClientEndpoint_Cert_CA=
+	// APP__CONFIG2__ClientEndpoint_Cert_Crt=
+	// APP__CONFIG2__ClientEndpoint_Cert_Key=
+	// APP__CONFIG2__ServerPort=8080
 	//
 	// pre runner 1
 	// pre runner 2
@@ -123,12 +136,12 @@ APP__CONFIG2__ClientEndpoint: http://localhost:8888/demo`), os.ModePerm))
 
 type Config1 struct {
 	WorkerID int
-	Endpoint types.Endpoint
+	Endpoint types.EndpointNoOption
 }
 
 type Config2 struct {
 	ServerPort     uint16
-	ClientEndpoint types.Endpoint
+	ClientEndpoint types.EndpointNoOption
 
 	server *http.Server
 	client *http.Client
@@ -138,8 +151,8 @@ func (c *Config2) SetDefault() {
 	if c.ServerPort == 0 {
 		c.ServerPort = 80
 	}
-	if c.ClientEndpoint.IsZero() {
-		must.NoError(c.ClientEndpoint.UnmarshalText([]byte("http://localhost:80/demo")))
+	if c.ClientEndpoint.Address == "" {
+		c.ClientEndpoint.Address = "http://localhost:80/demo"
 	}
 }
 func (c *Config2) Init() {

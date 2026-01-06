@@ -1,97 +1,144 @@
 package types_test
 
 import (
-	"net/url"
+	"encoding/base64"
+	"fmt"
 	"testing"
+	"time"
 
 	. "github.com/xoctopus/x/testx"
 
-	. "github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/components/conftls"
+	"github.com/xoctopus/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
-func TestParseEndpoint(t *testing.T) {
-	cases := map[string]struct {
-		uri    string
-		expect *Endpoint
-	}{
-		"STMPs": {
-			uri: "stmps://mail.xxx.com:465",
-			expect: &Endpoint{
-				Scheme: "stmps",
-				Host:   "mail.xxx.com",
-				Port:   465,
-			},
+type MockOption struct {
+	Timeout types.Duration `url:"timeout,default=10s"`
+	Name    string         `url:"name,default='default'"`
+}
+
+var DefaultMockOption = MockOption{
+	Timeout: types.Duration(10 * time.Second),
+	Name:    "default",
+}
+
+func (o MockOption) IsZero() bool {
+	return o == MockOption{} || o == DefaultMockOption
+}
+
+func ExampleEndpoint() {
+	grp := envx.NewGroup("TEST")
+	enc := envx.NewEncoder(grp)
+	err := enc.Encode(types.Endpoint[MockOption]{
+		Address: "redis://localhost:6379/1",
+		Auth:    types.Userinfo{Username: "username", Password: "LelzsnHN2xnJd/MB+JGIXWqd8pJPhPYfuRfDbrCsZE8="},
+		Option:  MockOption{},
+		Cert: conftls.X509KeyPair{
+			Key: "key_path",
+			Crt: "crt_path",
+			CA:  "ca_path",
 		},
-		"Postgres": {
-			uri: "postgres://username:password@hostname:5432/database_name?sslmode=disable",
-			expect: &Endpoint{
-				Scheme:   "postgres",
-				Host:     "hostname",
+	})
+	if err != nil {
+		return
+	}
+
+	// for configuration
+	fmt.Println(string(grp.Bytes()))
+	fmt.Println(string(grp.MaskBytes()))
+
+	// Output:
+	// TEST__Address=redis://localhost:6379/1
+	// TEST__Auth_DecryptKeyEnv=
+	// TEST__Auth_Password=LelzsnHN2xnJd/MB+JGIXWqd8pJPhPYfuRfDbrCsZE8=
+	// TEST__Auth_Username=username
+	// TEST__Cert_CA=ca_path
+	// TEST__Cert_Crt=crt_path
+	// TEST__Cert_Key=key_path
+	// TEST__Option_Name=
+	// TEST__Option_Timeout=0s
+	//
+	// TEST__Address=redis://localhost:6379/1
+	// TEST__Auth_DecryptKeyEnv=
+	// TEST__Auth_Password=--------
+	// TEST__Auth_Username=username
+	// TEST__Cert_CA=ca_path
+	// TEST__Cert_Crt=crt_path
+	// TEST__Cert_Key=key_path
+	// TEST__Option_Name=
+	// TEST__Option_Timeout=0s
+}
+
+func TestEndpoint(t *testing.T) {
+	type Endpoint = types.Endpoint[MockOption]
+	t.Run("InvalidAddress", func(t *testing.T) {
+		ep := &Endpoint{Address: "https://example.com/%zz"}
+		Expect(t, ep.Init(), Failed())
+	})
+	t.Run("InvalidAuth", func(t *testing.T) {
+		t.Setenv("PASSWORD_DEC_KEY", "def")
+		ep := &Endpoint{
+			Address: "redis://localhost:6379/1",
+			Auth: types.Userinfo{
 				Username: "username",
-				Password: "password",
-				Port:     5432,
-				Base:     "database_name",
-				Param:    url.Values{"sslmode": {"disable"}},
+				Password: types.Password(base64.StdEncoding.EncodeToString([]byte("abc"))),
 			},
-		},
-		"HTTPs": {
-			uri: "https://hostname/path/to/resource?page=1&q=go 语言",
-			expect: &Endpoint{
-				Scheme: "https",
-				Host:   "hostname",
-				Base:   "path/to/resource",
-				Param:  url.Values{"q": {"go 语言"}, "page": {"1"}},
-			},
-		},
-		"NoScheme": {
-			uri: "//hostname:1234/path/to/resource",
-			expect: &Endpoint{
-				Host: "hostname",
-				Port: 1234,
-				Base: "path/to/resource",
-			},
-		},
-		// TODO
-		// "Unescaped": {
-		// 	uri: "http+ssl://hostname:1234/path",
-		// 	expect: &Endpoint{
-		// 		Scheme: "http+ssl",
-		// 		Host:   "hostname",
-		// 		Port:   1234,
-		// 		Base:   "path",
-		// 	},
-		// },
-	}
+		}
+		Expect(t, ep.Init(), Failed())
 
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			ep, err := ParseEndpoint(c.uri)
-			Expect(t, err, Succeed())
-			Expect(t, ep.String(), Equal(c.uri))
-			Expect(t, ep.String(), Equal(c.expect.String()))
-			Expect(t, ep.SecurityString(), Equal(c.expect.SecurityString()))
-			Expect(t, ep.IsZero(), Equal(c.expect.IsZero()))
-			Expect(t, ep.Hostname(), Equal(c.expect.Hostname()))
-
-			text, err := c.expect.MarshalText()
-			Expect(t, err, Succeed())
-			Expect(t, text, Equal([]byte(c.uri)))
-
-			err = ep.UnmarshalText(text)
-			Expect(t, err, Succeed())
-			Expect(t, ep.String(), Equal(c.uri))
+		t.Run("UserinfoInURL", func(t *testing.T) {
+			username := ep.Auth.Username
+			password := ep.Auth.Password
+			ep = &Endpoint{
+				Address: fmt.Sprintf("redis://%s:%s@localhost:6379/1", username, password),
+				Auth:    types.Userinfo{},
+			}
+			Expect(t, ep.Init(), Failed())
 		})
-	}
-
-	t.Run("FailedToParseURL", func(t *testing.T) {
-		input := "http://hostname:http/path/to/resource"
-		_, err := ParseEndpoint(input)
-		Expect(t, err, Failed())
-		err = (&Endpoint{}).UnmarshalText([]byte(input))
-		Expect(t, err, Failed())
+	})
+	t.Run("FailedUnmarshalOption", func(t *testing.T) {
+		ep := &Endpoint{
+			Address: "redis://localhost:6379/1?timeout=abc",
+		}
+		Expect(t, ep.Init(), Failed())
+	})
+	t.Run("FailedInitCert", func(t *testing.T) {
+		ep := &Endpoint{
+			Address: "redis://localhost:6379/1?timeout=3s&name=abc",
+			Cert: conftls.X509KeyPair{
+				Key: "key_path",
+				Crt: "crt_path",
+				CA:  "ca_path",
+			},
+		}
+		Expect(t, ep.Init(), Failed())
+		Expect(t, ep.Option.Name, Equal("abc"))
+		Expect(t, ep.Option.Timeout, Equal(types.Duration(3*time.Second)))
 	})
 
-	ep := cases["Postgres"].expect
-	Expect(t, ep.Key(), Equal("postgres://hostname:5432/database_name"))
-	Expect(t, ep.Options(), Equal(url.Values{"sslmode": {"disable"}}))
+	t.Run("Success", func(t *testing.T) {
+		t.Run("URLQuery", func(t *testing.T) {
+			ep := &Endpoint{
+				Address: "redis://username:password@localhost:6379/1?timeout=3s&name=abc",
+			}
+			Expect(t, ep.Init(), Succeed())
+			Expect(t, ep.Endpoint(), Equal("redis://localhost:6379/1"))
+			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
+			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
+		})
+		t.Run("Option", func(t *testing.T) {
+			ep := &Endpoint{
+				Address: "redis://username:password@localhost:6379/1?timeout=3s&name=abc",
+				Option: MockOption{
+					Timeout: types.Duration(10 * time.Second),
+					Name:    "def",
+				},
+			}
+			Expect(t, ep.Init(), Succeed())
+			Expect(t, ep.Endpoint(), Equal("redis://localhost:6379/1"))
+			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=def&timeout=10s"))
+			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=def&timeout=10s"))
+		})
+	})
 }

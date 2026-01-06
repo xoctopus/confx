@@ -1,83 +1,79 @@
 package confredis_test
 
 import (
-	"net/url"
+	"context"
 	"testing"
 
-	"github.com/xoctopus/x/misc/must"
+	"github.com/gomodule/redigo/redis"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
-	"github.com/xoctopus/confx/pkg/components/confredis"
-	redisv1 "github.com/xoctopus/confx/pkg/components/confredis/v1"
-	"github.com/xoctopus/confx/pkg/components/runtime"
+	"github.com/xoctopus/confx/pkg/components/confkv"
+	"github.com/xoctopus/confx/pkg/components/confredis/v1"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
-func TestEndpoint(t *testing.T) {
-	ep := &redisv1.Endpoint{}
-
+func TestRedisEndpointV1(t *testing.T) {
 	t.Run("SetDefault", func(t *testing.T) {
+		ep := &confredis.Endpoint{}
+
+		t.Run("BeforeInit", func(t *testing.T) {
+			d := ep.LivenessCheck(context.Background())
+			Expect(t, d.Message, Equal("lost connection"))
+			Expect(t, ep.Get(), BeNil[redis.Conn]())
+			_, err := ep.Exec("any")
+			Expect(t, err, ErrorContains("lost connection"))
+			Expect(t, ep.Close(), Succeed())
+		})
+
 		ep.SetDefault()
-		Expect(t, ep.String(), Equal("redis://127.0.0.1:6379/0"))
-		Expect(t, ep.DB(), Equal(0))
-
+		_ = ep.Endpoint.Init()
+		Expect(t, ep.Endpoint.Endpoint(), Equal("redis://localhost:6379/0"))
 	})
-	t.Run("Init", func(t *testing.T) {
-		t.Run("PrefixFromEnv", func(t *testing.T) {
-			t.Setenv(runtime.TARGET_PROJECT, "test")
-			t.Setenv(runtime.DEPLOY_ENVIRONMENT, "local")
 
-			Expect(t, ep.Init(), Failed()) // not hacking
-			Expect(t, ep.String(), Equal(
-				"redis://127.0.0.1:6379/0"+
-					"?connTimeout=10"+
-					"&keepAlive=3600"+
-					"&maxActive=100"+
-					"&maxIdle=100"+
-					"&readTimeout=10"+
-					"&skipTlsVerify=true"+
-					"&wait=true"+
-					"&writeTimeout=10"))
+	t.Run("Lost", func(t *testing.T) {
+		t.Run("InvalidAddress", func(t *testing.T) {
+			ep := &confredis.Endpoint{}
+			ep.Address = "redis://localhost:6379/%zz"
+			Expect(t, ep.Init(), Failed())
 		})
-		t.Run("InvalidParam", func(t *testing.T) {
-			ep2 := &redisv1.Endpoint{Endpoint: *must.NoErrorV(types.ParseEndpoint("tcp://localhost:100/1"))}
-			ep2.Param = url.Values{"connTimeout": []string{"abc"}}
-			Expect(t, ep2.Init(), Failed())
+
+		t.Run("InvalidPrefix", func(t *testing.T) {
+			ep := &confredis.Endpoint{}
+			ep.SetDefault()
+			Expect(t, ep.Init(), ErrorContains("invalid redis prefix"))
 		})
+		t.Run("InvalidPath", func(t *testing.T) {
+			ep := &confredis.Endpoint{}
+			ep.Address = "redis://localhost:6379/abc?prefix=unittest"
+			Expect(t, ep.Init(), ErrorContains("invalid redis select index"))
+		})
+		ep := &confredis.Endpoint{}
+		ep.Address = "redis://localhost:6379/1?prefix=unittest"
+		Expect(t, ep.Init(), Failed())
+
+		_, err := ep.Exec("set", ep.Key("abc"), 1)
+		Expect(t, err, Failed())
+
+		d := ep.LivenessCheck(context.Background())
+		Expect(t, d.Reachable, BeFalse())
 	})
-}
 
-func TestEndpoint_Hack(t *testing.T) {
-	ctx1 := hack.WithRedis(hack.Context(t), t, "redis://:123456@127.0.0.1:16379/0")
-	ctx2 := hack.WithRedisLost(hack.Context(t), t, "redis://:123456@127.0.0.1:16380/0")
-	t.Run("Hack", func(t *testing.T) {
-		op := confredis.MustFrom(ctx1)
-		_, err := op.Exec("set", op.Key("abc"), 1)
+	t.Run("Established", func(t *testing.T) {
+		ctx1 := hack.WithRedis(hack.Context(t), t, "redis://:123456@127.0.0.1:16379/0?prefix=unittest")
+
+		ep := confkv.Must(ctx1)
+		_, err := ep.Exec("set", ep.Key("abc"), 1)
 		Expect(t, err, Succeed())
 
-		conn := op.(*redisv1.Endpoint).MustGet()
+		conn := ep.(*confredis.Endpoint).MustGet()
 		Expect(t, conn != nil, BeTrue())
 		Expect(t, conn.Err() == nil, BeTrue())
 
-		v, _ := op.Exec("get", op.Key("abc"))
+		v, _ := ep.Exec("get", ep.Key("abc"))
 		Expect(t, v, Equal[any]([]byte("1")))
 
-		// v, _ = op.ExecCmd(
-		// 	Command("get", op.Key("abc")),
-		// 	Command("get", op.Key("def")),
-		// )
-		// Expect(t, v, Equal[any]([]any{[]byte("1"), nil}))
-
-		m := op.(types.LivenessChecker).LivenessCheck()
-		Expect(t, m["redis://127.0.0.1:16379/0"], Equal("true"))
-	})
-	t.Run("Lost", func(t *testing.T) {
-		op := confredis.MustFrom(ctx2)
-		_, err := op.Exec("set", op.Key("abc"), 1)
-		Expect(t, err, Failed())
-
-		m := op.(types.LivenessChecker).LivenessCheck()
-		Expect(t, m["redis://127.0.0.1:16380/0"], Equal("false"))
+		d := ep.(types.LivenessChecker).LivenessCheck(ctx1)
+		Expect(t, d.Reachable, BeTrue())
 	})
 }

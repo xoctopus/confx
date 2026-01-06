@@ -23,7 +23,7 @@ var (
 	app    *appx.AppCtx
 	config = &struct {
 		WorkerID uint64
-		Endpoint types.Endpoint
+		Endpoint types.Endpoint[any]
 	}{
 		WorkerID: 100,
 	}
@@ -55,7 +55,7 @@ func init() {
 func Main() error {
 	log.Printf("app: %s", app.Version())
 	log.Printf("WorkerID: %v", config.WorkerID)
-	log.Printf("Endpoint: %s", config.Endpoint)
+	log.Printf("Endpoint: %s", config.Endpoint.Address)
 	time.Sleep(2 * time.Second)
 	return nil
 }

@@ -3,9 +3,9 @@ package envx_test
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
@@ -222,14 +222,8 @@ func TestDecoder_Decode(t *testing.T) {
 				grp.Add(envx.NewVar("Array_4", "4"))               // skipped: out of capacity
 				grp.Add(envx.NewVar("Array_INVALID_INDEX", "any")) // skipped
 
-				target := struct{ Array [3]*types.Endpoint }{}
-				expect := struct{ Array [3]*types.Endpoint }{
-					Array: [3]*types.Endpoint{
-						nil,
-						{Scheme: "http", Host: "localhost", Port: 9999, Param: url.Values{}},
-						nil,
-					},
-				}
+				target := struct{ Array [3]string }{}
+				expect := struct{ Array [3]string }{Array: [3]string{"", "http://localhost:9999", ""}}
 				Expect(t, dec.Decode(&target), Succeed())
 				Expect(t, expect, Equal(target))
 			})
@@ -246,7 +240,7 @@ func TestDecoder_Decode(t *testing.T) {
 			grp.Add(envx.NewVar("MustFailed", "any"))
 
 			err := dec.Decode(&struct {
-				Endpoint   *types.Endpoint
+				Time       time.Time
 				MustFailed MustFailedArshaler
 			}{
 				MustFailed: MustFailedArshaler{},
@@ -262,50 +256,42 @@ type TestData struct {
 	// expect skipped because field is a nil pointer
 	NilPointer *int
 	// expect is optional and name overwritten to `address`
-	HasTag *types.Endpoint `env:"address,optional"`
+	HasTag *types.Endpoint[struct{}] `env:"address,optional"`
 	// expect skipped
-	SkipTag types.Endpoint `env:"-"`
+	SkipTag types.Endpoint[any] `env:"-"`
 	// expect marshaled as a single string and password field will be masked
-	Endpoint *types.Endpoint
+	Endpoint *types.Endpoint[struct{}]
 	// expect masked
 	types.Password
-	RedisInstances map[string]*types.Endpoint `env:"redis"`
-	MysqlInstances [2]*types.Endpoint         `env:"database"`
+	RedisInstances map[string]*types.Endpoint[struct{}] `env:"redis"`
+	MysqlInstances [2]*types.Endpoint[struct{}]         `env:"database"`
 }
 
 var x = &TestData{
 	unexported: "any",
-	HasTag:     &types.Endpoint{Scheme: "http", Host: "localhost"},
-	SkipTag:    types.Endpoint{Scheme: "http", Host: "localhost"},
-	Endpoint: &types.Endpoint{
-		Scheme:   "http",
-		Host:     "localhost",
-		Port:     8888,
-		Base:     "root",
-		Username: "username",
-		Password: "password",
-		Param:    url.Values{"key": []string{"value1", "value2"}},
+	HasTag:     &types.Endpoint[struct{}]{Address: "http://localhost"},
+	SkipTag:    types.Endpoint[any]{Address: "http://localhost"},
+	Endpoint:   &types.Endpoint[struct{}]{Address: "http://username:password@localhost:8888/root?key=value1&key=value2"},
+	Password:   "password",
+	RedisInstances: map[string]*types.Endpoint[struct{}]{
+		"instance1": {},
+		"instance2": {Address: "redis://u2:p2@host2:3306/2"},
 	},
-	Password: "password",
-	RedisInstances: map[string]*types.Endpoint{
-		"instance1": must.NoErrorV(types.ParseEndpoint("redis://u1:p1@host1:3306/1")),
-		"instance2": must.NoErrorV(types.ParseEndpoint("redis://u2:p2@host2:3306/2")),
-	},
-	MysqlInstances: [2]*types.Endpoint{
-		must.NoErrorV(types.ParseEndpoint("mysql://u:p@host1:3306/db1?ssl=off")),
-		must.NoErrorV(types.ParseEndpoint("mysql://u:p@host2:3306/db2?ssl=off")),
+	MysqlInstances: [2]*types.Endpoint[struct{}]{
+		{Address: "mysql://u:p@host1:3306/db1?ssl=off"},
+		{Address: "mysql://u:p@host2:3306/db2?ssl=off"},
 	},
 }
 
 func Example_env() {
 	envs := [][2]string{
-		{"EXAMPLE__ADDRESS", "asset://group/filename.png"},
-		{"EXAMPLE__DATABASE_0", "mysql://u:p@host1:3306/db1?ssl=off"},
-		{"EXAMPLE__DATABASE_1", "mysql://u:p@host2:3306/db2?ssl=off"},
-		{"EXAMPLE__Endpoint", "http://username:password@localhost:8888/root?key=value1&key=value2"},
+		{"EXAMPLE__ADDRESS_Address", "asset://group/filename.png"},
+		{"EXAMPLE__DATABASE_0_Address", "mysql://u:p@host1:3306/db1?ssl=off"},
+		{"EXAMPLE__DATABASE_1_Address", "mysql://u:p@host2:3306/db2?ssl=off"},
+		{"EXAMPLE__Endpoint_Address", "http://username:password@localhost:8888/root?key=value1&key=value2"},
 		{"EXAMPLE__Password", "password"},
-		{"EXAMPLE__REDIS_instance1", "redis://u1:p1@host1:3306/1"},
-		{"EXAMPLE__REDIS_instance2", "redis://u2:p2@host2:3306/2"},
+		{"EXAMPLE__REDIS_instance1_Address", "redis://u1:p1@host1:3306/1"},
+		{"EXAMPLE__REDIS_instance2_Address", "redis://u2:p2@host2:3306/2"},
 	}
 	for _, v := range envs {
 		_ = os.Setenv(v[0], v[1])
@@ -333,21 +319,65 @@ func Example_env() {
 	fmt.Println(string(grp.MaskBytes()))
 
 	// Output:
-	// EXAMPLE__ADDRESS=asset://group/filename.png
-	// EXAMPLE__DATABASE_0=mysql://u:p@host1:3306/db1?ssl=off
-	// EXAMPLE__DATABASE_1=mysql://u:p@host2:3306/db2?ssl=off
-	// EXAMPLE__Endpoint=http://username:password@localhost:8888/root?key=value1&key=value2
+	// EXAMPLE__ADDRESS_Address=asset://group/filename.png
+	// EXAMPLE__ADDRESS_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// EXAMPLE__ADDRESS_Auth_Password=
+	// EXAMPLE__ADDRESS_Auth_Username=
+	// EXAMPLE__ADDRESS_Cert_CA=
+	// EXAMPLE__ADDRESS_Cert_Crt=
+	// EXAMPLE__ADDRESS_Cert_Key=
+	// EXAMPLE__Endpoint_Address=http://username:password@localhost:8888/root?key=value1&key=value2
+	// EXAMPLE__Endpoint_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// EXAMPLE__Endpoint_Auth_Password=
+	// EXAMPLE__Endpoint_Auth_Username=
+	// EXAMPLE__Endpoint_Cert_CA=
+	// EXAMPLE__Endpoint_Cert_Crt=
+	// EXAMPLE__Endpoint_Cert_Key=
 	// EXAMPLE__NilPointer=0
 	// EXAMPLE__Password=password
-	// EXAMPLE__REDIS_instance1=redis://u1:p1@host1:3306/1
-	// EXAMPLE__REDIS_instance2=redis://u2:p2@host2:3306/2
+	// EXAMPLE__REDIS_instance1_Address=redis://u1:p1@host1:3306/1
+	// EXAMPLE__REDIS_instance1_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// EXAMPLE__REDIS_instance1_Auth_Password=
+	// EXAMPLE__REDIS_instance1_Auth_Username=
+	// EXAMPLE__REDIS_instance1_Cert_CA=
+	// EXAMPLE__REDIS_instance1_Cert_Crt=
+	// EXAMPLE__REDIS_instance1_Cert_Key=
+	// EXAMPLE__REDIS_instance2_Address=redis://u2:p2@host2:3306/2
+	// EXAMPLE__REDIS_instance2_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// EXAMPLE__REDIS_instance2_Auth_Password=
+	// EXAMPLE__REDIS_instance2_Auth_Username=
+	// EXAMPLE__REDIS_instance2_Cert_CA=
+	// EXAMPLE__REDIS_instance2_Cert_Crt=
+	// EXAMPLE__REDIS_instance2_Cert_Key=
 	//
-	// EXAMPLE__ADDRESS=asset://group/filename.png
-	// EXAMPLE__DATABASE_0=mysql://u:--------@host1:3306/db1?ssl=off
-	// EXAMPLE__DATABASE_1=mysql://u:--------@host2:3306/db2?ssl=off
-	// EXAMPLE__Endpoint=http://username:--------@localhost:8888/root?key=value1&key=value2
+	// EXAMPLE__ADDRESS_Address=asset://group/filename.png
+	// EXAMPLE__ADDRESS_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// EXAMPLE__ADDRESS_Auth_Password=--------
+	// EXAMPLE__ADDRESS_Auth_Username=
+	// EXAMPLE__ADDRESS_Cert_CA=
+	// EXAMPLE__ADDRESS_Cert_Crt=
+	// EXAMPLE__ADDRESS_Cert_Key=
+	// EXAMPLE__Endpoint_Address=http://username:password@localhost:8888/root?key=value1&key=value2
+	// EXAMPLE__Endpoint_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// EXAMPLE__Endpoint_Auth_Password=--------
+	// EXAMPLE__Endpoint_Auth_Username=
+	// EXAMPLE__Endpoint_Cert_CA=
+	// EXAMPLE__Endpoint_Cert_Crt=
+	// EXAMPLE__Endpoint_Cert_Key=
 	// EXAMPLE__NilPointer=0
 	// EXAMPLE__Password=--------
-	// EXAMPLE__REDIS_instance1=redis://u1:--------@host1:3306/1
-	// EXAMPLE__REDIS_instance2=redis://u2:--------@host2:3306/2
+	// EXAMPLE__REDIS_instance1_Address=redis://u1:p1@host1:3306/1
+	// EXAMPLE__REDIS_instance1_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// EXAMPLE__REDIS_instance1_Auth_Password=--------
+	// EXAMPLE__REDIS_instance1_Auth_Username=
+	// EXAMPLE__REDIS_instance1_Cert_CA=
+	// EXAMPLE__REDIS_instance1_Cert_Crt=
+	// EXAMPLE__REDIS_instance1_Cert_Key=
+	// EXAMPLE__REDIS_instance2_Address=redis://u2:p2@host2:3306/2
+	// EXAMPLE__REDIS_instance2_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// EXAMPLE__REDIS_instance2_Auth_Password=--------
+	// EXAMPLE__REDIS_instance2_Auth_Username=
+	// EXAMPLE__REDIS_instance2_Cert_CA=
+	// EXAMPLE__REDIS_instance2_Cert_Crt=
+	// EXAMPLE__REDIS_instance2_Cert_Key=
 }

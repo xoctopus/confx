@@ -16,7 +16,8 @@ type Subscriber interface {
 
 type PubSub interface {
 	Publish(ctx context.Context, msg Message, options ...OptionApplier) error
-	Subscribe(ctx context.Context, topic string) (Subscriber, error)
+	Subscribe(ctx context.Context, topic string, options ...OptionApplier) (Subscriber, error)
+	Close() error
 }
 
 type tCtxPubSub struct{}

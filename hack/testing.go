@@ -14,9 +14,9 @@ import (
 	"github.com/xoctopus/x/misc/retry"
 	. "github.com/xoctopus/x/testx"
 
+	"github.com/xoctopus/confx/pkg/components/confkv"
 	"github.com/xoctopus/confx/pkg/components/confmq"
 	pulsarv1 "github.com/xoctopus/confx/pkg/components/confpulsar/v1"
-	"github.com/xoctopus/confx/pkg/components/confredis"
 	redisv1 "github.com/xoctopus/confx/pkg/components/confredis/v1"
 	"github.com/xoctopus/confx/pkg/components/runtime"
 )
@@ -52,7 +52,7 @@ func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
 	Expect(t, err, Succeed())
 
 	ep := &redisv1.Endpoint{}
-	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
+	ep.Address = dsn
 
 	err = (&retry.Retry{
 		Repeats:  3,
@@ -64,7 +64,7 @@ func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
 
 	t.Cleanup(func() { _ = ep.Close() })
 
-	return confredis.With(ctx, ep)
+	return confkv.With(ctx, ep)
 }
 
 func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -72,14 +72,15 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 	Expect(t, err, Succeed())
 
 	ep := &redisv1.Endpoint{}
-	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
+	ep.Address = dsn
+
 	Expect(t, ep.Init(), Failed())
 
 	t.Cleanup(func() {
 		_ = ep.Close()
 	})
 
-	return confredis.Carry(ep)(ctx)
+	return confkv.Carry(ep)(ctx)
 }
 
 func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -91,7 +92,7 @@ func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
 	Expect(t, err, Succeed())
 
 	ep := &pulsarv1.Endpoint{}
-	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
+	ep.Address = dsn
 	ep.SetDefault()
 
 	err = (&retry.Retry{
@@ -113,9 +114,9 @@ func WithPulsarLost(ctx context.Context, t testing.TB, dsn string) context.Conte
 	t.Logf("try connecting %s", dsn)
 
 	ep := &pulsarv1.Endpoint{}
-	Expect(t, ep.UnmarshalText([]byte(dsn)), Succeed())
-
 	ep.SetDefault()
+	ep.Address = dsn
+
 	Expect(t, ep.Init(ctx), Failed())
 
 	t.Cleanup(func() { _ = ep.Close() })

@@ -1,6 +1,10 @@
 package types_test
 
 import (
+	"fmt"
+	"regexp"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -69,8 +73,104 @@ func TestDurationParser(t *testing.T) {
 	}
 
 	for str, dur := range cases {
-		d, err := types.ParseDuration(str)
+		d, err := ParseDuration(str)
 		Expect(t, err, Succeed())
 		Expect(t, d, Equal(dur))
+		x, err := time.ParseDuration(str)
+		if err != nil {
+			t.Log(str)
+			continue
+		}
+		if x != d {
+			t.Log(str)
+			continue
+		}
+		Expect(t, x, Equal(d))
+	}
+}
+
+var (
+	units = [][]string{
+		{"ns", "nano"},
+		{"us", "µs", "micro"},
+		{"ms", "milli"},
+		{"s", "sec"},
+		{"m", "min"},
+		{"h", "hr", "hour"},
+		{"d", "day"},
+		{"w", "wk", "week"},
+	}
+
+	dus = map[string]time.Duration{
+		"ns": time.Nanosecond,
+		"us": time.Microsecond,
+		"ms": time.Millisecond,
+		"s":  time.Second,
+		"m":  time.Minute,
+		"h":  time.Hour,
+		"d":  24 * time.Hour,
+		"w":  7 * 24 * time.Hour,
+	}
+
+	regexDuration = regexp.MustCompile(`((\d+)\s*([A-Za-zµ]+))`)
+)
+
+func ParseDuration(s string) (time.Duration, error) {
+	if du, err := time.ParseDuration(s); err == nil {
+		return du, nil
+	}
+
+	var du time.Duration
+	ok := false
+	for _, match := range regexDuration.FindAllStringSubmatch(s, -1) {
+		factor, err := strconv.Atoi(match[2]) // converts string to int
+		if err != nil {
+			return 0, err
+		}
+		unit := strings.ToLower(strings.TrimSpace(match[3]))
+
+		for _, variants := range units {
+			last := len(variants) - 1
+			u := dus[variants[0]]
+
+			for i, variant := range variants {
+				if (last == i && strings.HasPrefix(unit, variant)) ||
+					strings.EqualFold(variant, unit) {
+					ok = true
+					du += time.Duration(factor) * u
+				}
+			}
+		}
+	}
+
+	if ok {
+		return du, nil
+	}
+	return 0, fmt.Errorf("failed to parse %s as duration", s)
+}
+
+func IsDuration(str string) bool {
+	_, err := ParseDuration(str)
+	return err == nil
+}
+
+func TestDuration(t *testing.T) {
+	ds := []time.Duration{
+		time.Second,
+		10001,
+		10001000,
+		time.Hour,
+		24 * time.Hour,
+	}
+
+	for _, d := range ds {
+		dd := types.Duration(d)
+		Expect(t, dd.IsZero(), BeFalse())
+		data, err := dd.MarshalText()
+		Expect(t, err, Succeed())
+		Expect(t, string(data), Equal(dd.String()))
+
+		dd2 := types.Duration(0)
+		Expect(t, dd2.UnmarshalText([]byte(dd.String())), Succeed())
 	}
 }

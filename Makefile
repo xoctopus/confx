@@ -1,3 +1,4 @@
+
 # go package info
 MODULE_PATH    := $(shell cat go.mod | grep ^module -m 1 | awk '{ print $$2; }' || '')
 MODULE_NAME    := $(shell basename $(MODULE_PATH))
@@ -88,7 +89,7 @@ upgrade-dep:
 	@echo "	DONE."
 
 tidy:
-	@echo "==> installing dependencies"
+	@echo "==> go mod tidy"
 	@go mod tidy
 
 hack_dep_run:
@@ -110,7 +111,8 @@ view-cover: cover
 	@echo "==> run unit test with coverage and view results"
 	@$(GOBUILD) tool cover -html cover.out
 
-ci-cover: cover
+ci-cover: lint cover
+
 
 fmt: dep clean
 	@echo "==> formating code"

@@ -127,4 +127,8 @@ func TestMessage(t *testing.T) {
 
 		Expect(t, confmq.UnmarshalV(nil, nil), Succeed())
 	})
+	t.Run("Failed", func(t *testing.T) {
+		_, err := confmq.ParseMessage([]byte(`{`))
+		Expect(t, err, Failed())
+	})
 }

@@ -1,106 +1,128 @@
 package types
 
 import (
-	"fmt"
+	"context"
+	"net"
 	"net/url"
-	"strconv"
+	"reflect"
 	"strings"
+	"time"
+
+	"github.com/xoctopus/x/textx"
+
+	"github.com/xoctopus/confx/pkg/components/conftls"
 )
 
-func ParseEndpoint(text string) (*Endpoint, error) {
-	u, err := url.Parse(text)
+type Endpoint[Option comparable] struct {
+	// Address component connection endpoint address
+	Address string
+	Auth    Userinfo
+	Option  Option
+	Cert    conftls.X509KeyPair
+
+	addr *url.URL
+}
+
+type EndpointNoOption = Endpoint[struct{}]
+
+func (e *Endpoint[Option]) Init() (err error) {
+	e.addr, err = url.Parse(e.Address)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse endpoint from %q, [cause:%w]", text, err)
+		return
 	}
 
-	ep := &Endpoint{
-		Scheme: u.Scheme,
-		Param:  u.Query(),
-		Base:   strings.TrimPrefix(u.Path, "/"),
+	e.Auth.SetDefault()
+	if e.Auth.IsZero() {
+		password, _ := e.addr.User.Password()
+		e.Auth.Password = Password(password)
+		e.Auth.Username = e.addr.User.Username()
 	}
-
-	ep.Host = u.Hostname()
-	if u.Port() != "" {
-		port, _ := strconv.ParseUint(u.Port(), 10, 16)
-		ep.Port = uint16(port)
-	}
-
-	if u.User != nil {
-		ep.Username = u.User.Username()
-		password, _ := u.User.Password()
-		ep.Password = Password(password)
-	}
-
-	return ep, nil
-}
-
-type Endpoint struct {
-	Scheme   string
-	Host     string
-	Port     uint16
-	Base     string
-	Username string
-	Password Password
-	Param    url.Values
-}
-
-func (e Endpoint) String() string {
-	u := &url.URL{
-		Scheme:   e.Scheme,
-		Host:     e.Hostname(),
-		RawQuery: e.Param.Encode(),
-	}
-	if e.Base != "" {
-		u.Path = "/" + e.Base
-	}
-
-	if e.Username != "" || e.Password != "" {
-		u.User = url.UserPassword(e.Username, e.Password.String())
-	}
-
-	s, _ := url.QueryUnescape(u.String())
-	return s
-}
-
-func (e Endpoint) SecurityString() string {
-	if e.Password != "" {
-		e.Password = Password(e.Password.SecurityString())
-	}
-	return e.String()
-}
-
-func (e Endpoint) IsZero() bool {
-	return e.Host == ""
-}
-
-func (e Endpoint) Hostname() string {
-	if e.Port == 0 {
-		return e.Host
-	}
-	return fmt.Sprintf("%s:%d", e.Host, e.Port)
-}
-
-func (e Endpoint) MarshalText() ([]byte, error) {
-	return []byte(e.String()), nil
-}
-
-func (e *Endpoint) UnmarshalText(text []byte) error {
-	ep, err := ParseEndpoint(string(text))
-	if err != nil {
+	if err = e.Auth.Init(); err != nil {
 		return err
 	}
-	*e = *ep
+	if !e.Auth.IsZero() {
+		e.addr.User = e.Auth.Userinfo()
+	}
+
+	x, ok := any(e.Option).(interface{ IsZero() bool })
+	zero := (ok && x.IsZero()) || (e.Option == *new(Option))
+
+	rv := reflect.ValueOf(e).Elem().FieldByName("Option")
+	valid := rv.IsValid() && rv.CanSet()
+
+	if zero {
+		if valid {
+			if err = textx.UnmarshalURL(e.addr.Query(), &e.Option); err != nil {
+				return err
+			}
+		}
+	}
+	if valid {
+		param, _ := textx.MarshalURL(e.Option)
+		if len(param) > 0 {
+			e.addr.RawQuery = param.Encode()
+		}
+	}
+
+	if !e.Cert.IsZero() {
+		if err = e.Cert.Init(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
-func (e *Endpoint) Key() string {
-	key := e.Scheme + "://" + e.Hostname()
-	if len(e.Base) > 0 {
-		key += "/" + e.Base
-	}
-	return key
+// Endpoint returns Scheme, Host and Path. this method helps to identify a unique
+// component
+func (e *Endpoint[Option]) Endpoint() string {
+	return (&url.URL{
+		Scheme: e.addr.Scheme,
+		Host:   e.addr.Host,
+		Path:   e.addr.Path,
+	}).String()
 }
 
-func (e *Endpoint) Options() url.Values {
-	return e.Param
+// String returns full address info includes options and auth info
+func (e *Endpoint[Option]) String() string {
+	return e.addr.String()
+}
+
+// SecurityString like String but auth info is hidden
+func (e *Endpoint[Option]) SecurityString() string {
+	u := *e.addr
+	u.User = nil
+	return u.String()
+}
+
+func (e *Endpoint[Option]) Scheme() string {
+	return e.addr.Scheme
+}
+
+func (e *Endpoint[Option]) LivenessCheck(ctx context.Context) LivenessData {
+	host := e.addr.Host
+	if !strings.Contains(host, ":") {
+		host += ":80"
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	cost := Cost()
+	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", host)
+	if err == nil {
+		defer func() { _ = conn.Close() }()
+		return LivenessData{
+			Reachable: true,
+			TTL:       Duration(cost()),
+		}
+	}
+	return LivenessData{
+		Reachable: false,
+		Message:   e.String(),
+	}
+}
+
+func (e *Endpoint[Option]) URL() url.URL {
+	return *e.addr
 }

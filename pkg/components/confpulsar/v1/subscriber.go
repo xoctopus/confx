@@ -52,10 +52,10 @@ func (s *subscriber) Run(ctx context.Context, h func(context.Context, Message)) 
 
 // handle wrapped consumer handle task
 func (s *subscriber) handle(ctx context.Context, msg pulsar.Message, h func(context.Context, Message)) (err error) {
-	_, log := logx.From(ctx).Start(
-		ctx, "subscriber.Handle",
-		"topic", s.topic,
-		"pulsar_msg_id", msg.ID(),
+	_, log := logx.From(ctx).Start(ctx, "subscriber.Handle",
+		"sub_topic", s.topic,
+		"msg_topic", msg.Topic(),
+		"msg_pub_time", msg.PublishTime(),
 	)
 	defer log.End()
 
