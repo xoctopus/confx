@@ -1,3 +1,5 @@
+// Package confpulsar defines component of redis client
+// +genx:doc
 package confpulsar
 
 import (
@@ -15,6 +17,7 @@ import (
 	"github.com/xoctopus/confx/pkg/types"
 )
 
+// Endpoint pulsar component endpoint
 type Endpoint struct {
 	types.Endpoint[PulsarOption]
 

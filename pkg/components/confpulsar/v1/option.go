@@ -10,6 +10,7 @@ import (
 	"github.com/xoctopus/confx/pkg/types"
 )
 
+// PulsarOption presents pulsar client options
 type PulsarOption struct {
 	OperationTimeout  types.Duration `url:",default=100ms"`
 	ConnTimeout       types.Duration `url:",default=3s"`

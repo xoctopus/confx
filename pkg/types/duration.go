@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// Duration extends time.Duraiton for
 type Duration time.Duration
 
 func (d Duration) IsZero() bool {

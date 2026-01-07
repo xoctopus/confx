@@ -13,12 +13,16 @@ import (
 	"github.com/xoctopus/confx/pkg/components/conftls"
 )
 
+// Endpoint a connectable endpoint
 type Endpoint[Option comparable] struct {
 	// Address component connection endpoint address
 	Address string
-	Auth    Userinfo
-	Option  Option
-	Cert    conftls.X509KeyPair
+	// Auth support Endpoint auth info with username and password
+	Auth Userinfo
+	// Option component Option. if no option use EndpointNoOption
+	Option Option
+	// Cert X509KeyPair to support certification info
+	Cert conftls.X509KeyPair
 
 	addr *url.URL
 }

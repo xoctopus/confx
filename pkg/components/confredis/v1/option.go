@@ -2,6 +2,7 @@ package confredis
 
 import "github.com/xoctopus/confx/pkg/types"
 
+// RedisOptions presents
 type RedisOptions struct {
 	Prefix        string         `url:""`
 	ConnTimeout   types.Duration `url:",default=10s"`

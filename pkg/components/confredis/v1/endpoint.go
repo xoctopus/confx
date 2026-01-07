@@ -1,3 +1,5 @@
+// Package confredis defines component of redis client
+// +genx:doc
 package confredis
 
 import (
@@ -14,6 +16,7 @@ import (
 	"github.com/xoctopus/confx/pkg/types"
 )
 
+// Endpoint redis component endpoint
 type Endpoint struct {
 	types.Endpoint[RedisOptions]
 

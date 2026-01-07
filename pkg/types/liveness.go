@@ -4,12 +4,18 @@ import (
 	"context"
 )
 
+// LivenessData presents LivenessChecker result
 type LivenessData struct {
-	Reachable bool     `json:"reachable"`
-	TTL       Duration `json:"ttl,omitempty"`
-	Message   string   `json:"msg,omitempty"`
+	// Reachable if remote endpoint is reachable
+	Reachable bool `json:"reachable"`
+	// TTL probes ttl to remote endpoint
+	TTL Duration `json:"ttl,omitempty"`
+	// Message result or extended message
+	Message string `json:"msg,omitempty"`
 }
 
+// LivenessChecker check remote endpoint liveness
+// Endpoint already implements it, components should override that
 type LivenessChecker interface {
 	LivenessCheck(ctx context.Context) LivenessData
 }
