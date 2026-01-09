@@ -9,7 +9,6 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	"github.com/apache/pulsar-client-go/pulsar/log"
-
 	"github.com/xoctopus/confx/pkg/components/confmq"
 	"github.com/xoctopus/confx/pkg/types"
 )
@@ -189,6 +188,56 @@ func WithSyncPublish() confmq.OptionApplier {
 	})
 }
 
+func WithPubSendTimeout(d time.Duration) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*PubOption); ok {
+			x.options.SendTimeout = d
+		}
+	})
+}
+
+func WithPubEnableBlockIfQueueFull() confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*PubOption); ok {
+			x.options.DisableBlockIfQueueFull = true
+		}
+	})
+}
+
+func WithPubMaxPendingMessages(n int) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*PubOption); ok {
+			x.options.MaxPendingMessages = n
+		}
+	})
+}
+
+func WithPubEnableCompression() confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*PubOption); ok {
+			x.options.CompressionType = pulsar.LZ4
+			x.options.CompressionLevel = pulsar.Default
+		}
+	})
+}
+
+func WithPubBatchingMaxMessages(n uint) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*PubOption); ok {
+			x.options.DisableBatching = false
+			x.options.BatchingMaxMessages = n
+		}
+	})
+}
+
+func WithPubAccessMode(m pulsar.ProducerAccessMode) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*PubOption); ok {
+			x.options.ProducerAccessMode = pulsar.ProducerAccessModeShared
+		}
+	})
+}
+
 func WithPublisherOptions(o pulsar.ProducerOptions) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*PubOption); ok {
@@ -212,6 +261,35 @@ func WithConsumerFailover(f func(context.Context, error)) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.failover = f
+		}
+	})
+}
+
+func WithSubscriptionName(name string) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.options.SubscriptionName = name
+		}
+	})
+}
+
+func WithSubscriptionType(t pulsar.SubscriptionType) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.options.Type = t
+		}
+	})
+}
+
+func WithSubEnableRetryNack(retryDelay time.Duration, maxRetry uint32) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.options.RetryEnable = true
+			x.options.NackRedeliveryDelay = retryDelay
+			if x.options.DLQ == nil {
+				x.options.DLQ = &pulsar.DLQPolicy{}
+			}
+			x.options.DLQ.MaxDeliveries = maxRetry
 		}
 	})
 }
