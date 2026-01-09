@@ -18,7 +18,7 @@ type MockPubOptions struct {
 	key string
 }
 
-func (m *MockPubOptions) Scheme() string { return "mock" }
+func (m *MockPubOptions) OptionScheme() string { return "mock" }
 
 func WithOptionVal(key string) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(o confmq.Option) {

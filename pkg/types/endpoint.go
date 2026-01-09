@@ -4,7 +4,6 @@ import (
 	"context"
 	"net"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 )
 
 // Endpoint a connectable endpoint
+// Note options in url Param can override option
 type Endpoint[Option comparable] struct {
 	// Address component connection endpoint address
 	Address string
@@ -48,24 +48,12 @@ func (e *Endpoint[Option]) Init() (err error) {
 		e.addr.User = e.Auth.Userinfo()
 	}
 
-	x, ok := any(e.Option).(interface{ IsZero() bool })
-	zero := (ok && x.IsZero()) || (e.Option == *new(Option))
-
-	rv := reflect.ValueOf(e).Elem().FieldByName("Option")
-	valid := rv.IsValid() && rv.CanSet()
-
-	if zero {
-		if valid {
-			if err = textx.UnmarshalURL(e.addr.Query(), &e.Option); err != nil {
-				return err
-			}
-		}
+	if err = textx.UnmarshalURL(e.addr.Query(), &e.Option); err != nil {
+		return err
 	}
-	if valid {
-		param, _ := textx.MarshalURL(e.Option)
-		if len(param) > 0 {
-			e.addr.RawQuery = param.Encode()
-		}
+	param, _ := textx.MarshalURL(e.Option)
+	if len(param) > 0 {
+		e.addr.RawQuery = param.Encode()
 	}
 
 	if !e.Cert.IsZero() {

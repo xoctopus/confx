@@ -1,4 +1,15 @@
 
+<a name="v0.2.7"></a>
+## [v0.2.7](https://github.com/xoctopus/confx/compare/v0.2.6...v0.2.7)
+
+> 2026-01-07
+
+### Doc
+
+* update components documents
+* update changelog
+
+
 <a name="v0.2.6"></a>
 ## [v0.2.6](https://github.com/xoctopus/confx/compare/v0.2.5...v0.2.6)
 

@@ -1,7 +1,7 @@
 package confmq
 
 type Option interface {
-	Scheme() string
+	OptionScheme() string
 }
 
 type OptionApplier interface {

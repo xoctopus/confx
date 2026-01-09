@@ -127,7 +127,7 @@ func TestEndpoint(t *testing.T) {
 			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
 			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
 		})
-		t.Run("Option", func(t *testing.T) {
+		t.Run("URLQueryOverrideOption", func(t *testing.T) {
 			ep := &Endpoint{
 				Address: "redis://username:password@localhost:6379/1?timeout=3s&name=abc",
 				Option: MockOption{
@@ -137,8 +137,8 @@ func TestEndpoint(t *testing.T) {
 			}
 			Expect(t, ep.Init(), Succeed())
 			Expect(t, ep.Endpoint(), Equal("redis://localhost:6379/1"))
-			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=def&timeout=10s"))
-			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=def&timeout=10s"))
+			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
+			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
 		})
 	})
 }

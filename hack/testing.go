@@ -35,12 +35,13 @@ func Check(t testing.TB) {
 
 func Context(t testing.TB) context.Context {
 	t.Helper()
+	logx.SetLogFormat(logx.LogFormatJSON)
 
 	t.Setenv(runtime.DEPLOY_ENVIRONMENT, "test_hack")
 	t.Setenv(runtime.TARGET_PROJECT, "test_local")
 
 	return contextx.Compose(
-		logx.Carry(logx.DefaultStd()),
+		logx.Carry(logx.Std(logx.NewHandler())),
 		sfid.Carry(sfid.NewDefaultIDGen(100)),
 	)(context.Background())
 }
@@ -84,8 +85,6 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 }
 
 func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
-	t.Logf("try connecting %s", dsn)
-
 	Check(t)
 
 	_, err := url.Parse(dsn)
@@ -110,8 +109,6 @@ func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
 func WithPulsarLost(ctx context.Context, t testing.TB, dsn string) context.Context {
 	_, err := url.Parse(dsn)
 	Expect(t, err, Succeed())
-
-	t.Logf("try connecting %s", dsn)
 
 	ep := &pulsarv1.Endpoint{}
 	ep.SetDefault()

@@ -3,6 +3,7 @@ package confpulsar_test
 import (
 	"context"
 	_ "embed"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,6 +25,10 @@ var (
 	ca string
 )
 
+func genTopic(t *testing.T) string {
+	return strings.ReplaceAll(t.Name(), "/", "_")
+}
+
 func TestPulsarEndpointV1(t *testing.T) {
 	t.Run("SetDefault", func(t *testing.T) {
 		ep := &confpulsar.Endpoint{}
@@ -43,14 +48,14 @@ func TestPulsarEndpointV1(t *testing.T) {
 			})
 
 			t.Run("Unreachable", func(t *testing.T) {
-				ctx := hack.WithPulsarLost(hack.Context(t), t, "pulsar://localhost:6650")
+				ctx := hack.WithPulsarLost(hack.Context(t), t, "pulsar://localhost:6650?connectionTimeout=100ms")
 				ep := confmq.Must(ctx)
 				Expect(t, ep, NotBeNil[confmq.PubSub]())
 
-				_, err := ep.Subscribe(ctx, "topic")
+				_, err := ep.Subscribe(ctx, genTopic(t))
 				Expect(t, err, Failed())
 
-				err = ep.Publish(ctx, confmq.NewMessage(ctx, "topic", "any"))
+				err = ep.Publish(ctx, confmq.NewMessage(ctx, genTopic(t), "any"))
 				Expect(t, err, Failed())
 			})
 
@@ -71,22 +76,25 @@ func TestPulsarEndpointV1(t *testing.T) {
 			ep := confmq.Must(ctx)
 			Expect(t, ep, NotBeNil[confmq.PubSub]())
 
-			msg := confmq.NewMessage(ctx, "liveness", "any")
+			msg := confmq.NewMessage(ctx, genTopic(t), "any")
 			ret := make(<-chan error)
 
-			sub, err := ep.Subscribe(ctx, "liveness")
+			sub, err := ep.Subscribe(ctx, genTopic(t))
 			Expect(t, err, Succeed())
 
 			go func() {
-				ret = sub.Run(ctx, func(ctx context.Context, rec confmq.Message) {
+				ret = sub.Run(ctx, func(ctx context.Context, rec confmq.Message) error {
 					Expect(t, rec.Topic(), Equal(msg.Topic()))
-					Expect(t, rec.ID(), Equal(msg.ID()))
-					_ = sub.Close()
+					if rec.ID() == msg.ID() {
+						time.Sleep(time.Second) // wait unacked messages
+						_ = sub.Close()
+					}
+					return nil
 				})
 			}()
 
 			time.Sleep(time.Second)
-			err = ep.Publish(ctx, msg, confpulsar.WithPublishSync())
+			err = ep.Publish(ctx, msg, confpulsar.WithSyncPublish())
 			Expect(t, err, Succeed())
 			t.Log(<-ret)
 
@@ -100,9 +108,9 @@ func TestPulsarEndpointV1(t *testing.T) {
 			ctx := hack.WithPulsar(hack.Context(t), t, dsn)
 			ep := confmq.Must(ctx)
 			_ = ep.Close()
-			_, err := ep.Subscribe(ctx, "any")
+			_, err := ep.Subscribe(ctx, genTopic(t))
 			Expect(t, err, Failed())
-			err = ep.Publish(ctx, confmq.NewMessage(ctx, "any", nil))
+			err = ep.Publish(ctx, confmq.NewMessage(ctx, genTopic(t), nil))
 			Expect(t, err, Failed())
 			r := ep.(types.LivenessChecker).LivenessCheck(ctx)
 			Expect(t, r.Reachable, BeFalse())
@@ -112,44 +120,46 @@ func TestPulsarEndpointV1(t *testing.T) {
 		t.Run("SendMode", func(t *testing.T) {
 			t.Run("Sync", func(t *testing.T) {
 				var (
-					ctx   = hack.WithPulsar(hack.Context(t), t, dsn)
-					ep    = confmq.Must(ctx)
-					topic = "unit_test_sync"
+					ctx = hack.WithPulsar(hack.Context(t), t, dsn)
+					ep  = confmq.Must(ctx)
 				)
-				sub, err := ep.Subscribe(ctx, topic)
+				sub, err := ep.Subscribe(ctx, genTopic(t))
 				Expect(t, err, Succeed())
 
 				rec := sub.Run(
-					ctx, func(ctx context.Context, msg confmq.Message) {
+					ctx, func(ctx context.Context, msg confmq.Message) error {
 						raw := string(msg.Data())
 						Expect(t, raw, Equal("send_mode:sync"))
+						time.Sleep(time.Second)
 						_ = sub.Close()
+						return nil
 					},
 				)
 				err = ep.Publish(
-					ctx, confmq.NewMessage(ctx, topic, "send_mode:sync"),
-					confpulsar.WithPublishSync(),
+					ctx, confmq.NewMessage(ctx, genTopic(t), "send_mode:sync"),
+					confpulsar.WithSyncPublish(),
 				)
 				Expect(t, err, Succeed())
 				t.Log(<-rec)
 			})
 			t.Run("Async", func(t *testing.T) {
 				var (
-					ctx   = hack.WithPulsar(hack.Context(t), t, dsn)
-					ep    = confmq.Must(ctx)
-					topic = "unit_test_async"
+					ctx = hack.WithPulsar(hack.Context(t), t, dsn)
+					ep  = confmq.Must(ctx)
 				)
-				sub, err := ep.Subscribe(ctx, topic)
+				sub, err := ep.Subscribe(ctx, genTopic(t))
 				Expect(t, err, Succeed())
-				rec := sub.Run(ctx, func(ctx context.Context, msg confmq.Message) {
+				rec := sub.Run(ctx, func(ctx context.Context, msg confmq.Message) error {
 					t.Log(string(msg.Data()))
+					return nil
 				})
 
 				err = ep.Publish(
-					ctx, confmq.NewMessage(ctx, topic, "send_mode:async"),
-					confpulsar.WithPublishCallback(func(msg confmq.Message, err error) {
+					ctx, confmq.NewMessage(ctx, genTopic(t), "send_mode:async"),
+					confpulsar.WithPublishFailover(func(msg confmq.Message, err error) {
 						raw := string(msg.Data())
 						Expect(t, raw, Equal("send_mode:async"))
+						time.Sleep(time.Second)
 						_ = sub.Close()
 					}),
 				)
@@ -162,16 +172,16 @@ func TestPulsarEndpointV1(t *testing.T) {
 			ctx := hack.WithPulsar(hack.Context(t), t, dsn)
 			ep := confmq.Must(ctx)
 
-			sub, err := ep.Subscribe(ctx, "any")
+			sub, err := ep.Subscribe(ctx, genTopic(t))
 			Expect(t, err, Succeed())
-			Expect(t, sub.Topic(), Equal("any"))
+			Expect(t, sub.Topic(), Equal(genTopic(t)))
 
-			rec := sub.Run(ctx, func(ctx context.Context, msg confmq.Message) {
+			rec := sub.Run(ctx, func(ctx context.Context, msg confmq.Message) error {
 				panic("in consumer handler")
 			})
 
 			time.Sleep(time.Millisecond * 100)
-			err = ep.Publish(ctx, confmq.NewMessage(ctx, "any", nil))
+			err = ep.Publish(ctx, confmq.NewMessage(ctx, genTopic(t), nil))
 			Expect(t, err, Succeed())
 
 			Expect(t, <-rec, ErrorContains("in consumer handler"))

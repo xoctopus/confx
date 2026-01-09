@@ -10,7 +10,7 @@ import (
 type Subscriber interface {
 	Topic() string
 
-	Run(context.Context, func(context.Context, Message)) <-chan error
+	Run(context.Context, func(context.Context, Message) error) <-chan error
 	Close() error
 }
 

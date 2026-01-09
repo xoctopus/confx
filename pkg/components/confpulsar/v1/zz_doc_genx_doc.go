@@ -5,6 +5,13 @@ import (
 	"github.com/xoctopus/x/docx"
 )
 
+func (v *ecode) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{"presents"}, true
+}
+
 func (v *Endpoint) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
@@ -22,39 +29,50 @@ func (v *Endpoint) DocOf(names ...string) ([]string, bool) {
 func (v *PulsarOption) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
+		case "ConnectionTimeout":
+			return []string{"[Client] establishment timeout"}, true
+		case "ConnectionMaxIdleTime":
+			return []string{"[Client] release the connection if it is not", "used for more than ConnectionMaxIdleTime. default is 30 minutes"}, true
 		case "OperationTimeout":
-			return []string{}, true
-		case "ConnTimeout":
-			return []string{}, true
+			return []string{"[Client] producer-create, subscribe and unsubscribe", "operations will be retried until this interval"}, true
 		case "KeepAliveInterval":
-			return []string{}, true
-		case "MaxConnector":
-			return []string{}, true
-		case "MaxPending":
-			return []string{}, true
-		case "MaxBatching":
-			return []string{}, true
+			return []string{"[Client] the ping send and check interval"}, true
+		case "MaxConnectionsPerBroker":
+			return []string{"[Client] max connections to a single broker"}, true
+		case "SendTimeout":
+			return []string{"[PUB] specifies the timeout for a message from sent to", "acknowledged by the server"}, true
+		case "DisableBlockIfQueueFull":
+			return []string{"[PUB] controls whether Send and SendAsync block", "when producer's message queue is full."}, true
+		case "MaxPendingMessages":
+			return []string{"[PUB] specifies the max size of the queue holding"}, true
+		case "DisableCompress":
+			return []string{"[PUB] specifies if disable message compression, if it is", "enabled use LZ4 compress type"}, true
+		case "BatchingMaxMessages":
+			return []string{"[PUB] specifies the max messages permitted in a batch"}, true
+		case "EnablePubShared":
+			return []string{"[PUB] if disabled, publisher is required exclusive access", "for producer. failed immediately if there's already a producer connected."}, true
+		case "EnableSubShared":
+			return []string{"[SUB] if disabled, there can be only 1 consumer on the same", "topic with the same subscription name"}, true
+		case "EnableRetryNack":
+			return []string{"[SUB] if enabled, NACKed message will be redelivered after", "NackRetryInterval max MaxNackRetry times. if reached MaxNackRetry times,", "the message filled to global DLQ"}, true
+		case "NackRetryInterval":
+			return []string{"[SUB] retry nack message interval"}, true
+		case "MaxNackRetry":
+			return []string{"[SUB] max retry times for nack message"}, true
 		}
 		return []string{}, false
 	}
 	return []string{"presents pulsar client options"}, true
 }
 
-func (v *scheme) DocOf(names ...string) ([]string, bool) {
+func (v *PubOption) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}
 	return []string{}, true
 }
 
-func (v *pubOption) DocOf(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		return []string{}, false
-	}
-	return []string{}, true
-}
-
-func (v *subOption) DocOf(names ...string) ([]string, bool) {
+func (v *SubOption) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}
