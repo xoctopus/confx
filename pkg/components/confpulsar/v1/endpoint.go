@@ -87,13 +87,25 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 	return
 }
 
-func (e *Endpoint) producer(_ context.Context, opt *pulsar.ProducerOptions) (pulsar.Producer, error) {
+func (e *Endpoint) producer(ctx context.Context, opt *pulsar.ProducerOptions) (p pulsar.Producer, err error) {
 	must.BeTrueF(opt.Topic != "", "producer topic is required but got empty")
 
+	_, log := logx.Enter(ctx, "topic", opt.Topic)
+	defer func() {
+		if err != nil {
+			log.Error(err)
+		} else {
+			log.Info("")
+		}
+		log.End()
+	}()
+
 	if p, ok := e.producers.Load(opt.Topic); ok {
+		log = log.With("producer", "loaded")
 		return p, nil
 	}
 
+	log = log.With("producer", "create")
 	producer, err := e.client.CreateProducer(*opt)
 	if err != nil {
 		return nil, err
@@ -106,7 +118,7 @@ func (e *Endpoint) producer(_ context.Context, opt *pulsar.ProducerOptions) (pul
 func (e *Endpoint) Subscribe(ctx context.Context, topic string, options ...OptionApplier) (sub Subscriber, err error) {
 	must.BeTrueF(topic != "", "consumer topic is required but got empty")
 
-	_, log := logx.Start(ctx, "sub")
+	_, log := logx.Enter(ctx, "topic", topic)
 	defer func() {
 		if err != nil {
 			log.Error(err)
@@ -138,7 +150,7 @@ func (e *Endpoint) Subscribe(ctx context.Context, topic string, options ...Optio
 func (e *Endpoint) Publish(ctx context.Context, msg Message, appliers ...OptionApplier) (err error) {
 	must.BeTrueF(msg.Topic() != "", "publish topic is required but got empty")
 
-	_, log := logx.Start(ctx, "pub")
+	_, log := logx.Enter(ctx, "topic", msg.Topic(), "message_id", msg.ID())
 	defer func() {
 		if err != nil {
 			log.Error(err)
@@ -148,7 +160,6 @@ func (e *Endpoint) Publish(ctx context.Context, msg Message, appliers ...OptionA
 		log.End()
 	}()
 
-	log = log.With("topic", msg.Topic(), "message_id", msg.ID())
 	if e.closed.Load() || e.client == nil {
 		return errors.New("endpoint is closed")
 	}

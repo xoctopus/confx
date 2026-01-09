@@ -75,12 +75,8 @@ func (s *subscriber) handle(ctx context.Context, msg pulsar.Message, h func(cont
 		"msg_pub_time", msg.PublishTime(),
 	)
 	defer func() {
-	}()
-
-	defer func() {
-		r := recover()
-		if r != nil {
-			err = codex.Wrap(ECODE__HANDLER_PANICKED, fmt.Errorf("%v", r))
+		if r := recover(); r != nil {
+			err = codex.Wrap(ECODE__HANDLER_PANICKED, fmt.Errorf("consumer handler panicked: %v", r))
 		}
 		if err != nil {
 			log.Error(err)

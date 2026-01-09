@@ -9,6 +9,7 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	"github.com/apache/pulsar-client-go/pulsar/log"
+
 	"github.com/xoctopus/confx/pkg/components/confmq"
 	"github.com/xoctopus/confx/pkg/types"
 )
@@ -125,7 +126,7 @@ func (o *PulsarOption) SetDefault() {
 }
 
 func (o *PulsarOption) ClientOption(url string) pulsar.ClientOptions {
-	l := slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelError}))
+	l := slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
 	return pulsar.ClientOptions{
 		URL:                     url,
@@ -257,7 +258,7 @@ type SubOption struct {
 
 func (*SubOption) OptionScheme() string { return "pulsar" }
 
-func WithConsumerFailover(f func(context.Context, error)) confmq.OptionApplier {
+func WithSubFailover(f func(context.Context, error)) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.failover = f
