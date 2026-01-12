@@ -326,11 +326,16 @@ func WithSubEnableRetryNack(retryDelay time.Duration, maxRetry uint32) confmq.Op
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.options.RetryEnable = true
-			x.options.NackRedeliveryDelay = retryDelay
+			if maxRetry > 1 {
+				x.options.NackBackoffPolicy = &nackBackoffPolicy{retryDelay, maxRetry}
+			} else {
+				x.options.NackRedeliveryDelay = retryDelay
+			}
 			if x.options.DLQ == nil {
 				x.options.DLQ = &pulsar.DLQPolicy{}
 			}
 			x.options.DLQ.MaxDeliveries = maxRetry
+			x.options.DLQ.DeadLetterTopic = x.options.Topic + "_DLQ"
 		}
 	})
 }
@@ -341,4 +346,15 @@ func WithPulsarConsumerOptions(options pulsar.ConsumerOptions) confmq.OptionAppl
 			o.options = options
 		}
 	})
+}
+
+type nackBackoffPolicy struct {
+	retryDelay time.Duration
+	maxRetry   uint32
+}
+
+func (p *nackBackoffPolicy) Next(count uint32) time.Duration {
+	count = max(1, count)
+	count = min(count, p.maxRetry)
+	return min(p.retryDelay*time.Duration(count), time.Minute*10)
 }
