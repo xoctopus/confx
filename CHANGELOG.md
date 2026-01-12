@@ -1,4 +1,14 @@
 
+<a name="v0.2.10"></a>
+## [v0.2.10](https://github.com/xoctopus/confx/compare/v0.2.9...v0.2.10)
+
+> 2026-01-12
+
+### Feat
+
+* **confpulsar:** enrich pulsar pub/sub options
+
+
 <a name="v0.2.9"></a>
 ## [v0.2.9](https://github.com/xoctopus/confx/compare/v0.2.7...v0.2.9)
 
