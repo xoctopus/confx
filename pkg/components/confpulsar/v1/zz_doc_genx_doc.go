@@ -26,7 +26,7 @@ func (v *Endpoint) DocOf(names ...string) ([]string, bool) {
 	return []string{"pulsar component endpoint"}, true
 }
 
-func (v *PulsarOption) DocOf(names ...string) ([]string, bool) {
+func (v *Option) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "ConnectionTimeout":
@@ -62,7 +62,7 @@ func (v *PulsarOption) DocOf(names ...string) ([]string, bool) {
 		}
 		return []string{}, false
 	}
-	return []string{"presents pulsar client options"}, true
+	return []string{"presents pulsar client options and default pub/sub options. it can be", "overridden by option applier when call Endpoint.Publish and Endpoint.Subscribe"}, true
 }
 
 func (v *PubOption) DocOf(names ...string) ([]string, bool) {
@@ -73,6 +73,13 @@ func (v *PubOption) DocOf(names ...string) ([]string, bool) {
 }
 
 func (v *SubOption) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{}, true
+}
+
+func (v *consumers) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}

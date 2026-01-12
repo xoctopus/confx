@@ -15,5 +15,7 @@ func (e ecode) Message() string {
 		return "[confpulsar.ecode:1] failed to parse message"
 	case ECODE__HANDLER_PANICKED:
 		return "[confpulsar.ecode:2] subscriber handler panicked"
+	case ECODE__SUBSCRIPTION_CANCELED:
+		return "[confpulsar.ecode:3] subscription canceled"
 	}
 }

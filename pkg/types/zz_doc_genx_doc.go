@@ -22,7 +22,7 @@ func (v *Endpoint[Option]) DocOf(names ...string) ([]string, bool) {
 		}
 		return []string{}, false
 	}
-	return []string{"a connectable endpoint"}, true
+	return []string{"a connectable endpoint", "Note options in url Param can override option"}, true
 }
 
 func (v *LivenessData) DocOf(names ...string) ([]string, bool) {

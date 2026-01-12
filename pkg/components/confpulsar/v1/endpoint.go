@@ -7,23 +7,26 @@ import (
 	"errors"
 	"net/url"
 	"sync/atomic"
+	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/syncx"
 
-	. "github.com/xoctopus/confx/pkg/components/confmq"
+	"github.com/xoctopus/confx/pkg/components/confmq"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
 // Endpoint pulsar component endpoint
 type Endpoint struct {
-	types.Endpoint[PulsarOption]
+	types.Endpoint[Option]
 
 	client    pulsar.Client
-	producers syncx.Map[string, pulsar.Producer]
 	closed    atomic.Bool
+	producers syncx.Map[string, *publisher]
+	consumers *consumers
 }
 
 func (e *Endpoint) SetDefault() {
@@ -31,7 +34,10 @@ func (e *Endpoint) SetDefault() {
 		e.Endpoint.Address = "pulsar://localhost:6650"
 	}
 	if e.producers == nil {
-		e.producers = syncx.NewXmap[string, pulsar.Producer]()
+		e.producers = syncx.NewXmap[string, *publisher]()
+	}
+	if e.consumers == nil {
+		e.consumers = &consumers{}
 	}
 	e.Option.SetDefault()
 	e.closed.Store(false)
@@ -71,54 +77,93 @@ func (e *Endpoint) Init(ctx context.Context) error {
 
 func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 	if e.closed.Load() || e.client == nil {
-		v.Message = "endpoint is closed"
+		v.Message = codex.New(ECODE__CLIENT_CLOSED).Error()
 		return
 	}
 
-	opt := e.Option.PubOption("liveness")
 	span := types.Cost()
-	_, err := e.producer(ctx, &opt.options)
-	v.TTL = types.Duration(span())
+	p, err := e.Publisher(ctx, WithPubTopic("liveness"), WithSyncPublish())
 	if err != nil {
 		v.Message = err.Error()
 		return
 	}
-	v.Reachable = true
+	msg := confmq.NewMessage(ctx, "liveness", nil)
+	if err = p.PublishMessage(ctx, msg); err != nil {
+		v.Message = err.Error()
+		return
+	}
+
+	s, err := e.Subscriber(ctx, WithSubTopic("liveness"))
+	if err != nil {
+		v.Message = err.Error()
+		return
+	}
+	defer s.Close()
+
+	select {
+	case <-s.Run(ctx, func(ctx context.Context, m confmq.Message) error {
+		if m.ID() == msg.ID() {
+			v.TTL = types.Duration(span())
+			v.Reachable = true
+			s.Close()
+		}
+		return nil
+	}):
+	case <-time.After(time.Minute):
+		v.TTL = types.Duration(span())
+		v.Reachable = false
+		v.Message = "liveness check timeout"
+	}
+
 	return
 }
 
-func (e *Endpoint) producer(ctx context.Context, opt *pulsar.ProducerOptions) (p pulsar.Producer, err error) {
-	must.BeTrueF(opt.Topic != "", "producer topic is required but got empty")
-
-	_, log := logx.Enter(ctx, "topic", opt.Topic)
+func (e *Endpoint) Publisher(ctx context.Context, options ...confmq.OptionApplier) (p confmq.Publisher, err error) {
+	_, log := logx.Enter(ctx)
 	defer func() {
 		if err != nil {
 			log.Error(err)
 		} else {
-			log.Info("")
+			log.Info("pub created")
 		}
 		log.End()
 	}()
 
-	if p, ok := e.producers.Load(opt.Topic); ok {
+	if e.closed.Load() || e.client == nil {
+		return nil, codex.New(ECODE__CLIENT_CLOSED)
+	}
+
+	var (
+		opt    = e.Option.PubOption(options...)
+		pub    pulsar.Producer
+		loaded bool
+	)
+	must.BeTrueF(opt.options.Topic != "", "producer topic is required")
+
+	log = log.With("topic", opt.options.Topic, "sync", opt.sync)
+	p, loaded = e.producers.Load(opt.options.Topic)
+	if loaded {
 		log = log.With("producer", "loaded")
-		return p, nil
+		return
 	}
 
-	log = log.With("producer", "create")
-	producer, err := e.client.CreateProducer(*opt)
+	pub, err = e.client.CreateProducer(opt.options)
 	if err != nil {
-		return nil, err
+		return
 	}
 
-	actual, _ := e.producers.LoadOrStore(opt.Topic, producer)
-	return actual, nil
+	log = log.With("producer", "created")
+	p, _ = e.producers.LoadOrStore(opt.options.Topic, &publisher{
+		cli:      e,
+		pub:      pub,
+		sync:     opt.sync,
+		callback: opt.callback,
+	})
+	return
 }
 
-func (e *Endpoint) Subscribe(ctx context.Context, topic string, options ...OptionApplier) (sub Subscriber, err error) {
-	must.BeTrueF(topic != "", "consumer topic is required but got empty")
-
-	_, log := logx.Enter(ctx, "topic", topic)
+func (e *Endpoint) Subscriber(ctx context.Context, options ...confmq.OptionApplier) (_ confmq.Subscriber, err error) {
+	_, log := logx.Enter(ctx)
 	defer func() {
 		if err != nil {
 			log.Error(err)
@@ -129,87 +174,67 @@ func (e *Endpoint) Subscribe(ctx context.Context, topic string, options ...Optio
 	}()
 
 	if e.closed.Load() || e.client == nil {
-		return nil, errors.New("endpoint is closed")
+		return nil, codex.New(ECODE__CLIENT_CLOSED)
 	}
 
-	opt := e.Option.SubOption(topic, options...)
-	if opt.options.Type != pulsar.Exclusive {
-		panic("any")
-	}
-	c, err := e.client.Subscribe(opt.options)
+	opt := e.Option.SubOption(options...)
+	must.BeTrueF(
+		opt.options.Topic != "" || len(opt.options.Topics) > 0 ||
+			opt.options.TopicsPattern != "" || opt.options.SubscriptionName == "",
+		"consumer topic is required",
+	)
+	log = log.With("topic", opt.options.Topic, "name", opt.options.SubscriptionName)
+
+	s, err := e.client.Subscribe(opt.options)
 	if err != nil {
 		return nil, err
 	}
 
-	return &subscriber{
-		topic: topic,
-		cli:   c,
-	}, nil
-}
-
-func (e *Endpoint) Publish(ctx context.Context, msg Message, appliers ...OptionApplier) (err error) {
-	must.BeTrueF(msg.Topic() != "", "publish topic is required but got empty")
-
-	_, log := logx.Enter(ctx, "topic", msg.Topic(), "message_id", msg.ID())
-	defer func() {
-		if err != nil {
-			log.Error(err)
-		} else {
-			log.Info("published")
-		}
-		log.End()
-	}()
-
-	if e.closed.Load() || e.client == nil {
-		return errors.New("endpoint is closed")
+	sub := &subscriber{
+		sub:      s,
+		cli:      e,
+		callback: opt.callback,
+		autoAck:  !opt.disableAutoAck,
 	}
-
-	var data []byte
-	data, err = msg.(MessageArshaler).Marshal()
-	if err != nil {
-		return err
-	}
-
-	var (
-		pub pulsar.Producer
-		raw = &pulsar.ProducerMessage{Payload: data}
-		opt = e.Option.PubOption(msg.Topic(), appliers...)
-	)
-
-	pub, err = e.producer(ctx, &opt.options)
-	if err != nil {
-		return err
-	}
-
-	if opt.sync {
-		_, err = pub.Send(ctx, raw)
-		return err
-	}
-
-	var done atomic.Bool
-	pub.SendAsync(
-		ctx, raw,
-		func(_ pulsar.MessageID, _ *pulsar.ProducerMessage, err error) {
-			if done.CompareAndSwap(false, true) {
-				if opt.failover != nil {
-					opt.failover(msg, err)
-				}
-			}
-		},
-	)
-	return nil
+	e.consumers.add(sub)
+	return sub, nil
 }
 
 func (e *Endpoint) Close() error {
 	if e.closed.CompareAndSwap(false, true) {
-		if e.producers != nil {
-			for _, p := range e.producers.Range {
-				p.Close()
-			}
-		}
 		if e.client != nil {
 			e.client.Close()
 		}
+		if e.producers != nil {
+			for _, p := range e.producers.Range {
+				if p.closed.CompareAndSwap(false, true) {
+					p.pub.Close()
+				}
+			}
+		}
+		if e.consumers != nil {
+			e.consumers.close()
+		}
 	}
 	return nil
+}
+
+func (e *Endpoint) CloseSubscriber(sub confmq.Subscriber) {
+	if s, ok := sub.(*subscriber); ok {
+		e.consumers.mtx.Lock()
+		defer e.consumers.mtx.Unlock()
+		e.consumers.lst.Remove(s.elem)
+		s.cancel(codex.New(ECODE__SUBSCRIPTION_CANCELED))
+		s.sub.Close()
+	}
+}
+
+func (e *Endpoint) ClosePublisher(pub confmq.Publisher) {
+	if p, ok := pub.(*publisher); ok {
+		if x, _ := e.producers.LoadAndDelete(p.Topic()); x != nil {
+			if x.closed.CompareAndSwap(false, true) {
+				x.pub.Close()
+			}
+		}
+	}
 }

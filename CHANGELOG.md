@@ -1,4 +1,19 @@
 
+<a name="v0.2.9"></a>
+## [v0.2.9](https://github.com/xoctopus/confx/compare/v0.2.7...v0.2.9)
+
+> 2026-01-09
+
+### Chore
+
+* **confpulsar:** add Publish/Subscribe/producer logs
+
+### Feat
+
+* **confpulsar:** enrich pulsar pub/sub options
+* **confpulsar:** retry message when consumer handler failed
+
+
 <a name="v0.2.7"></a>
 ## [v0.2.7](https://github.com/xoctopus/confx/compare/v0.2.6...v0.2.7)
 

@@ -1,7 +1,6 @@
 package confpulsar
 
 import (
-	"context"
 	"io"
 	"log/slog"
 	"time"
@@ -14,8 +13,9 @@ import (
 	"github.com/xoctopus/confx/pkg/types"
 )
 
-// PulsarOption presents pulsar client options
-type PulsarOption struct {
+// Option presents pulsar client options and default pub/sub options. it can be
+// overridden by option applier when call Endpoint.Publish and Endpoint.Subscribe
+type Option struct {
 	// ConnectionTimeout [Client] establishment timeout
 	ConnectionTimeout types.Duration `url:",default=1s"`
 	// ConnectionMaxIdleTime [Client] release the connection if it is not
@@ -63,7 +63,7 @@ type PulsarOption struct {
 	defaultSubOption *SubOption
 }
 
-func (o *PulsarOption) SetDefault() {
+func (o *Option) SetDefault() {
 	if o.defaultPubOption == nil {
 		o.defaultPubOption = &PubOption{}
 	}
@@ -125,7 +125,7 @@ func (o *PulsarOption) SetDefault() {
 	}
 }
 
-func (o *PulsarOption) ClientOption(url string) pulsar.ClientOptions {
+func (o *Option) ClientOption(url string) pulsar.ClientOptions {
 	l := slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
 	return pulsar.ClientOptions{
@@ -139,32 +139,27 @@ func (o *PulsarOption) ClientOption(url string) pulsar.ClientOptions {
 	}
 }
 
-func (o *PulsarOption) PubOption(topic string, appliers ...confmq.OptionApplier) *PubOption {
+func (o *Option) PubOption(appliers ...confmq.OptionApplier) *PubOption {
 	opt := *o.defaultPubOption
 	for _, applier := range appliers {
 		applier.Apply(&opt)
 	}
-	opt.options.Topic = topic
 	return &opt
 }
 
-func (o *PulsarOption) SubOption(topic string, appliers ...confmq.OptionApplier) *SubOption {
+func (o *Option) SubOption(appliers ...confmq.OptionApplier) *SubOption {
 	opt := *o.defaultSubOption
 	for _, applier := range appliers {
 		applier.Apply(&opt)
-	}
-	opt.options.Topic = topic
-	if opt.options.SubscriptionName == "" {
-		opt.options.SubscriptionName = topic
 	}
 	return &opt
 }
 
 type PubOption struct {
 	_initialized bool
-	// failover when sync send mode disabled. failover will be called when message
-	// sent succeed or failed
-	failover func(confmq.Message, error)
+	// callback when async send mode enabled. callback will be called when message
+	// sent completed
+	callback func(confmq.Message, error)
 	// sync decides use Send or SendAsync in pulsar client
 	sync bool
 	// options pulsar producer option
@@ -173,10 +168,10 @@ type PubOption struct {
 
 func (*PubOption) OptionScheme() string { return "pulsar" }
 
-func WithPublishFailover(f func(confmq.Message, error)) confmq.OptionApplier {
+func WithPublishCallback(f func(confmq.Message, error)) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*PubOption); ok {
-			x.failover = f
+			x.callback = f
 		}
 	})
 }
@@ -185,6 +180,14 @@ func WithSyncPublish() confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.sync = true
+		}
+	})
+}
+
+func WithPubTopic(topic string) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*PubOption); ok {
+			x.options.Topic = topic
 		}
 	})
 }
@@ -249,24 +252,61 @@ func WithPublisherOptions(o pulsar.ProducerOptions) confmq.OptionApplier {
 
 type SubOption struct {
 	_initialized bool
-	// failover it is called when invalid message received or custom handler
-	// panicked. if needed consumer set this attribute to hook failed case.
-	failover func(context.Context, error)
+	// disableAutoAck disable auto ack. if this option is set true, message ack
+	// should be handled by callback.
+	disableAutoAck bool
+	// callback it is called when message handled
+	callback func(pulsar.Consumer, pulsar.Message, confmq.Message, error)
 	// options pulsar consumer options
 	options pulsar.ConsumerOptions
 }
 
 func (*SubOption) OptionScheme() string { return "pulsar" }
 
-func WithSubFailover(f func(context.Context, error)) confmq.OptionApplier {
+// WithSubDisableAutoAck enables auto ack. when message received from mq, ack will
+// be performed immediately.
+func WithSubDisableAutoAck() confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*SubOption); ok {
-			x.failover = f
+			x.disableAutoAck = true
 		}
 	})
 }
 
-func WithSubscriptionName(name string) confmq.OptionApplier {
+// WithSubCallback set subscriber's callback when message is handled.
+func WithSubCallback(f func(pulsar.Consumer, pulsar.Message, confmq.Message, error)) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.callback = f
+		}
+	})
+}
+
+func WithSubTopic(topics ...string) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			if len(topics) == 1 {
+				x.options.Topic = topics[0]
+				if x.options.SubscriptionName == "" {
+					x.options.SubscriptionName = topics[0]
+				}
+			}
+			if len(topics) > 1 {
+				x.options.Topics = topics
+			}
+		}
+	})
+}
+
+func WithSubTopicPattern(pattern string) confmq.OptionApplier {
+	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.options.TopicsPattern = pattern
+		}
+	})
+}
+
+func WithSubName(name string) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.options.SubscriptionName = name
@@ -274,7 +314,7 @@ func WithSubscriptionName(name string) confmq.OptionApplier {
 	})
 }
 
-func WithSubscriptionType(t pulsar.SubscriptionType) confmq.OptionApplier {
+func WithSubType(t pulsar.SubscriptionType) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.options.Type = t

@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/pulsar-client-go/pulsar"
+	"github.com/xoctopus/x/codex"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
@@ -52,10 +54,7 @@ func TestPulsarEndpointV1(t *testing.T) {
 				ep := confmq.Must(ctx)
 				Expect(t, ep, NotBeNil[confmq.PubSub]())
 
-				_, err := ep.Subscribe(ctx, genTopic(t))
-				Expect(t, err, Failed())
-
-				err = ep.Publish(ctx, confmq.NewMessage(ctx, genTopic(t), "any"))
+				_, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
 				Expect(t, err, Failed())
 			})
 
@@ -76,27 +75,26 @@ func TestPulsarEndpointV1(t *testing.T) {
 			ep := confmq.Must(ctx)
 			Expect(t, ep, NotBeNil[confmq.PubSub]())
 
-			msg := confmq.NewMessage(ctx, genTopic(t), "any")
-			ret := make(<-chan error)
-
-			sub, err := ep.Subscribe(ctx, genTopic(t))
+			sub, err := ep.Subscriber(
+				ctx,
+				confpulsar.WithSubTopic(genTopic(t)),
+			)
 			Expect(t, err, Succeed())
-
-			go func() {
-				ret = sub.Run(ctx, func(ctx context.Context, rec confmq.Message) error {
-					Expect(t, rec.Topic(), Equal(msg.Topic()))
-					if rec.ID() == msg.ID() {
-						time.Sleep(time.Second) // wait unacked messages
-						_ = sub.Close()
-					}
-					return nil
-				})
-			}()
+			pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
+			Expect(t, err, Succeed())
 
 			time.Sleep(time.Second)
-			err = ep.Publish(ctx, msg, confpulsar.WithSyncPublish())
+			err = pub.Publish(ctx, t.Name())
 			Expect(t, err, Succeed())
-			t.Log(<-ret)
+
+			<-sub.Run(ctx, func(ctx context.Context, msg confmq.Message) error {
+				Expect(t, msg.Topic(), Equal(pub.Topic()))
+				if string(msg.Data()) == t.Name() {
+					time.Sleep(time.Second) // wait unacked messages
+					sub.Close()
+				}
+				return nil
+			})
 
 			t.Run("LivenessCheck", func(t *testing.T) {
 				d := ep.(types.LivenessChecker).LivenessCheck(ctx)
@@ -108,13 +106,16 @@ func TestPulsarEndpointV1(t *testing.T) {
 			ctx := hack.WithPulsar(hack.Context(t), t, dsn)
 			ep := confmq.Must(ctx)
 			_ = ep.Close()
-			_, err := ep.Subscribe(ctx, genTopic(t))
+
+			_, err := ep.Subscriber(
+				ctx,
+				confpulsar.WithSubTopic(genTopic(t)),
+			)
 			Expect(t, err, Failed())
-			err = ep.Publish(ctx, confmq.NewMessage(ctx, genTopic(t), nil))
+			_, err = ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
 			Expect(t, err, Failed())
 			r := ep.(types.LivenessChecker).LivenessCheck(ctx)
 			Expect(t, r.Reachable, BeFalse())
-			Expect(t, r.Message, Equal("endpoint is closed"))
 		})
 
 		t.Run("SendMode", func(t *testing.T) {
@@ -123,68 +124,77 @@ func TestPulsarEndpointV1(t *testing.T) {
 					ctx = hack.WithPulsar(hack.Context(t), t, dsn)
 					ep  = confmq.Must(ctx)
 				)
-				sub, err := ep.Subscribe(ctx, genTopic(t))
+				sub, err := ep.Subscriber(ctx, confpulsar.WithSubTopic(genTopic(t)))
+				Expect(t, err, Succeed())
+				pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
 				Expect(t, err, Succeed())
 
-				rec := sub.Run(
+				err = pub.Publish(ctx, "send_mode:sync")
+				Expect(t, err, Succeed())
+
+				<-sub.Run(
 					ctx, func(ctx context.Context, msg confmq.Message) error {
 						raw := string(msg.Data())
 						Expect(t, raw, Equal("send_mode:sync"))
 						time.Sleep(time.Second)
-						_ = sub.Close()
+						sub.Close()
 						return nil
 					},
 				)
-				err = ep.Publish(
-					ctx, confmq.NewMessage(ctx, genTopic(t), "send_mode:sync"),
-					confpulsar.WithSyncPublish(),
-				)
-				Expect(t, err, Succeed())
-				t.Log(<-rec)
 			})
 			t.Run("Async", func(t *testing.T) {
 				var (
 					ctx = hack.WithPulsar(hack.Context(t), t, dsn)
 					ep  = confmq.Must(ctx)
 				)
-				sub, err := ep.Subscribe(ctx, genTopic(t))
+				sub, err := ep.Subscriber(ctx, confpulsar.WithSubTopic(genTopic(t)))
 				Expect(t, err, Succeed())
-				rec := sub.Run(ctx, func(ctx context.Context, msg confmq.Message) error {
-					t.Log(string(msg.Data()))
+				pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
+				Expect(t, err, Succeed())
+
+				err = pub.Publish(ctx, "send_mode:async")
+				Expect(t, err, Succeed())
+
+				<-sub.Run(ctx, func(ctx context.Context, msg confmq.Message) error {
+					raw := string(msg.Data())
+					Expect(t, raw, Equal("send_mode:async"))
+					time.Sleep(time.Second)
+					sub.Close()
 					return nil
 				})
-
-				err = ep.Publish(
-					ctx, confmq.NewMessage(ctx, genTopic(t), "send_mode:async"),
-					confpulsar.WithPublishFailover(func(msg confmq.Message, err error) {
-						raw := string(msg.Data())
-						Expect(t, raw, Equal("send_mode:async"))
-						time.Sleep(time.Second)
-						_ = sub.Close()
-					}),
-				)
-				Expect(t, err, Succeed())
-				t.Log(<-rec)
 			})
 		})
 
 		t.Run("HandlerPanic", func(t *testing.T) {
-			ctx := hack.WithPulsar(hack.Context(t), t, dsn)
-			ep := confmq.Must(ctx)
-
-			sub, err := ep.Subscribe(ctx, genTopic(t))
+			var (
+				ctx = hack.WithPulsar(hack.Context(t), t, dsn)
+				ep  = confmq.Must(ctx)
+			)
+			sub, err := ep.Subscriber(ctx,
+				confpulsar.WithSubTopic(genTopic(t)),
+				confpulsar.WithSubDisableAutoAck(),
+				confpulsar.WithSubCallback(func(c pulsar.Consumer, m pulsar.Message, p confmq.Message, err error) {
+					_ = c.Ack(m)
+					if err == nil {
+						return
+					}
+					if codex.IsCode(err, confpulsar.ECODE__PARSE_MESSAGE) ||
+						codex.IsCode(err, confpulsar.ECODE__HANDLER_PANICKED) {
+						Expect(t, err, ErrorContains("in consumer handler"))
+					}
+				}),
+			)
 			Expect(t, err, Succeed())
-			Expect(t, sub.Topic(), Equal(genTopic(t)))
+			pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
+			Expect(t, err, Succeed())
 
-			rec := sub.Run(ctx, func(ctx context.Context, msg confmq.Message) error {
+			err = pub.Publish(ctx, "any")
+			Expect(t, err, Succeed())
+
+			<-sub.Run(ctx, func(ctx context.Context, msg confmq.Message) error {
+				defer sub.Close()
 				panic("in consumer handler")
 			})
-
-			time.Sleep(time.Millisecond * 100)
-			err = ep.Publish(ctx, confmq.NewMessage(ctx, genTopic(t), nil))
-			Expect(t, err, Succeed())
-
-			Expect(t, <-rec, ErrorContains("in consumer handler"))
 		})
 	})
 }

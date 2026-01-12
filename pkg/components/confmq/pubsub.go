@@ -8,15 +8,25 @@ import (
 )
 
 type Subscriber interface {
-	Topic() string
+	// Run starts consuming and handling messages with h
+	Run(ctx context.Context, h func(context.Context, Message) error) <-chan error
+	// Close closes this subscriber
+	Close()
+}
 
-	Run(context.Context, func(context.Context, Message) error) <-chan error
-	Close() error
+type Publisher interface {
+	Topic() string
+	Publish(context.Context, any) error
+	PublishMessage(context.Context, Message) error
+	Close()
 }
 
 type PubSub interface {
-	Publish(ctx context.Context, msg Message, options ...OptionApplier) error
-	Subscribe(ctx context.Context, topic string, options ...OptionApplier) (Subscriber, error)
+	// Publisher returns a publisher
+	Publisher(ctx context.Context, options ...OptionApplier) (Publisher, error)
+	// Subscriber returns a subscriber
+	Subscriber(ctx context.Context, options ...OptionApplier) (Subscriber, error)
+	// Close closes pub/sub endpoint
 	Close() error
 }
 
