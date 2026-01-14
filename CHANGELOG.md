@@ -1,4 +1,18 @@
 
+<a name="v0.2.11"></a>
+## [v0.2.11](https://github.com/xoctopus/confx/compare/v0.2.10...v0.2.11)
+
+> 2026-01-12
+
+### Doc
+
+* update CHANGELOG
+
+### Feat
+
+* **confpulsar:** nack backoff policy
+
+
 <a name="v0.2.10"></a>
 ## [v0.2.10](https://github.com/xoctopus/confx/compare/v0.2.9...v0.2.10)
 

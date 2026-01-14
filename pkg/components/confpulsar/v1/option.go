@@ -237,7 +237,7 @@ func WithPubBatchingMaxMessages(n uint) confmq.OptionApplier {
 func WithPubAccessMode(m pulsar.ProducerAccessMode) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*PubOption); ok {
-			x.options.ProducerAccessMode = pulsar.ProducerAccessModeShared
+			x.options.ProducerAccessMode = m
 		}
 	})
 }
