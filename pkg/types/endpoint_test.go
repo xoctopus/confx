@@ -72,6 +72,14 @@ func ExampleEndpoint() {
 
 func TestEndpoint(t *testing.T) {
 	type Endpoint = types.Endpoint[MockOption]
+
+	t.Run("IsZero", func(t *testing.T) {
+		ep := &types.EndpointNoOption{Address: ""}
+		Expect(t, ep.IsZero(), BeTrue())
+		ep = &types.EndpointNoOption{Address: "https://abc.def.com"}
+		Expect(t, ep.IsZero(), BeFalse())
+	})
+
 	t.Run("InvalidAddress", func(t *testing.T) {
 		ep := &Endpoint{Address: "https://example.com/%zz"}
 		Expect(t, ep.Init(), Failed())
@@ -140,5 +148,16 @@ func TestEndpoint(t *testing.T) {
 			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
 			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
 		})
+	})
+
+	t.Run("ModifyURLQuery", func(t *testing.T) {
+		ep := types.EndpointNoOption{Address: "redis://username:password@localhost:6379/1?name=abc&timeout=3s"}
+		Expect(t, ep.Init(), Succeed())
+
+		u1 := ep.URL()
+		Expect(t, u1.Query().Encode(), Equal("name=abc&timeout=3s"))
+		ep.AddOption("key", "v1", "v2")
+		u2 := ep.URL()
+		Expect(t, u2.Query().Encode(), Equal("key=v1&key=v2&name=abc&timeout=3s"))
 	})
 }

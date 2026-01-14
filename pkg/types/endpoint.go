@@ -29,6 +29,10 @@ type Endpoint[Option comparable] struct {
 
 type EndpointNoOption = Endpoint[struct{}]
 
+func (e *Endpoint[Option]) IsZero() bool {
+	return e.Address == ""
+}
+
 func (e *Endpoint[Option]) Init() (err error) {
 	e.addr, err = url.Parse(e.Address)
 	if err != nil {
@@ -117,4 +121,12 @@ func (e *Endpoint[Option]) LivenessCheck(ctx context.Context) LivenessData {
 
 func (e *Endpoint[Option]) URL() url.URL {
 	return *e.addr
+}
+
+func (e *Endpoint[Option]) AddOption(k string, vs ...string) {
+	q := e.addr.Query()
+	for _, v := range vs {
+		q.Add(k, v)
+	}
+	e.addr.RawQuery = q.Encode()
 }

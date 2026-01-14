@@ -1,4 +1,14 @@
 
+<a name="v0.2.12"></a>
+## [v0.2.12](https://github.com/xoctopus/confx/compare/v0.2.11...v0.2.12)
+
+> 2026-01-14
+
+### Fix
+
+* **confpulsar:** WithPubAccessMode
+
+
 <a name="v0.2.11"></a>
 ## [v0.2.11](https://github.com/xoctopus/confx/compare/v0.2.10...v0.2.11)
 
