@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.13...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.14...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.2.14"></a>
+## [v0.2.14](https://github.com/xoctopus/confx/compare/v0.2.13...v0.2.14)
 
 > 2026-01-15
+
+### Doc
+
+* update CHANGELOG
 
 ### Feat
 
