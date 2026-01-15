@@ -1,6 +1,7 @@
 package confpulsar
 
 import (
+	"fmt"
 	"io"
 	"log/slog"
 	"time"
@@ -16,6 +17,18 @@ import (
 // Option presents pulsar client options and default pub/sub options. it can be
 // overridden by option applier when call Endpoint.Publish and Endpoint.Subscribe
 type Option struct {
+	// Tenant represents the top-level Pulsar tenant.
+	// It is the highest isolation boundary in Pulsar, usually used to separate
+	// environments (prod/test/dev) or organizations.
+	// It maps to the `<tenant>` part of `persistent://<tenant>/<namespace>/<topic>`.
+	Tenant string `url:",default=public"`
+
+	// Namespace represents the logical domain under a tenant.
+	// It is the main unit for policy and resource management in Pulsar, such as:
+	// retention, TTL, backlog quota, permissions, and schema enforcement.
+	// It maps to the `<namespace>` part of `persistent://<tenant>/<namespace>/<topic>`.
+	Namespace string `url:",default=default"`
+
 	// ConnectionTimeout [Client] establishment timeout
 	ConnectionTimeout types.Duration `url:",default=1s"`
 	// ConnectionMaxIdleTime [Client] release the connection if it is not
@@ -123,6 +136,10 @@ func (o *Option) SetDefault() {
 		}
 		o.defaultSubOption._initialized = true
 	}
+}
+
+func (o *Option) String() string {
+	return fmt.Sprintf("persistent://%s/%s/", o.Tenant, o.Namespace)
 }
 
 func (o *Option) ClientOption(url string) pulsar.ClientOptions {

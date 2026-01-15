@@ -29,6 +29,10 @@ func (v *Endpoint) DocOf(names ...string) ([]string, bool) {
 func (v *Option) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
+		case "Tenant":
+			return []string{"represents the top-level Pulsar tenant.", "It is the highest isolation boundary in Pulsar, usually used to separate", "environments (prod/test/dev) or organizations.", "It maps to the `<tenant>` part of `persistent://<tenant>/<namespace>/<topic>`."}, true
+		case "Namespace":
+			return []string{"represents the logical domain under a tenant.", "It is the main unit for policy and resource management in Pulsar, such as:", "retention, TTL, backlog quota, permissions, and schema enforcement.", "It maps to the `<namespace>` part of `persistent://<tenant>/<namespace>/<topic>`."}, true
 		case "ConnectionTimeout":
 			return []string{"[Client] establishment timeout"}, true
 		case "ConnectionMaxIdleTime":
@@ -73,6 +77,20 @@ func (v *PubOption) DocOf(names ...string) ([]string, bool) {
 }
 
 func (v *SubOption) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{}, true
+}
+
+func (v *nackBackoffPolicy) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{}, true
+}
+
+func (v *publisher) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}

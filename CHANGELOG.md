@@ -1,4 +1,14 @@
 
+<a name="v0.2.13"></a>
+## [v0.2.13](https://github.com/xoctopus/confx/compare/v0.2.12...v0.2.13)
+
+> 2026-01-14
+
+### Feat
+
+* **types:** endpoint add IsZero and AddOption
+
+
 <a name="v0.2.12"></a>
 ## [v0.2.12](https://github.com/xoctopus/confx/compare/v0.2.11...v0.2.12)
 

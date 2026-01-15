@@ -139,6 +139,7 @@ func (e *Endpoint) Publisher(ctx context.Context, options ...confmq.OptionApplie
 		loaded bool
 	)
 	must.BeTrueF(opt.options.Topic != "", "producer topic is required")
+	opt.options.Topic = e.Option.String() + opt.options.Topic
 
 	log = log.With("topic", opt.options.Topic, "sync", opt.sync)
 	p, loaded = e.producers.Load(opt.options.Topic)
@@ -183,6 +184,7 @@ func (e *Endpoint) Subscriber(ctx context.Context, options ...confmq.OptionAppli
 			opt.options.TopicsPattern != "" || opt.options.SubscriptionName == "",
 		"consumer topic is required",
 	)
+	opt.options.Topic = e.Option.String() + opt.options.Topic
 	log = log.With("topic", opt.options.Topic, "name", opt.options.SubscriptionName)
 
 	s, err := e.client.Subscribe(opt.options)
