@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/url"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -18,19 +17,19 @@ import (
 	"github.com/xoctopus/confx/pkg/components/confmq"
 	pulsarv1 "github.com/xoctopus/confx/pkg/components/confpulsar/v1"
 	redisv1 "github.com/xoctopus/confx/pkg/components/confredis/v1"
+	redisv2 "github.com/xoctopus/confx/pkg/components/confredis/v2"
 	"github.com/xoctopus/confx/pkg/components/runtime"
 )
 
-var once sync.Once
+var retrier = &retry.Retry{
+	Repeats:  10,
+	Interval: 3 * time.Second,
+}
 
 func Check(t testing.TB) {
 	if os.Getenv("HACK_TEST") != "true" {
 		t.Skip("HACK_TEST=false skip hack testing")
 	}
-	once.Do(func() {
-		// t.Log("waiting dependencies...in 30s")
-		// time.Sleep(30 * time.Second)
-	})
 }
 
 func Context(t testing.TB) context.Context {
@@ -55,12 +54,7 @@ func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
 	ep := &redisv1.Endpoint{}
 	ep.Address = dsn
 
-	err = (&retry.Retry{
-		Repeats:  3,
-		Interval: time.Second * 3,
-	}).Do(func() error {
-		return ep.Init()
-	})
+	err = retrier.Do(func() error { return ep.Init() })
 	Expect(t, err, Succeed())
 
 	t.Cleanup(func() { _ = ep.Close() })
@@ -77,11 +71,26 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 
 	Expect(t, ep.Init(), Failed())
 
-	t.Cleanup(func() {
-		_ = ep.Close()
-	})
+	t.Cleanup(func() { _ = ep.Close() })
 
 	return confkv.Carry(ep)(ctx)
+}
+
+func WithRedisV2(ctx context.Context, t testing.TB, dsn string) context.Context {
+	Check(t)
+
+	_, err := url.Parse(dsn)
+	Expect(t, err, Succeed())
+
+	ep := &redisv2.Endpoint{}
+	ep.Address = dsn
+
+	err = retrier.Do(func() error { return ep.Init(ctx) })
+	Expect(t, err, Succeed())
+
+	t.Cleanup(func() { _ = ep.Close() })
+
+	return redisv2.Carry(ep)(ctx)
 }
 
 func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -94,12 +103,7 @@ func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
 	ep.Address = dsn
 	ep.SetDefault()
 
-	err = (&retry.Retry{
-		Repeats:  5,
-		Interval: time.Second * 5,
-	}).Do(func() error {
-		return ep.Init(ctx)
-	})
+	err = retrier.Do(func() error { return ep.Init(ctx) })
 	Expect(t, err, Succeed())
 
 	t.Cleanup(func() { _ = ep.Close() })

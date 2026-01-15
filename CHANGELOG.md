@@ -2,7 +2,11 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.14...HEAD)
 
-> 0001-01-01
+> 2026-01-15
+
+### Doc
+
+* update CHANGELOG
 
 
 <a name="v0.2.14"></a>

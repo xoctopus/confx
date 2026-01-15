@@ -14,7 +14,7 @@ import (
 
 // Endpoint a connectable endpoint
 // Note options in url Param can override option
-type Endpoint[Option comparable] struct {
+type Endpoint[Option any] struct {
 	// Address component connection endpoint address
 	Address string
 	// Auth support Endpoint auth info with username and password
