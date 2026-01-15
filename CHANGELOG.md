@@ -1,4 +1,14 @@
 
+<a name="HEAD"></a>
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.13...HEAD)
+
+> 2026-01-15
+
+### Feat
+
+* **confpulsar:** add tenant and namespace option
+
+
 <a name="v0.2.13"></a>
 ## [v0.2.13](https://github.com/xoctopus/confx/compare/v0.2.12...v0.2.13)
 
