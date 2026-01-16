@@ -116,6 +116,7 @@ func (s *subscriber) handle(ctx context.Context, msg pulsar.Message, h func(cont
 		err = codex.Wrap(ECODE__PARSE_MESSAGE, err)
 		return err
 	}
+	m.(confmq.MutMessage).SetPubOrderedKey(msg.Key())
 	log = log.With("msg_id", m.ID(), "topic", m.Topic())
 
 	return h(ctx, m)

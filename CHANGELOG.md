@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.15...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.16...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.2.16"></a>
+## [v0.2.16](https://github.com/xoctopus/confx/compare/v0.2.15...v0.2.16)
+
+> 2026-01-16
+
+### Feat
+
+* **confmq:** confmq.Message add pub/sub ordered attributes
 
 
 <a name="v0.2.15"></a>
