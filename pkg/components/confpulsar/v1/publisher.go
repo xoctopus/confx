@@ -61,7 +61,11 @@ func (p *publisher) PublishMessage(ctx context.Context, msg confmq.Message) (err
 	if err != nil {
 		return err
 	}
+
 	raw := &pulsar.ProducerMessage{Payload: data}
+	if x, ok := msg.(confmq.OrderedMessage); ok {
+		raw.Key = x.PubOrderedKey()
+	}
 
 	if p.sync {
 		_, err = p.pub.Send(ctx, raw)

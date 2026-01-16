@@ -27,6 +27,15 @@ type MutMessage interface {
 	Message
 
 	AddExtra(string, string)
+	SetSubOrderedKey(string)
+	SetPubOrderedKey(string)
+}
+
+type OrderedMessage interface {
+	Message
+
+	PubOrderedKey() string
+	SubOrderedKey() string
 }
 
 // ParseMessage data from message queue consumer
@@ -64,6 +73,11 @@ type message struct {
 	// payload
 	data []byte
 
+	// pubOrdered this key presents mq publishing routing policy
+	pubOrderedKey string
+	// subOrdered this key presents mq consuming order policy
+	subOrderedKey string
+
 	// extra
 	extra map[string][]string
 }
@@ -86,6 +100,22 @@ func (m *message) Data() []byte {
 
 func (m *message) Extra() map[string][]string {
 	return m.extra
+}
+
+func (m *message) PubOrderedKey() string {
+	return m.pubOrderedKey
+}
+
+func (m *message) SetPubOrderedKey(k string) {
+	m.pubOrderedKey = k
+}
+
+func (m *message) SubOrderedKey() string {
+	return m.subOrderedKey
+}
+
+func (m *message) SetSubOrderedKey(k string) {
+	m.subOrderedKey = k
 }
 
 func (m *message) AddExtra(key, val string) {
