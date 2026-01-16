@@ -110,7 +110,7 @@ func (e *Endpoint[Option]) LivenessCheck(ctx context.Context) LivenessData {
 		defer func() { _ = conn.Close() }()
 		return LivenessData{
 			Reachable: true,
-			TTL:       Duration(cost()),
+			RTT:       Duration(cost()),
 		}
 	}
 	return LivenessData{

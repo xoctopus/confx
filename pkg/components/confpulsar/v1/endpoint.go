@@ -103,14 +103,14 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 	select {
 	case <-s.Run(ctx, func(ctx context.Context, m confmq.Message) error {
 		if m.ID() == msg.ID() {
-			v.TTL = types.Duration(span())
+			v.RTT = types.Duration(span())
 			v.Reachable = true
 			s.Close()
 		}
 		return nil
 	}):
 	case <-time.After(time.Minute):
-		v.TTL = types.Duration(span())
+		v.RTT = types.Duration(span())
 		v.Reachable = false
 		v.Message = "liveness check timeout"
 	}

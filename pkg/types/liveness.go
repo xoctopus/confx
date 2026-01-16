@@ -8,8 +8,8 @@ import (
 type LivenessData struct {
 	// Reachable if remote endpoint is reachable
 	Reachable bool `json:"reachable"`
-	// TTL probes ttl to remote endpoint
-	TTL Duration `json:"ttl,omitempty"`
+	// RTT probes round trip time to remote endpoint
+	RTT Duration `json:"rtt,omitempty"`
 	// Message result or extended message
 	Message string `json:"msg,omitempty"`
 }

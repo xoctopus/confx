@@ -90,7 +90,7 @@ func (r *Endpoint) LivenessCheck(_ context.Context) (d types.LivenessData) {
 			return
 		}
 		d.Reachable = true
-		d.TTL = types.Duration(span())
+		d.RTT = types.Duration(span())
 		return
 	}
 

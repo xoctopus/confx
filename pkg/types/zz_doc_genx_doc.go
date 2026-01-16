@@ -30,8 +30,8 @@ func (v *LivenessData) DocOf(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Reachable":
 			return []string{"if remote endpoint is reachable"}, true
-		case "TTL":
-			return []string{"probes ttl to remote endpoint"}, true
+		case "RTT":
+			return []string{"probes round trip time to remote endpoint"}, true
 		case "Message":
 			return []string{"result or extended message"}, true
 		}

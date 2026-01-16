@@ -66,7 +66,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (d types.LivenessData) {
 		return
 	}
 
-	d.TTL = types.Duration(cost)
+	d.RTT = types.Duration(cost)
 	d.Reachable = true
 	return
 }
