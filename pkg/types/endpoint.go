@@ -33,13 +33,19 @@ func (e *Endpoint[Option]) IsZero() bool {
 	return e.Address == ""
 }
 
+func (e *Endpoint[Option]) SetDefault() {
+	if x, ok := any(&e.Option).(interface{ SetDefault() }); ok {
+		x.SetDefault()
+	}
+	e.Auth.SetDefault()
+}
+
 func (e *Endpoint[Option]) Init() (err error) {
 	e.addr, err = url.Parse(e.Address)
 	if err != nil {
 		return
 	}
 
-	e.Auth.SetDefault()
 	if e.Auth.IsZero() {
 		password, _ := e.addr.User.Password()
 		e.Auth.Password = Password(password)

@@ -1,9 +1,12 @@
 package confredis
 
 import (
+	"net/url"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/textx"
 
 	"github.com/xoctopus/confx/pkg/types"
 )
@@ -38,6 +41,10 @@ type Option struct {
 	MasterName string
 
 	ClusterMode bool
+}
+
+func (o *Option) SetDefault() {
+	must.NoError(textx.UnmarshalURL(url.Values{}, o))
 }
 
 func (o Option) ClientOption() *redis.UniversalOptions {

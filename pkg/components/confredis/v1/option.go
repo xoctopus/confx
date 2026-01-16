@@ -1,9 +1,16 @@
 package confredis
 
-import "github.com/xoctopus/confx/pkg/types"
+import (
+	"net/url"
 
-// RedisOptions presents
-type RedisOptions struct {
+	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/textx"
+
+	"github.com/xoctopus/confx/pkg/types"
+)
+
+// Option presents
+type Option struct {
 	Prefix        string         `url:""`
 	ConnTimeout   types.Duration `url:",default=10s"`
 	WriteTimeout  types.Duration `url:",default=10s"`
@@ -14,4 +21,8 @@ type RedisOptions struct {
 	ClientName    string         `url:""`
 	SkipTLSVerify bool           `url:",default=true"`
 	Wait          bool           `url:",default=true"`
+}
+
+func (o *Option) SetDefault() {
+	must.NoError(textx.UnmarshalURL(url.Values{}, o))
 }

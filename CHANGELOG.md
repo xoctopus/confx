@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.16...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.17...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.2.17"></a>
+## [v0.2.17](https://github.com/xoctopus/confx/compare/v0.2.16...v0.2.17)
+
+> 2026-01-16
+
+### Fix
+
+* **confpulsar:** set message partition key
 
 
 <a name="v0.2.16"></a>

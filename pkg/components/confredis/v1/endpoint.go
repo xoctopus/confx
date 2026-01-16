@@ -18,7 +18,7 @@ import (
 
 // Endpoint redis component endpoint
 type Endpoint struct {
-	types.Endpoint[RedisOptions]
+	types.Endpoint[Option]
 
 	prefix string
 	index  int

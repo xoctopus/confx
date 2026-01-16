@@ -19,7 +19,7 @@ func (v *Endpoint) DocOf(names ...string) ([]string, bool) {
 	return []string{"redis component endpoint"}, true
 }
 
-func (v *RedisOptions) DocOf(names ...string) ([]string, bool) {
+func (v *Option) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Prefix":

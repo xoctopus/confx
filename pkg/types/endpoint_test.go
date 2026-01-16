@@ -93,6 +93,7 @@ func TestEndpoint(t *testing.T) {
 				Password: types.Password(base64.StdEncoding.EncodeToString([]byte("abc"))),
 			},
 		}
+		ep.SetDefault()
 		Expect(t, ep.Init(), Failed())
 
 		t.Run("UserinfoInURL", func(t *testing.T) {
@@ -102,6 +103,7 @@ func TestEndpoint(t *testing.T) {
 				Address: fmt.Sprintf("redis://%s:%s@localhost:6379/1", username, password),
 				Auth:    types.Userinfo{},
 			}
+			ep.SetDefault()
 			Expect(t, ep.Init(), Failed())
 		})
 	})
