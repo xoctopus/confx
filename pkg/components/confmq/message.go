@@ -52,6 +52,17 @@ func NewMessage(ctx context.Context, topic string, v any) Message {
 	return NewMessageFromRaw(ctx, topic, raw)
 }
 
+func NewMessageWithID(topic string, id int64, v any) Message {
+	raw := must.NoErrorV(MarshalV(v))
+	return &message{
+		topic:     topic,
+		id:        id,
+		data:      raw,
+		timestamp: time.Now(),
+		extra:     make(map[string][]string),
+	}
+}
+
 func NewMessageFromRaw(ctx context.Context, topic string, raw []byte) Message {
 	idg := sfid.Must(ctx)
 
