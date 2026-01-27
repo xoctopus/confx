@@ -6,7 +6,7 @@ require (
 	github.com/go-think/openssl v1.20.0
 	github.com/xoctopus/genx v0.1.16
 	github.com/xoctopus/logx v0.1.1
-	github.com/xoctopus/sfid v0.0.3
+	github.com/xoctopus/sfid v0.0.5
 	github.com/xoctopus/x v0.2.11
 )
 
