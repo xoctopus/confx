@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
-	"sync"
 
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/xoctopus/logx"
@@ -14,32 +13,10 @@ import (
 	"github.com/xoctopus/confx/pkg/components/confmq"
 )
 
-type consumers struct {
-	mtx sync.RWMutex
-	lst list.List
-}
-
-func (c *consumers) add(s *subscriber) {
-	c.mtx.Lock()
-	defer c.mtx.Unlock()
-	elem := c.lst.PushBack(s)
-	s.elem = elem
-}
-
-func (c *consumers) close() {
-	c.mtx.Lock()
-	defer c.mtx.Unlock()
-	for elem := c.lst.Front(); elem != nil; elem = elem.Next() {
-		s := elem.Value.(*subscriber)
-		s.cancel(codex.New(ECODE__SUBSCRIPTION_CANCELED))
-		s.sub.Close()
-		c.lst.Remove(elem)
-	}
-}
-
 type subscriber struct {
-	cli      *Endpoint
-	elem     *list.Element
+	cli  *Endpoint
+	elem *list.Element
+
 	topic    string
 	sub      pulsar.Consumer
 	cancel   context.CancelCauseFunc
@@ -51,20 +28,16 @@ func (s *subscriber) Topic() string {
 	return s.topic
 }
 
-func (s *subscriber) Consumer() any {
-	return s.sub
-}
-
 // Run starts consuming messages and processing them.
 func (s *subscriber) Run(ctx context.Context, h func(context.Context, confmq.Message) error) <-chan error {
 	ch := make(chan error)
 	ctx, s.cancel = context.WithCancelCause(ctx)
 
+	log := logx.From(ctx)
 	go func() {
 		defer close(ch)
 
 		for {
-			log := logx.From(ctx)
 			msg, err := s.sub.Receive(ctx) // block call until subscriber closed
 			if err != nil {
 				log.Error(err)
@@ -75,7 +48,7 @@ func (s *subscriber) Run(ctx context.Context, h func(context.Context, confmq.Mes
 			log = log.With("msg_topic", msg.Topic(), "pulsar_msg_id", msg.ID().String())
 			if s.autoAck {
 				if err = s.sub.Ack(msg); err != nil {
-					log.With("action", "ack").Error(err) // TODO if ack failed should MUST ACKed
+					log.With("action", "ack").Error(err)
 				}
 			}
 
@@ -120,6 +93,23 @@ func (s *subscriber) handle(ctx context.Context, msg pulsar.Message, h func(cont
 	log = log.With("msg_id", m.ID(), "topic", m.Topic())
 
 	return h(ctx, m)
+}
+
+func (s *subscriber) Elem() *list.Element {
+	return s.elem
+}
+
+func (s *subscriber) SetElem(elem *list.Element) {
+	s.elem = elem
+}
+
+func (s *subscriber) close() {
+	if s.cancel != nil {
+		s.cancel(codex.New(ECODE__SUBSCRIPTION_CANCELED))
+	}
+	if s.sub != nil {
+		s.sub.Close()
+	}
 }
 
 func (s *subscriber) Close() {

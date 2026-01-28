@@ -1,8 +1,32 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.17...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.19...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.2.19"></a>
+## [v0.2.19](https://github.com/xoctopus/confx/compare/v0.2.18...v0.2.19)
+
+> 2026-01-23
+
+### Build
+
+* **deps:** bump github.com/xoctopus/genx from 0.1.15 to 0.1.16 ([#6](https://github.com/xoctopus/confx/issues/6))
+
+### Feat
+
+* **confmq:** NewMessageWithID
+
+
+<a name="v0.2.18"></a>
+## [v0.2.18](https://github.com/xoctopus/confx/compare/v0.2.17...v0.2.18)
+
+> 2026-01-16
+
+### Feat
+
+* **types:** add types.Endpoint.SetDefault
 
 
 <a name="v0.2.17"></a>

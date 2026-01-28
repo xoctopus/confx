@@ -110,6 +110,24 @@ func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
 	return confmq.With(ctx, ep)
 }
 
+func TryWithPulsar(ctx context.Context, t testing.TB, dsn string) (context.Context, error) {
+	Check(t)
+
+	_, err := url.Parse(dsn)
+	Expect(t, err, Succeed())
+
+	ep := &pulsarv1.Endpoint{}
+	ep.Address = dsn
+	ep.SetDefault()
+
+	err = ep.Init(ctx)
+	if err == nil {
+		t.Cleanup(func() { _ = ep.Close() })
+		return confmq.With(ctx, ep), nil
+	}
+	return ctx, err
+}
+
 func WithPulsarLost(ctx context.Context, t testing.TB, dsn string) context.Context {
 	_, err := url.Parse(dsn)
 	Expect(t, err, Succeed())

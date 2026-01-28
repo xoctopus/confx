@@ -26,6 +26,13 @@ func (v *Endpoint) DocOf(names ...string) ([]string, bool) {
 	return []string{"pulsar component endpoint"}, true
 }
 
+func (v *manager[T]) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{}, true
+}
+
 func (v *Option) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
@@ -63,6 +70,8 @@ func (v *Option) DocOf(names ...string) ([]string, bool) {
 			return []string{"[SUB] retry nack message interval"}, true
 		case "MaxNackRetry":
 			return []string{"[SUB] max retry times for nack message"}, true
+		case "DisablePersistent":
+			return []string{"[TOPIC] if disable persistent. set true the topic prefix", "use `non-persistent`.", "eg:", "persistent://tenant/namespace/topic", "non-persistent://tenant/namespace/topic"}, true
 		}
 		return []string{}, false
 	}
@@ -91,13 +100,6 @@ func (v *nackBackoffPolicy) DocOf(names ...string) ([]string, bool) {
 }
 
 func (v *publisher) DocOf(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		return []string{}, false
-	}
-	return []string{}, true
-}
-
-func (v *consumers) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}

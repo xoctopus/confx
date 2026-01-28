@@ -1,6 +1,7 @@
 package confpulsar
 
 import (
+	"container/list"
 	"context"
 	"sync/atomic"
 
@@ -12,8 +13,10 @@ import (
 )
 
 type publisher struct {
-	cli      *Endpoint
-	closed   atomic.Bool
+	cli    *Endpoint
+	elem   *list.Element
+	closed atomic.Bool
+
 	pub      pulsar.Producer
 	sync     bool
 	callback func(message confmq.Message, err error)
@@ -23,8 +26,8 @@ func (p *publisher) Topic() string {
 	return p.pub.Topic()
 }
 
-func (p *publisher) Publish(ctx context.Context, v any) (err error) {
-	_, log := logx.Enter(ctx)
+func (p *publisher) publish(ctx context.Context, m confmq.Message) (err error) {
+	_, log := logx.Enter(ctx, "topic", m.Topic(), "msg_id", m.ID())
 	defer func() {
 		if err != nil {
 			log.Error(err)
@@ -41,29 +44,13 @@ func (p *publisher) Publish(ctx context.Context, v any) (err error) {
 		return codex.New(ECODE__CLIENT_CLOSED)
 	}
 
-	msg := confmq.NewMessage(ctx, p.pub.Topic(), v)
-	log = log.With("topic", msg.Topic(), "msg_id", msg.ID())
-	return p.PublishMessage(ctx, msg)
-}
-
-func (p *publisher) PublishMessage(ctx context.Context, msg confmq.Message) (err error) {
-	_, log := logx.Enter(ctx, "topic", msg.Topic(), "msg_id", msg.ID())
-	defer func() {
-		if err != nil {
-			log.Error(err)
-		} else {
-			log.Info("published")
-		}
-		log.End()
-	}()
-
-	data, err := msg.(confmq.MessageArshaler).Marshal()
+	data, err := m.(confmq.MessageArshaler).Marshal()
 	if err != nil {
 		return err
 	}
 
 	raw := &pulsar.ProducerMessage{Payload: data}
-	if x, ok := msg.(confmq.OrderedMessage); ok {
+	if x, ok := m.(confmq.OrderedMessage); ok {
 		raw.Key = x.PubOrderedKey()
 	}
 
@@ -78,12 +65,37 @@ func (p *publisher) PublishMessage(ctx context.Context, msg confmq.Message) (err
 		func(_ pulsar.MessageID, _ *pulsar.ProducerMessage, err error) {
 			if done.CompareAndSwap(false, true) {
 				if p.callback != nil {
-					p.callback(msg, err)
+					p.callback(m, err)
 				}
 			}
 		},
 	)
 	return nil
+}
+
+func (p *publisher) Publish(ctx context.Context, v any) (err error) {
+	return p.publish(ctx, confmq.NewMessage(ctx, p.pub.Topic(), v))
+}
+
+func (p *publisher) PublishMessage(ctx context.Context, msg confmq.Message) (err error) {
+	if p.cli.Option.Topic(msg.Topic()) != p.pub.Topic() {
+		return codex.Errorf(ECODE__PUB_INVALID_MESSAGE, "unexpected topic")
+	}
+	return p.publish(ctx, msg)
+}
+
+func (p *publisher) Elem() *list.Element {
+	return p.elem
+}
+
+func (p *publisher) SetElem(elem *list.Element) {
+	p.elem = elem
+}
+
+func (p *publisher) close() {
+	if p.closed.CompareAndSwap(false, true) {
+		p.pub.Close()
+	}
 }
 
 func (p *publisher) Close() {

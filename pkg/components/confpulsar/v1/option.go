@@ -71,6 +71,15 @@ type Option struct {
 	// MaxNackRetry [SUB] max retry times for nack message
 	MaxNackRetry uint32 `url:",default=3"`
 
+	// DisablePersistent [TOPIC] if disable persistent. set true the topic prefix
+	// use `non-persistent`.
+	// eg:
+	// persistent://tenant/namespace/topic
+	// non-persistent://tenant/namespace/topic
+	DisablePersistent bool `usl:",default=false"`
+	// prefix persistent url prefix
+	prefix string
+
 	// internal
 	defaultPubOption *PubOption
 	defaultSubOption *SubOption
@@ -136,10 +145,19 @@ func (o *Option) SetDefault() {
 		}
 		o.defaultSubOption._initialized = true
 	}
+
+	o.prefix = "persistent"
+	if o.DisablePersistent {
+		o.prefix = "non-persistent"
+	}
 }
 
 func (o *Option) String() string {
-	return fmt.Sprintf("persistent://%s/%s/", o.Tenant, o.Namespace)
+	return fmt.Sprintf("%s://%s/%s/", o.prefix, o.Tenant, o.Namespace)
+}
+
+func (o *Option) Topic(topic string) string {
+	return fmt.Sprintf("%s://%s/%s/%s", o.prefix, o.Tenant, o.Namespace, topic)
 }
 
 func (o *Option) ClientOption(url string) pulsar.ClientOptions {

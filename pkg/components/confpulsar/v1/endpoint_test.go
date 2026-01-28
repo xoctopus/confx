@@ -4,6 +4,7 @@ import (
 	"context"
 	_ "embed"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -195,6 +196,32 @@ func TestPulsarEndpointV1(t *testing.T) {
 				defer sub.Close()
 				panic("in consumer handler")
 			})
+		})
+
+		t.Run("MultiLivenessCheck", func(t *testing.T) {
+			var (
+				err1 error
+				err2 error
+				wg   sync.WaitGroup
+			)
+
+			wg.Add(2)
+			go t.Run("Checker1", func(t *testing.T) {
+				defer wg.Done()
+				ctx := hack.Context(t)
+				_, err1 = hack.TryWithPulsar(ctx, t, dsn)
+				t.Log(err1)
+			})
+			go t.Run("Checker2", func(t *testing.T) {
+				defer wg.Done()
+				ctx := hack.Context(t)
+				_, err1 = hack.TryWithPulsar(ctx, t, dsn)
+				t.Log(err2)
+			})
+			wg.Wait()
+
+			// expect at-least-one success
+			Expect(t, err1 == nil || err2 == nil, BeTrue())
 		})
 	})
 }

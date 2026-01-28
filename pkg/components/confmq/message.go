@@ -68,7 +68,7 @@ func NewMessageFromRaw(ctx context.Context, topic string, raw []byte) Message {
 
 	return &message{
 		topic:     topic,
-		id:        idg.ID(),
+		id:        idg.MustID(),
 		data:      raw,
 		timestamp: time.Now(),
 		extra:     make(map[string][]string),

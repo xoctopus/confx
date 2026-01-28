@@ -13,7 +13,6 @@ import (
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/misc/must"
-	"github.com/xoctopus/x/syncx"
 
 	"github.com/xoctopus/confx/pkg/components/confmq"
 	"github.com/xoctopus/confx/pkg/types"
@@ -25,8 +24,8 @@ type Endpoint struct {
 
 	client    pulsar.Client
 	closed    atomic.Bool
-	producers syncx.Map[string, *publisher]
-	consumers *consumers
+	producers *manager[*publisher]
+	consumers *manager[*subscriber]
 }
 
 func (e *Endpoint) SetDefault() {
@@ -34,10 +33,10 @@ func (e *Endpoint) SetDefault() {
 		e.Endpoint.Address = "pulsar://localhost:6650"
 	}
 	if e.producers == nil {
-		e.producers = syncx.NewXmap[string, *publisher]()
+		e.producers = &manager[*publisher]{}
 	}
 	if e.consumers == nil {
-		e.consumers = &consumers{}
+		e.consumers = &manager[*subscriber]{}
 	}
 	e.Option.SetDefault()
 	e.closed.Store(false)
@@ -81,24 +80,35 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 		return
 	}
 
-	span := types.Cost()
-	p, err := e.Publisher(ctx, WithPubTopic("liveness"), WithSyncPublish())
-	if err != nil {
-		v.Message = err.Error()
-		return
-	}
-	msg := confmq.NewMessage(ctx, "liveness", nil)
-	if err = p.PublishMessage(ctx, msg); err != nil {
-		v.Message = err.Error()
-		return
-	}
-
-	s, err := e.Subscriber(ctx, WithSubTopic("liveness"))
+	s, err := e.Subscriber(
+		ctx,
+		WithSubTopic("liveness"),
+		WithSubType(pulsar.Exclusive),
+	)
 	if err != nil {
 		v.Message = err.Error()
 		return
 	}
 	defer s.Close()
+
+	span := types.Cost()
+	p, err := e.Publisher(
+		ctx,
+		WithPubTopic("liveness"),
+		WithSyncPublish(),
+		WithPubAccessMode(pulsar.ProducerAccessModeExclusive),
+	)
+	if err != nil {
+		v.Message = err.Error()
+		return
+	}
+	defer p.Close()
+
+	msg := confmq.NewMessage(ctx, "liveness", nil)
+	if err = p.PublishMessage(ctx, msg); err != nil {
+		v.Message = err.Error()
+		return
+	}
 
 	select {
 	case <-s.Run(ctx, func(ctx context.Context, m confmq.Message) error {
@@ -118,7 +128,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 	return
 }
 
-func (e *Endpoint) Publisher(ctx context.Context, options ...confmq.OptionApplier) (p confmq.Publisher, err error) {
+func (e *Endpoint) Publisher(ctx context.Context, options ...confmq.OptionApplier) (_ confmq.Publisher, err error) {
 	_, log := logx.Enter(ctx)
 	defer func() {
 		if err != nil {
@@ -134,33 +144,27 @@ func (e *Endpoint) Publisher(ctx context.Context, options ...confmq.OptionApplie
 	}
 
 	var (
-		opt    = e.Option.PubOption(options...)
-		pub    pulsar.Producer
-		loaded bool
+		opt = e.Option.PubOption(options...)
+		p   pulsar.Producer
 	)
 	must.BeTrueF(opt.options.Topic != "", "producer topic is required")
 	opt.options.Topic = e.Option.String() + opt.options.Topic
 
 	log = log.With("topic", opt.options.Topic, "sync", opt.sync)
-	p, loaded = e.producers.Load(opt.options.Topic)
-	if loaded {
-		log = log.With("producer", "loaded")
-		return
-	}
-
-	pub, err = e.client.CreateProducer(opt.options)
+	p, err = e.client.CreateProducer(opt.options)
 	if err != nil {
 		return
 	}
 
 	log = log.With("producer", "created")
-	p, _ = e.producers.LoadOrStore(opt.options.Topic, &publisher{
+	pub := &publisher{
 		cli:      e,
-		pub:      pub,
+		pub:      p,
 		sync:     opt.sync,
 		callback: opt.callback,
-	})
-	return
+	}
+	e.producers.Add(pub)
+	return pub, nil
 }
 
 func (e *Endpoint) Subscriber(ctx context.Context, options ...confmq.OptionApplier) (_ confmq.Subscriber, err error) {
@@ -198,7 +202,7 @@ func (e *Endpoint) Subscriber(ctx context.Context, options ...confmq.OptionAppli
 		callback: opt.callback,
 		autoAck:  !opt.disableAutoAck,
 	}
-	e.consumers.add(sub)
+	e.consumers.Add(sub)
 	return sub, nil
 }
 
@@ -208,14 +212,10 @@ func (e *Endpoint) Close() error {
 			e.client.Close()
 		}
 		if e.producers != nil {
-			for _, p := range e.producers.Range {
-				if p.closed.CompareAndSwap(false, true) {
-					p.pub.Close()
-				}
-			}
+			e.producers.Close()
 		}
 		if e.consumers != nil {
-			e.consumers.close()
+			e.consumers.Close()
 		}
 	}
 	return nil
@@ -223,20 +223,12 @@ func (e *Endpoint) Close() error {
 
 func (e *Endpoint) CloseSubscriber(sub confmq.Subscriber) {
 	if s, ok := sub.(*subscriber); ok {
-		e.consumers.mtx.Lock()
-		defer e.consumers.mtx.Unlock()
-		e.consumers.lst.Remove(s.elem)
-		s.cancel(codex.New(ECODE__SUBSCRIPTION_CANCELED))
-		s.sub.Close()
+		e.consumers.Remove(s)
 	}
 }
 
 func (e *Endpoint) ClosePublisher(pub confmq.Publisher) {
 	if p, ok := pub.(*publisher); ok {
-		if x, _ := e.producers.LoadAndDelete(p.Topic()); x != nil {
-			if x.closed.CompareAndSwap(false, true) {
-				x.pub.Close()
-			}
-		}
+		e.producers.Remove(p)
 	}
 }

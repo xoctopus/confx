@@ -12,4 +12,5 @@ const (
 	ECODE__CLIENT_CLOSED               // client closed
 	ECODE__SUBSCRIBER_CLOSED           // subscriber closed
 	ECODE__PUBLISHER_CLOSED            // publisher closed
+	ECODE__PUB_INVALID_MESSAGE         // publish invalid message
 )
