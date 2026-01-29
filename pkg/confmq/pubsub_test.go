@@ -4,13 +4,12 @@ import (
 	"context"
 	"testing"
 
+	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 	. "github.com/xoctopus/x/testx"
-
-	"github.com/xoctopus/confx/pkg/components/confmq"
 )
 
 type MockPubSub struct {
-	confmq.PubSub
+	confmq2.PubSub
 	option MockPubOptions
 }
 
@@ -20,15 +19,15 @@ type MockPubOptions struct {
 
 func (m *MockPubOptions) OptionScheme() string { return "mock" }
 
-func WithOptionVal(key string) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(o confmq.Option) {
+func WithOptionVal(key string) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(o confmq2.Option) {
 		if x, ok := o.(*MockPubOptions); ok {
 			x.key = key
 		}
 	})
 }
 
-func (ps *MockPubSub) Publish(ctx context.Context, m confmq.Message, appliers ...confmq.OptionApplier) error {
+func (ps *MockPubSub) Publish(ctx context.Context, m confmq2.Message, appliers ...confmq2.OptionApplier) error {
 	for _, applier := range appliers {
 		applier.Apply(&ps.option)
 	}
@@ -37,12 +36,12 @@ func (ps *MockPubSub) Publish(ctx context.Context, m confmq.Message, appliers ..
 
 func TestInjection(t *testing.T) {
 	ctx := context.Background()
-	_, ok := confmq.From(ctx)
+	_, ok := confmq2.From(ctx)
 	Expect(t, ok, BeFalse())
 
 	ps := &MockPubSub{}
-	ctx = confmq.Carry(ps)(ctx)
-	Expect(t, confmq.Must(ctx), Equal[confmq.PubSub](ps))
+	ctx = confmq2.Carry(ps)(ctx)
+	Expect(t, confmq2.Must(ctx), Equal[confmq2.PubSub](ps))
 
 	_ = ps.Publish(ctx, nil, WithOptionVal("key"))
 	Expect(t, ps.option.key, Equal("key"))

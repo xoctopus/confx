@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
+	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/misc/must"
 
-	"github.com/xoctopus/confx/pkg/components/confmq"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
@@ -104,14 +104,14 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 	}
 	defer p.Close()
 
-	msg := confmq.NewMessage(ctx, "liveness", nil)
+	msg := confmq2.NewMessage(ctx, "liveness", nil)
 	if err = p.PublishMessage(ctx, msg); err != nil {
 		v.Message = err.Error()
 		return
 	}
 
 	select {
-	case <-s.Run(ctx, func(ctx context.Context, m confmq.Message) error {
+	case <-s.Run(ctx, func(ctx context.Context, m confmq2.Message) error {
 		if m.ID() == msg.ID() {
 			v.RTT = types.Duration(span())
 			v.Reachable = true
@@ -128,7 +128,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 	return
 }
 
-func (e *Endpoint) Publisher(ctx context.Context, options ...confmq.OptionApplier) (_ confmq.Publisher, err error) {
+func (e *Endpoint) Publisher(ctx context.Context, options ...confmq2.OptionApplier) (_ confmq2.Publisher, err error) {
 	_, log := logx.Enter(ctx)
 	defer func() {
 		if err != nil {
@@ -167,7 +167,7 @@ func (e *Endpoint) Publisher(ctx context.Context, options ...confmq.OptionApplie
 	return pub, nil
 }
 
-func (e *Endpoint) Subscriber(ctx context.Context, options ...confmq.OptionApplier) (_ confmq.Subscriber, err error) {
+func (e *Endpoint) Subscriber(ctx context.Context, options ...confmq2.OptionApplier) (_ confmq2.Subscriber, err error) {
 	_, log := logx.Enter(ctx)
 	defer func() {
 		if err != nil {
@@ -228,13 +228,13 @@ func (e *Endpoint) Close() error {
 	return nil
 }
 
-func (e *Endpoint) CloseSubscriber(sub confmq.Subscriber) {
+func (e *Endpoint) CloseSubscriber(sub confmq2.Subscriber) {
 	if s, ok := sub.(*subscriber); ok {
 		e.consumers.Remove(s)
 	}
 }
 
-func (e *Endpoint) ClosePublisher(pub confmq.Publisher) {
+func (e *Endpoint) ClosePublisher(pub confmq2.Publisher) {
 	if p, ok := pub.(*publisher); ok {
 		e.producers.Remove(p)
 	}

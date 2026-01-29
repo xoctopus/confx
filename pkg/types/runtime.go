@@ -1,4 +1,4 @@
-package runtime
+package types
 
 const (
 	TARGET_PROJECT     = "PROJECT"

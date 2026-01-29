@@ -7,18 +7,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/xoctopus/confx/pkg/confkv"
+	"github.com/xoctopus/confx/pkg/confmq"
+	pulsarv1 "github.com/xoctopus/confx/pkg/confpulsar/v1"
+	redisv1 "github.com/xoctopus/confx/pkg/confredis/v1"
+	"github.com/xoctopus/confx/pkg/confredis/v2"
+	"github.com/xoctopus/confx/pkg/types"
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/sfid/pkg/sfid"
 	"github.com/xoctopus/x/contextx"
 	"github.com/xoctopus/x/misc/retry"
 	. "github.com/xoctopus/x/testx"
-
-	"github.com/xoctopus/confx/pkg/components/confkv"
-	"github.com/xoctopus/confx/pkg/components/confmq"
-	pulsarv1 "github.com/xoctopus/confx/pkg/components/confpulsar/v1"
-	redisv1 "github.com/xoctopus/confx/pkg/components/confredis/v1"
-	redisv2 "github.com/xoctopus/confx/pkg/components/confredis/v2"
-	"github.com/xoctopus/confx/pkg/components/runtime"
 )
 
 var retrier = &retry.Retry{
@@ -36,8 +35,8 @@ func Context(t testing.TB) context.Context {
 	t.Helper()
 	logx.SetLogFormat(logx.LogFormatJSON)
 
-	t.Setenv(runtime.DEPLOY_ENVIRONMENT, "test_hack")
-	t.Setenv(runtime.TARGET_PROJECT, "test_local")
+	t.Setenv(types.DEPLOY_ENVIRONMENT, "test_hack")
+	t.Setenv(types.TARGET_PROJECT, "test_local")
 
 	return contextx.Compose(
 		logx.Carry(logx.Std(logx.NewHandler())),
@@ -82,7 +81,7 @@ func WithRedisV2(ctx context.Context, t testing.TB, dsn string) context.Context 
 	_, err := url.Parse(dsn)
 	Expect(t, err, Succeed())
 
-	ep := &redisv2.Endpoint{}
+	ep := &confredis.Endpoint{}
 	ep.Address = dsn
 
 	err = retrier.Do(func() error { return ep.Init(ctx) })
@@ -90,7 +89,7 @@ func WithRedisV2(ctx context.Context, t testing.TB, dsn string) context.Context 
 
 	t.Cleanup(func() { _ = ep.Close() })
 
-	return redisv2.Carry(ep)(ctx)
+	return confredis.Carry(ep)(ctx)
 }
 
 func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {

@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
+	"github.com/xoctopus/confx/pkg/confmq"
+	"github.com/xoctopus/confx/pkg/confpulsar/v1"
+	"github.com/xoctopus/confx/pkg/conftls"
 	"github.com/xoctopus/x/codex"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
-	"github.com/xoctopus/confx/pkg/components/confmq"
-	"github.com/xoctopus/confx/pkg/components/confpulsar/v1"
-	"github.com/xoctopus/confx/pkg/components/conftls"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
@@ -239,17 +239,21 @@ func TestPulsarEndpointV1(t *testing.T) {
 			)
 
 			wg.Add(2)
-			go t.Run("Checker1", func(t *testing.T) {
-				defer wg.Done()
-				ctx := hack.Context(t)
-				_, err1 = hack.TryWithPulsar(ctx, t, dsn)
-				t.Log(err1)
+			t.Run("Checker1", func(t *testing.T) {
+				go func() {
+					defer wg.Done()
+					ctx := hack.Context(t)
+					_, err1 = hack.TryWithPulsar(ctx, t, dsn)
+					t.Log(err1)
+				}()
 			})
-			go t.Run("Checker2", func(t *testing.T) {
-				defer wg.Done()
-				ctx := hack.Context(t)
-				_, err1 = hack.TryWithPulsar(ctx, t, dsn)
-				t.Log(err2)
+			t.Run("Checker2", func(t *testing.T) {
+				go func() {
+					defer wg.Done()
+					ctx := hack.Context(t)
+					_, err1 = hack.TryWithPulsar(ctx, t, dsn)
+					t.Log(err2)
+				}()
 			})
 			wg.Wait()
 

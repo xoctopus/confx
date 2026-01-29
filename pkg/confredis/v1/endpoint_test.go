@@ -5,11 +5,11 @@ import (
 	"testing"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/xoctopus/confx/pkg/confkv"
+	"github.com/xoctopus/confx/pkg/confredis/v1"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
-	"github.com/xoctopus/confx/pkg/components/confkv"
-	"github.com/xoctopus/confx/pkg/components/confredis/v1"
 	"github.com/xoctopus/confx/pkg/types"
 )
 

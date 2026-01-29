@@ -6,10 +6,9 @@ import (
 
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
+	"github.com/xoctopus/confx/pkg/confmq"
+	. "github.com/xoctopus/confx/pkg/confpulsar/v1"
 	. "github.com/xoctopus/x/testx"
-
-	"github.com/xoctopus/confx/pkg/components/confmq"
-	. "github.com/xoctopus/confx/pkg/components/confpulsar/v1"
 )
 
 func TestPulsarOption(t *testing.T) {

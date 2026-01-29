@@ -9,8 +9,8 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	"github.com/apache/pulsar-client-go/pulsar/log"
+	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 
-	"github.com/xoctopus/confx/pkg/components/confmq"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
@@ -174,7 +174,7 @@ func (o *Option) ClientOption(url string) pulsar.ClientOptions {
 	}
 }
 
-func (o *Option) PubOption(appliers ...confmq.OptionApplier) *PubOption {
+func (o *Option) PubOption(appliers ...confmq2.OptionApplier) *PubOption {
 	opt := *o.defaultPubOption
 	for _, applier := range appliers {
 		applier.Apply(&opt)
@@ -182,7 +182,7 @@ func (o *Option) PubOption(appliers ...confmq.OptionApplier) *PubOption {
 	return &opt
 }
 
-func (o *Option) SubOption(appliers ...confmq.OptionApplier) *SubOption {
+func (o *Option) SubOption(appliers ...confmq2.OptionApplier) *SubOption {
 	opt := *o.defaultSubOption
 	for _, applier := range appliers {
 		applier.Apply(&opt)
@@ -194,7 +194,7 @@ type PubOption struct {
 	_initialized bool
 	// callback when async send mode enabled. callback will be called when message
 	// sent completed
-	callback func(confmq.Message, error)
+	callback func(confmq2.Message, error)
 	// sync decides use Send or SendAsync in pulsar client
 	sync bool
 	// options pulsar producer option
@@ -207,56 +207,56 @@ func (o *PubOption) Options() pulsar.ProducerOptions {
 
 func (*PubOption) OptionScheme() string { return "pulsar" }
 
-func WithPublishCallback(f func(confmq.Message, error)) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPublishCallback(f func(confmq2.Message, error)) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.callback = f
 		}
 	})
 }
 
-func WithSyncPublish() confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithSyncPublish() confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.sync = true
 		}
 	})
 }
 
-func WithPubTopic(topic string) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPubTopic(topic string) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options.Topic = topic
 		}
 	})
 }
 
-func WithPubSendTimeout(d time.Duration) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPubSendTimeout(d time.Duration) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options.SendTimeout = d
 		}
 	})
 }
 
-func WithPubEnableBlockIfQueueFull() confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPubEnableBlockIfQueueFull() confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options.DisableBlockIfQueueFull = true
 		}
 	})
 }
 
-func WithPubMaxPendingMessages(n int) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPubMaxPendingMessages(n int) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options.MaxPendingMessages = n
 		}
 	})
 }
 
-func WithPubEnableCompression() confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPubEnableCompression() confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options.CompressionType = pulsar.LZ4
 			x.options.CompressionLevel = pulsar.Default
@@ -264,8 +264,8 @@ func WithPubEnableCompression() confmq.OptionApplier {
 	})
 }
 
-func WithPubBatchingMaxMessages(n uint) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPubBatchingMaxMessages(n uint) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options.DisableBatching = false
 			x.options.BatchingMaxMessages = n
@@ -273,16 +273,16 @@ func WithPubBatchingMaxMessages(n uint) confmq.OptionApplier {
 	})
 }
 
-func WithPubAccessMode(m pulsar.ProducerAccessMode) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPubAccessMode(m pulsar.ProducerAccessMode) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options.ProducerAccessMode = m
 		}
 	})
 }
 
-func WithPublisherOptions(o pulsar.ProducerOptions) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPublisherOptions(o pulsar.ProducerOptions) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options = o
 		}
@@ -295,7 +295,7 @@ type SubOption struct {
 	// should be handled by callback.
 	disableAutoAck bool
 	// callback it is called when message handled
-	callback func(pulsar.Consumer, pulsar.Message, confmq.Message, error)
+	callback func(pulsar.Consumer, pulsar.Message, confmq2.Message, error)
 	// options pulsar consumer options
 	options pulsar.ConsumerOptions
 }
@@ -308,8 +308,8 @@ func (o *SubOption) Options() pulsar.ConsumerOptions {
 
 // WithSubDisableAutoAck enables auto ack. when message received from mq, ack will
 // be performed immediately.
-func WithSubDisableAutoAck() confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithSubDisableAutoAck() confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.disableAutoAck = true
 		}
@@ -317,16 +317,16 @@ func WithSubDisableAutoAck() confmq.OptionApplier {
 }
 
 // WithSubCallback set subscriber's callback when message is handled.
-func WithSubCallback(f func(pulsar.Consumer, pulsar.Message, confmq.Message, error)) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithSubCallback(f func(pulsar.Consumer, pulsar.Message, confmq2.Message, error)) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.callback = f
 		}
 	})
 }
 
-func WithSubTopic(topics ...string) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithSubTopic(topics ...string) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			if len(topics) > 0 {
 				if x.options.SubscriptionName == "" {
@@ -343,32 +343,32 @@ func WithSubTopic(topics ...string) confmq.OptionApplier {
 	})
 }
 
-func WithSubTopicPattern(pattern string) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithSubTopicPattern(pattern string) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.options.TopicsPattern = pattern
 		}
 	})
 }
 
-func WithSubName(name string) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithSubName(name string) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.options.SubscriptionName = name
 		}
 	})
 }
 
-func WithSubType(t pulsar.SubscriptionType) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithSubType(t pulsar.SubscriptionType) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.options.Type = t
 		}
 	})
 }
 
-func WithSubEnableRetryNack(retryDelay time.Duration, maxRetry uint32) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithSubEnableRetryNack(retryDelay time.Duration, maxRetry uint32) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.options.RetryEnable = true
 			if maxRetry > 1 {
@@ -385,8 +385,8 @@ func WithSubEnableRetryNack(retryDelay time.Duration, maxRetry uint32) confmq.Op
 	})
 }
 
-func WithPulsarConsumerOptions(options pulsar.ConsumerOptions) confmq.OptionApplier {
-	return confmq.OptionApplyFunc(func(opt confmq.Option) {
+func WithPulsarConsumerOptions(options pulsar.ConsumerOptions) confmq2.OptionApplier {
+	return confmq2.OptionApplyFunc(func(opt confmq2.Option) {
 		if o, ok := opt.(*SubOption); ok {
 			o.options = options
 		}

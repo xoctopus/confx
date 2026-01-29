@@ -2,7 +2,7 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.19...HEAD)
 
-> 2026-01-28
+> 2026-01-29
 
 ### Feat
 
