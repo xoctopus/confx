@@ -27,6 +27,11 @@ func (o MockOption) IsZero() bool {
 	return o == MockOption{} || o == DefaultMockOption
 }
 
+func (o *MockOption) SetDefault() {
+	o.Timeout = types.Duration(time.Second * 10)
+	o.Name = "unknown"
+}
+
 func ExampleEndpoint() {
 	grp := envx.NewGroup("TEST")
 	enc := envx.NewEncoder(grp)

@@ -30,7 +30,6 @@ type Option struct {
 	// PoolSize controls redis request concurrency. 10*GOMAXPROCS is recommended.
 	// this option affects MaxActiveConns, which will be set to 4 times of PoolSize
 	// for balancing connection stability and concurrent performance.
-	//edis connection stability and concurrent performance.
 	PoolSize          int            `url:",default=20"`
 	MaxIdleConnection int            `url:",default=10"`
 	MaxIdleTime       types.Duration `url:",default=1h"`

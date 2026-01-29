@@ -3,6 +3,7 @@ package confpulsar_test
 import (
 	"context"
 	_ "embed"
+	"errors"
 	"strings"
 	"sync"
 	"testing"
@@ -28,7 +29,7 @@ var (
 	ca string
 )
 
-func genTopic(t *testing.T) string {
+func TopicFor(t *testing.T) string {
 	return strings.ReplaceAll(t.Name(), "/", "_")
 }
 
@@ -55,7 +56,7 @@ func TestPulsarEndpointV1(t *testing.T) {
 				ep := confmq.Must(ctx)
 				Expect(t, ep, NotBeNil[confmq.PubSub]())
 
-				_, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
+				_, err := ep.Publisher(ctx, confpulsar.WithPubTopic(TopicFor(t)))
 				Expect(t, err, Failed())
 			})
 
@@ -75,21 +76,42 @@ func TestPulsarEndpointV1(t *testing.T) {
 			ctx := hack.WithPulsar(hack.Context(t), t, dsn)
 			ep := confmq.Must(ctx)
 			Expect(t, ep, NotBeNil[confmq.PubSub]())
+			topic := TopicFor(t)
+
+			t.Run("LivenessCheck", func(t *testing.T) {
+				d := ep.(types.LivenessChecker).LivenessCheck(ctx)
+				Expect(t, d.Reachable, BeTrue())
+			})
+
+			pub, err := ep.Publisher(
+				ctx,
+				confpulsar.WithPubTopic(topic),
+				confpulsar.WithPublishCallback(func(confmq.Message, error) {}),
+			)
+			Expect(t, err, Succeed())
+			Expect(t, pub.Topic(), HaveSuffix(topic))
+			Expect(t, pub.Publish(ctx, t.Name()), Succeed())
+
+			t.Run("InvalidMessage", func(t *testing.T) {
+				err = pub.PublishMessage(ctx, confmq.NewMessage(ctx, "other", nil))
+				Expect(t, codex.IsCode(err, confpulsar.ECODE__PUB_INVALID_MESSAGE), BeTrue())
+			})
+
+			t.Run("PublisherClosed", func(t *testing.T) {
+				pub.Close()
+
+				err = pub.PublishMessage(ctx, confmq.NewMessage(ctx, topic, nil))
+				Expect(t, codex.IsCode(err, confpulsar.ECODE__PUBLISHER_CLOSED), BeTrue())
+			})
 
 			sub, err := ep.Subscriber(
 				ctx,
-				confpulsar.WithSubTopic(genTopic(t)),
+				confpulsar.WithSubTopic(topic),
 			)
-			Expect(t, err, Succeed())
-			pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
-			Expect(t, err, Succeed())
-
-			time.Sleep(time.Second)
-			err = pub.Publish(ctx, t.Name())
 			Expect(t, err, Succeed())
 
 			<-sub.Run(ctx, func(ctx context.Context, msg confmq.Message) error {
-				Expect(t, msg.Topic(), Equal(pub.Topic()))
+				Expect(t, msg.Topic(), HaveSuffix(topic))
 				if string(msg.Data()) == t.Name() {
 					time.Sleep(time.Second) // wait unacked messages
 					sub.Close()
@@ -97,10 +119,21 @@ func TestPulsarEndpointV1(t *testing.T) {
 				return nil
 			})
 
-			t.Run("LivenessCheck", func(t *testing.T) {
-				d := ep.(types.LivenessChecker).LivenessCheck(ctx)
-				Expect(t, d.Reachable, BeTrue())
+			t.Run("EndpointClosed", func(t *testing.T) {
+				Expect(t, ep.Close(), Succeed())
+				err = pub.Publish(ctx, nil)
+				Expect(t, codex.IsCode(err, confpulsar.ECODE__CLIENT_CLOSED), BeTrue())
 			})
+		})
+
+		t.Run("FailedToInitClient", func(t *testing.T) {
+			_, err := hack.TryWithPulsar(
+				hack.Context(t), t,
+				"pulsar://localhost:16650?connectionMaxIdleTime=30s",
+			)
+			expect := &pulsar.Error{}
+			Expect(t, errors.As(err, &expect), BeTrue())
+			Expect(t, expect.Result(), Equal(pulsar.InvalidConfiguration))
 		})
 
 		t.Run("ClosedClient", func(t *testing.T) {
@@ -110,10 +143,10 @@ func TestPulsarEndpointV1(t *testing.T) {
 
 			_, err := ep.Subscriber(
 				ctx,
-				confpulsar.WithSubTopic(genTopic(t)),
+				confpulsar.WithSubTopic(TopicFor(t)),
 			)
 			Expect(t, err, Failed())
-			_, err = ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
+			_, err = ep.Publisher(ctx, confpulsar.WithPubTopic(TopicFor(t)))
 			Expect(t, err, Failed())
 			r := ep.(types.LivenessChecker).LivenessCheck(ctx)
 			Expect(t, r.Reachable, BeFalse())
@@ -125,9 +158,9 @@ func TestPulsarEndpointV1(t *testing.T) {
 					ctx = hack.WithPulsar(hack.Context(t), t, dsn)
 					ep  = confmq.Must(ctx)
 				)
-				sub, err := ep.Subscriber(ctx, confpulsar.WithSubTopic(genTopic(t)))
+				sub, err := ep.Subscriber(ctx, confpulsar.WithSubTopic(TopicFor(t)))
 				Expect(t, err, Succeed())
-				pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
+				pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(TopicFor(t)))
 				Expect(t, err, Succeed())
 
 				err = pub.Publish(ctx, "send_mode:sync")
@@ -148,9 +181,9 @@ func TestPulsarEndpointV1(t *testing.T) {
 					ctx = hack.WithPulsar(hack.Context(t), t, dsn)
 					ep  = confmq.Must(ctx)
 				)
-				sub, err := ep.Subscriber(ctx, confpulsar.WithSubTopic(genTopic(t)))
+				sub, err := ep.Subscriber(ctx, confpulsar.WithSubTopic(TopicFor(t)))
 				Expect(t, err, Succeed())
-				pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
+				pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(TopicFor(t)))
 				Expect(t, err, Succeed())
 
 				err = pub.Publish(ctx, "send_mode:async")
@@ -172,7 +205,7 @@ func TestPulsarEndpointV1(t *testing.T) {
 				ep  = confmq.Must(ctx)
 			)
 			sub, err := ep.Subscriber(ctx,
-				confpulsar.WithSubTopic(genTopic(t)),
+				confpulsar.WithSubTopic(TopicFor(t)),
 				confpulsar.WithSubDisableAutoAck(),
 				confpulsar.WithSubCallback(func(c pulsar.Consumer, m pulsar.Message, p confmq.Message, err error) {
 					_ = c.Ack(m)
@@ -186,7 +219,7 @@ func TestPulsarEndpointV1(t *testing.T) {
 				}),
 			)
 			Expect(t, err, Succeed())
-			pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(genTopic(t)))
+			pub, err := ep.Publisher(ctx, confpulsar.WithPubTopic(TopicFor(t)))
 			Expect(t, err, Succeed())
 
 			err = pub.Publish(ctx, "any")

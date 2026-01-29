@@ -92,6 +92,15 @@ func TestMessage(t *testing.T) {
 		}
 	})
 
+	t.Run("Ordered", func(t *testing.T) {
+		id := sfid.Must(ctx).MustID()
+		m := confmq.NewMessageWithID(t.Name(), id, "1")
+		m.(confmq.MutMessage).SetPubOrderedKey("p_ordered")
+		m.(confmq.MutMessage).SetSubOrderedKey("s_ordered")
+		Expect(t, m.(confmq.OrderedMessage).PubOrderedKey(), Equal("p_ordered"))
+		Expect(t, m.(confmq.OrderedMessage).SubOrderedKey(), Equal("s_ordered"))
+	})
+
 	t.Run("Helper", func(t *testing.T) {
 		data, err := confmq.MarshalV("123")
 		Expect(t, err, Succeed())

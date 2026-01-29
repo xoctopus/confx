@@ -37,11 +37,12 @@ func (p *publisher) publish(ctx context.Context, m confmq.Message) (err error) {
 		log.End()
 	}()
 
-	if p.closed.Load() {
-		return codex.New(ECODE__PUBLISHER_CLOSED)
-	}
 	if p.cli.closed.Load() {
 		return codex.New(ECODE__CLIENT_CLOSED)
+	}
+
+	if p.closed.Load() {
+		return codex.New(ECODE__PUBLISHER_CLOSED)
 	}
 
 	data, err := m.(confmq.MessageArshaler).Marshal()

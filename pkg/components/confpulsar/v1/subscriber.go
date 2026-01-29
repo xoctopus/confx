@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"runtime/debug"
+	"sync/atomic"
 
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/xoctopus/logx"
@@ -14,21 +15,22 @@ import (
 )
 
 type subscriber struct {
-	cli  *Endpoint
-	elem *list.Element
+	cli    *Endpoint
+	elem   *list.Element
+	closed atomic.Bool
+	sub    pulsar.Consumer
 
-	topic    string
-	sub      pulsar.Consumer
 	cancel   context.CancelCauseFunc
 	callback func(pulsar.Consumer, pulsar.Message, confmq.Message, error)
 	autoAck  bool
 }
 
-func (s *subscriber) Topic() string {
-	return s.topic
-}
-
 // Run starts consuming messages and processing them.
+// NOTE:
+//  1. The returned error channel is unbuffered. The caller MUST handle it.
+//  2. If `autoAck` is not enabled and `callback` is configured, the subscriber
+//     will NOT acknowledge messages automatically.
+//  3. If a callback is configured, it will be invoked after message processed
 func (s *subscriber) Run(ctx context.Context, h func(context.Context, confmq.Message) error) <-chan error {
 	ch := make(chan error)
 	ctx, s.cancel = context.WithCancelCause(ctx)
@@ -46,7 +48,7 @@ func (s *subscriber) Run(ctx context.Context, h func(context.Context, confmq.Mes
 			}
 
 			log = log.With("msg_topic", msg.Topic(), "pulsar_msg_id", msg.ID().String())
-			if s.autoAck {
+			if s.autoAck || s.callback == nil {
 				if err = s.sub.Ack(msg); err != nil {
 					log.With("action", "ack").Error(err)
 				}
@@ -104,11 +106,13 @@ func (s *subscriber) SetElem(elem *list.Element) {
 }
 
 func (s *subscriber) close() {
-	if s.cancel != nil {
-		s.cancel(codex.New(ECODE__SUBSCRIPTION_CANCELED))
-	}
-	if s.sub != nil {
-		s.sub.Close()
+	if s.closed.CompareAndSwap(false, true) {
+		if s.cancel != nil {
+			s.cancel(codex.New(ECODE__SUBSCRIPTION_CANCELED))
+		}
+		if s.sub != nil {
+			s.sub.Close()
+		}
 	}
 }
 

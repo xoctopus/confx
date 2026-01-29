@@ -2,7 +2,11 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.19...HEAD)
 
-> 0001-01-01
+> 2026-01-28
+
+### Feat
+
+* **confpulsar:** remove reuse of producer
 
 
 <a name="v0.2.19"></a>

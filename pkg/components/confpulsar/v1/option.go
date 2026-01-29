@@ -201,6 +201,10 @@ type PubOption struct {
 	options pulsar.ProducerOptions
 }
 
+func (o *PubOption) Options() pulsar.ProducerOptions {
+	return o.options
+}
+
 func (*PubOption) OptionScheme() string { return "pulsar" }
 
 func WithPublishCallback(f func(confmq.Message, error)) confmq.OptionApplier {
@@ -298,6 +302,10 @@ type SubOption struct {
 
 func (*SubOption) OptionScheme() string { return "pulsar" }
 
+func (o *SubOption) Options() pulsar.ConsumerOptions {
+	return o.options
+}
+
 // WithSubDisableAutoAck enables auto ack. when message received from mq, ack will
 // be performed immediately.
 func WithSubDisableAutoAck() confmq.OptionApplier {
@@ -320,14 +328,16 @@ func WithSubCallback(f func(pulsar.Consumer, pulsar.Message, confmq.Message, err
 func WithSubTopic(topics ...string) confmq.OptionApplier {
 	return confmq.OptionApplyFunc(func(opt confmq.Option) {
 		if x, ok := opt.(*SubOption); ok {
-			if len(topics) == 1 {
-				x.options.Topic = topics[0]
+			if len(topics) > 0 {
 				if x.options.SubscriptionName == "" {
 					x.options.SubscriptionName = topics[0]
 				}
-			}
-			if len(topics) > 1 {
-				x.options.Topics = topics
+				if len(topics) == 1 {
+					x.options.Topic = topics[0]
+				}
+				if len(topics) > 1 {
+					x.options.Topics = topics
+				}
 			}
 		}
 	})

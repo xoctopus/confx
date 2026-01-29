@@ -119,7 +119,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 		}
 		return nil
 	}):
-	case <-time.After(time.Minute):
+	case <-time.After(time.Second << 2):
 		v.RTT = types.Duration(span())
 		v.Reachable = false
 		v.Message = "liveness check timeout"
@@ -189,6 +189,13 @@ func (e *Endpoint) Subscriber(ctx context.Context, options ...confmq.OptionAppli
 		"consumer topic is required",
 	)
 	opt.options.Topic = e.Option.String() + opt.options.Topic
+	if opt.options.TopicsPattern != "" {
+		opt.options.TopicsPattern = e.Option.String() + opt.options.TopicsPattern
+	}
+	for i := range opt.options.Topics {
+		opt.options.Topics[i] = e.Option.String() + opt.options.Topics[i]
+	}
+
 	log = log.With("topic", opt.options.Topic, "name", opt.options.SubscriptionName)
 
 	s, err := e.client.Subscribe(opt.options)
