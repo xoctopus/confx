@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xoctopus/confx/pkg/conftls"
 	. "github.com/xoctopus/x/testx"
 
+	"github.com/xoctopus/confx/pkg/conftls"
 	"github.com/xoctopus/confx/pkg/envx"
 	"github.com/xoctopus/confx/pkg/types"
 )

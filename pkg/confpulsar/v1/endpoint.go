@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
-	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/misc/must"
 
+	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 	"github.com/xoctopus/confx/pkg/types"
 )
 

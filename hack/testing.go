@@ -7,17 +7,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/xoctopus/logx"
+	"github.com/xoctopus/sfid/pkg/sfid"
+	"github.com/xoctopus/x/contextx"
+	"github.com/xoctopus/x/misc/retry"
+	. "github.com/xoctopus/x/testx"
+
 	"github.com/xoctopus/confx/pkg/confkv"
 	"github.com/xoctopus/confx/pkg/confmq"
 	pulsarv1 "github.com/xoctopus/confx/pkg/confpulsar/v1"
 	redisv1 "github.com/xoctopus/confx/pkg/confredis/v1"
 	"github.com/xoctopus/confx/pkg/confredis/v2"
 	"github.com/xoctopus/confx/pkg/types"
-	"github.com/xoctopus/logx"
-	"github.com/xoctopus/sfid/pkg/sfid"
-	"github.com/xoctopus/x/contextx"
-	"github.com/xoctopus/x/misc/retry"
-	. "github.com/xoctopus/x/testx"
 )
 
 var retrier = &retry.Retry{
@@ -105,7 +106,9 @@ func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
 	err = retrier.Do(func() error { return ep.Init(ctx) })
 	Expect(t, err, Succeed())
 
-	t.Cleanup(func() { _ = ep.Close() })
+	t.Cleanup(func() {
+		_ = ep.Close()
+	})
 	return confmq.With(ctx, ep)
 }
 

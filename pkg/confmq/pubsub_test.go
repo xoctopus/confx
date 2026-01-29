@@ -4,8 +4,9 @@ import (
 	"context"
 	"testing"
 
-	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 	. "github.com/xoctopus/x/testx"
+
+	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 )
 
 type MockPubSub struct {

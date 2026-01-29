@@ -4,8 +4,9 @@ import (
 	_ "embed"
 	"testing"
 
-	"github.com/xoctopus/confx/pkg/conftls"
 	. "github.com/xoctopus/x/testx"
+
+	"github.com/xoctopus/confx/pkg/conftls"
 )
 
 var (

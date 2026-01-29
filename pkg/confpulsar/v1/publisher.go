@@ -6,9 +6,10 @@ import (
 	"sync/atomic"
 
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/xoctopus/confx/pkg/confmq"
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
+
+	"github.com/xoctopus/confx/pkg/confmq"
 )
 
 type publisher struct {

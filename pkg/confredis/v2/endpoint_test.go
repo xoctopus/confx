@@ -3,10 +3,10 @@ package confredis_test
 import (
 	"testing"
 
-	"github.com/xoctopus/confx/pkg/confredis/v2"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
+	"github.com/xoctopus/confx/pkg/confredis/v2"
 )
 
 func TestEndpoint(t *testing.T) {

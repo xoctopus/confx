@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/xoctopus/confx/pkg/confmq"
-	"github.com/xoctopus/confx/pkg/confpulsar/v1"
-	"github.com/xoctopus/confx/pkg/conftls"
 	"github.com/xoctopus/x/codex"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
+	"github.com/xoctopus/confx/pkg/confmq"
+	"github.com/xoctopus/confx/pkg/confpulsar/v1"
+	"github.com/xoctopus/confx/pkg/conftls"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
@@ -74,6 +74,8 @@ func TestPulsarEndpointV1(t *testing.T) {
 		dsn := "pulsar://localhost:16650"
 		t.Run("Established", func(t *testing.T) {
 			ctx := hack.WithPulsar(hack.Context(t), t, dsn)
+			ctx, cancel := context.WithTimeout(ctx, time.Minute*2)
+			defer cancel()
 			ep := confmq.Must(ctx)
 			Expect(t, ep, NotBeNil[confmq.PubSub]())
 			topic := TopicFor(t)

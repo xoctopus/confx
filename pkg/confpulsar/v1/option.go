@@ -9,8 +9,8 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	"github.com/apache/pulsar-client-go/pulsar/log"
-	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 
+	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 	"github.com/xoctopus/confx/pkg/types"
 )
 

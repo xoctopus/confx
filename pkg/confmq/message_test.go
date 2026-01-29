@@ -6,9 +6,10 @@ import (
 	"fmt"
 	"testing"
 
-	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 	"github.com/xoctopus/sfid/pkg/sfid"
 	. "github.com/xoctopus/x/testx"
+
+	confmq2 "github.com/xoctopus/confx/pkg/confmq"
 )
 
 type JSONArshaler struct {

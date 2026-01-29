@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xoctopus/confx/pkg/conftls"
 	"github.com/xoctopus/x/textx"
+
+	"github.com/xoctopus/confx/pkg/conftls"
 )
 
 // Endpoint a connectable endpoint

@@ -1,6 +1,6 @@
 module github.com/xoctopus/confx
 
-go 1.25.5
+go 1.25.6
 
 require (
 	github.com/go-think/openssl v1.20.0
@@ -9,6 +9,8 @@ require (
 	github.com/xoctopus/sfid v0.0.6
 	github.com/xoctopus/x v0.2.12
 )
+
+require github.com/onsi/gomega v1.38.2 // indirect
 
 // cobra
 require (
@@ -81,7 +83,7 @@ require (
 	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
 	golang.org/x/tools v0.40.0 // indirect
-	google.golang.org/protobuf v1.36.5 // indirect
+	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apimachinery v0.32.3 // indirect
 	k8s.io/client-go v0.32.3 // indirect
