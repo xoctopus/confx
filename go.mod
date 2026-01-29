@@ -21,7 +21,7 @@ require (
 require (
 	github.com/apache/pulsar-client-go v0.18.0
 	github.com/gomodule/redigo v1.9.3
-	github.com/redis/go-redis/v9 v9.17.2
+	github.com/redis/go-redis/v9 v9.17.3
 )
 
 // indirect
