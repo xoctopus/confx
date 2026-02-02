@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"sort"
 	"strings"
 
@@ -23,9 +22,9 @@ import (
 type Option func(*AppCtx)
 
 func WithMainRoot(root string) Option {
-	_, filename, _, _ := runtime.Caller(1)
+	// _, filename, _, _ := runtime.Caller(1)
 	return func(app *AppCtx) {
-		app.root = filepath.Join(filepath.Dir(filename), root)
+		app.root = root
 	}
 }
 
