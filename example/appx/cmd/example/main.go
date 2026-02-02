@@ -23,13 +23,16 @@ var (
 	app    *appx.AppCtx
 	config = &struct {
 		WorkerID uint64
-		Endpoint types.Endpoint[any]
+		Endpoint types.EndpointNoOption
 	}{
 		WorkerID: 100,
 	}
 )
 
 func init() {
+	// try to override local.yml
+	_ = os.Setenv("EXAMPLE__WorkerID", "111")
+
 	app = appx.NewAppContext(
 		appx.WithBuildMeta(appx.Meta{
 			Name:     Name,

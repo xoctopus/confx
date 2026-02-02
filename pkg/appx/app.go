@@ -144,7 +144,9 @@ func (app *AppCtx) injectLocalConfig() {
 		kv := make(map[string]string)
 		if err = yaml.Unmarshal(local, &kv); err == nil {
 			for k, v := range kv {
-				_ = os.Setenv(k, v)
+				if _, ok := os.LookupEnv(k); !ok {
+					_ = os.Setenv(k, v)
+				}
 			}
 		}
 	}
@@ -229,8 +231,23 @@ func (app *AppCtx) mustWriteDefault() {
 
 	content, err := yaml.Marshal(m)
 	must.NoErrorF(err, "failed to marshal default vars")
-
 	filename := filepath.Join(dir, "default.yml")
+	must.NoErrorF(
+		os.WriteFile(filename, content, os.ModePerm),
+		"failed to write default config file",
+	)
+
+	m = make(map[string]string)
+	for _, g := range app.dfts {
+		for _, v := range g.Values() {
+			if !v.Optional() {
+				m[g.Key(v.Key())] = v.Value()
+			}
+		}
+	}
+
+	content = envx.DotEnv(m)
+	filename = filepath.Join(dir, ".env")
 	must.NoErrorF(
 		os.WriteFile(filename, content, os.ModePerm),
 		"failed to write default config file",

@@ -1,6 +1,12 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.19...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.20...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.2.20"></a>
+## [v0.2.20](https://github.com/xoctopus/confx/compare/v0.2.19...v0.2.20)
 
 > 2026-01-29
 
@@ -9,6 +15,10 @@
 * **deps:** bump github.com/xoctopus/logx from 0.1.1 to 0.1.2 ([#7](https://github.com/xoctopus/confx/issues/7))
 * **deps:** bump github.com/xoctopus/x from 0.2.11 to 0.2.12 ([#8](https://github.com/xoctopus/confx/issues/8))
 * **deps:** bump github.com/redis/go-redis/v9 from 9.17.2 to 9.17.3 ([#9](https://github.com/xoctopus/confx/issues/9))
+
+### Chore
+
+* code formating
 
 ### Feat
 
