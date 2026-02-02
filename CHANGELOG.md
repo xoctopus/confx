@@ -1,8 +1,22 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.20...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.21...HEAD)
 
-> 0001-01-01
+> 2026-02-02
+
+### Fix
+
+* **appx:** app.root
+
+
+<a name="v0.2.21"></a>
+## [v0.2.21](https://github.com/xoctopus/confx/compare/v0.2.20...v0.2.21)
+
+> 2026-02-02
+
+### Fix
+
+* env override local.yml
 
 
 <a name="v0.2.20"></a>
