@@ -7,7 +7,7 @@ require (
 	github.com/xoctopus/genx v0.1.16
 	github.com/xoctopus/logx v0.1.2
 	github.com/xoctopus/sfid v0.0.6
-	github.com/xoctopus/x v0.2.12
+	github.com/xoctopus/x v0.3.0
 )
 
 require github.com/onsi/gomega v1.38.2 // indirect
