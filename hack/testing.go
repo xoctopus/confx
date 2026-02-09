@@ -8,17 +8,18 @@ import (
 	"time"
 
 	"github.com/xoctopus/logx"
+	"github.com/xoctopus/logx/handlers"
 	"github.com/xoctopus/sfid/pkg/sfid"
 	"github.com/xoctopus/x/contextx"
 	"github.com/xoctopus/x/misc/retry"
 	. "github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/pkg/confkv"
-	"github.com/xoctopus/confx/pkg/confmq"
 	pulsarv1 "github.com/xoctopus/confx/pkg/confpulsar/v1"
 	redisv1 "github.com/xoctopus/confx/pkg/confredis/v1"
 	"github.com/xoctopus/confx/pkg/confredis/v2"
 	"github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types/kv"
+	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
 var retrier = &retry.Retry{
@@ -34,13 +35,13 @@ func Check(t testing.TB) {
 
 func Context(t testing.TB) context.Context {
 	t.Helper()
-	logx.SetLogFormat(logx.LogFormatJSON)
+	handlers.SetLogFormat(handlers.LogFormatJSON)
 
 	t.Setenv(types.DEPLOY_ENVIRONMENT, "test_hack")
 	t.Setenv(types.TARGET_PROJECT, "test_local")
 
 	return contextx.Compose(
-		logx.Carry(logx.Std(logx.NewHandler())),
+		logx.Carry(logx.NewStd()),
 		sfid.Carry(sfid.NewDefaultIDGen(100)),
 	)(context.Background())
 }
@@ -59,7 +60,7 @@ func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
 
 	t.Cleanup(func() { _ = ep.Close() })
 
-	return confkv.With(ctx, ep)
+	return kv.With(ctx, ep)
 }
 
 func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -73,7 +74,7 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 
 	t.Cleanup(func() { _ = ep.Close() })
 
-	return confkv.Carry(ep)(ctx)
+	return kv.Carry(ep)(ctx)
 }
 
 func WithRedisV2(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -109,7 +110,7 @@ func WithPulsar(ctx context.Context, t testing.TB, dsn string) context.Context {
 	t.Cleanup(func() {
 		_ = ep.Close()
 	})
-	return confmq.With(ctx, ep)
+	return mq.With(ctx, ep)
 }
 
 func TryWithPulsar(ctx context.Context, t testing.TB, dsn string) (context.Context, error) {
@@ -125,7 +126,7 @@ func TryWithPulsar(ctx context.Context, t testing.TB, dsn string) (context.Conte
 	err = ep.Init(ctx)
 	if err == nil {
 		t.Cleanup(func() { _ = ep.Close() })
-		return confmq.With(ctx, ep), nil
+		return mq.With(ctx, ep), nil
 	}
 	return ctx, err
 }
@@ -142,5 +143,5 @@ func WithPulsarLost(ctx context.Context, t testing.TB, dsn string) context.Conte
 
 	t.Cleanup(func() { _ = ep.Close() })
 
-	return confmq.Carry(ep)(ctx)
+	return mq.Carry(ep)(ctx)
 }

@@ -1,6 +1,6 @@
 services:
   redis:
-    image: redis:8.2
+    image: redis:latest
     container_name: redis_confx
     platform: linux/amd64
     restart: always
@@ -16,3 +16,31 @@ services:
     command: bin/pulsar standalone
     ports:
       - "16650:6650"
+
+  mysql:
+    image: mysql:latest
+    container_name: mysql_confx
+    environment:
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_ALLOW_EMPTY_PASSWORD: true
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: ""
+      TZ: "Asia/Shanghai"
+    ports:
+      - "13306:3306"
+    volumes:
+      - ./init_mysql.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+
+  postgres:
+    image: postgres:18
+    container_name: postgres_18
+    environment:
+      POSTGRES_PASSWORD:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      TZ: "Asia/Shanghai"
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./init_postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always

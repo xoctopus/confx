@@ -5,12 +5,21 @@ go 1.25.6
 require (
 	github.com/go-think/openssl v1.20.0
 	github.com/xoctopus/genx v0.1.16
-	github.com/xoctopus/logx v0.1.2
+	github.com/xoctopus/logx v0.2.1
 	github.com/xoctopus/sfid v0.0.6
-	github.com/xoctopus/x v0.2.12
+	github.com/xoctopus/x v0.3.0
 )
 
-require github.com/onsi/gomega v1.38.2 // indirect
+require (
+	github.com/onsi/gomega v1.38.2 // indirect
+	github.com/rs/zerolog v1.34.0 // indirect
+	github.com/samber/lo v1.52.0 // indirect
+	github.com/samber/slog-common v0.20.0 // indirect
+	github.com/samber/slog-zerolog/v2 v2.9.1 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
+	go.uber.org/zap v1.27.1 // indirect
+	go.uber.org/zap/exp v0.3.0 // indirect
+)
 
 // cobra
 require (
@@ -50,7 +59,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

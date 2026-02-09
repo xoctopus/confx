@@ -1,4 +1,4 @@
-package confmq
+package mq
 
 import (
 	"encoding"

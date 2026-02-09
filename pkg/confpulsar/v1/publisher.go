@@ -9,7 +9,7 @@ import (
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
 
-	"github.com/xoctopus/confx/pkg/confmq"
+	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
 type publisher struct {
@@ -19,14 +19,14 @@ type publisher struct {
 
 	pub      pulsar.Producer
 	sync     bool
-	callback func(message confmq.Message, err error)
+	callback func(message mq.Message, err error)
 }
 
 func (p *publisher) Topic() string {
 	return p.pub.Topic()
 }
 
-func (p *publisher) publish(ctx context.Context, m confmq.Message) (err error) {
+func (p *publisher) publish(ctx context.Context, m mq.Message) (err error) {
 	_, log := logx.Enter(ctx, "topic", m.Topic(), "msg_id", m.ID())
 	defer func() {
 		if err != nil {
@@ -45,13 +45,13 @@ func (p *publisher) publish(ctx context.Context, m confmq.Message) (err error) {
 		return codex.New(ECODE__PUBLISHER_CLOSED)
 	}
 
-	data, err := m.(confmq.MessageArshaler).Marshal()
+	data, err := m.(mq.MessageArshaler).Marshal()
 	if err != nil {
 		return err
 	}
 
 	raw := &pulsar.ProducerMessage{Payload: data}
-	if x, ok := m.(confmq.OrderedMessage); ok {
+	if x, ok := m.(mq.OrderedMessage); ok {
 		raw.Key = x.PubOrderedKey()
 	}
 
@@ -75,10 +75,10 @@ func (p *publisher) publish(ctx context.Context, m confmq.Message) (err error) {
 }
 
 func (p *publisher) Publish(ctx context.Context, v any) (err error) {
-	return p.publish(ctx, confmq.NewMessage(ctx, p.pub.Topic(), v))
+	return p.publish(ctx, mq.NewMessage(ctx, p.pub.Topic(), v))
 }
 
-func (p *publisher) PublishMessage(ctx context.Context, msg confmq.Message) (err error) {
+func (p *publisher) PublishMessage(ctx context.Context, msg mq.Message) (err error) {
 	if p.cli.Option.Topic(msg.Topic()) != p.pub.Topic() {
 		return codex.Errorf(ECODE__PUB_INVALID_MESSAGE, "unexpected topic")
 	}

@@ -1,4 +1,4 @@
-package confmq_test
+package mq_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/xoctopus/sfid/pkg/sfid"
 	. "github.com/xoctopus/x/testx"
 
-	confmq2 "github.com/xoctopus/confx/pkg/confmq"
+	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
 type JSONArshaler struct {
@@ -72,18 +72,18 @@ func TestMessage(t *testing.T) {
 			TextArshaler{X: 1, Y: "2"},
 			Data{X: 1, Y: "2"},
 		} {
-			m := confmq2.NewMessage(ctx, "topic", v)
+			m := mq.NewMessage(ctx, "topic", v)
 			Expect(t, m.Topic(), Equal("topic"))
 			Expect(t, m.Data(), Equal([]byte(`{"x":1,"y":"2"}`)))
-			m.(confmq2.MutMessage).AddExtra("k1", "v1")
-			m.(confmq2.MutMessage).AddExtra("k1", "v2")
-			m.(confmq2.MutMessage).AddExtra("k2", "v1")
-			m.(confmq2.MutMessage).AddExtra("k2", "v2")
+			m.(mq.MutMessage).AddExtra("k1", "v1")
+			m.(mq.MutMessage).AddExtra("k1", "v2")
+			m.(mq.MutMessage).AddExtra("k2", "v1")
+			m.(mq.MutMessage).AddExtra("k2", "v2")
 
 			data, err := m.(Arshaler).Marshal()
 			Expect(t, err, Succeed())
 
-			x, err := confmq2.ParseMessage(data)
+			x, err := mq.ParseMessage(data)
 			Expect(t, x.Topic(), Equal(m.Topic()))
 			Expect(t, x.Data(), Equal(m.Data()))
 			Expect(t, x.ID(), Equal(m.ID()))
@@ -94,50 +94,50 @@ func TestMessage(t *testing.T) {
 
 	t.Run("Ordered", func(t *testing.T) {
 		id := sfid.Must(ctx).MustID()
-		m := confmq2.NewMessageWithID(t.Name(), id, "1")
-		m.(confmq2.MutMessage).SetPubOrderedKey("p_ordered")
-		m.(confmq2.MutMessage).SetSubOrderedKey("s_ordered")
-		Expect(t, m.(confmq2.OrderedMessage).PubOrderedKey(), Equal("p_ordered"))
-		Expect(t, m.(confmq2.OrderedMessage).SubOrderedKey(), Equal("s_ordered"))
+		m := mq.NewMessageWithID(t.Name(), id, "1")
+		m.(mq.MutMessage).SetPubOrderedKey("p_ordered")
+		m.(mq.MutMessage).SetSubOrderedKey("s_ordered")
+		Expect(t, m.(mq.OrderedMessage).PubOrderedKey(), Equal("p_ordered"))
+		Expect(t, m.(mq.OrderedMessage).SubOrderedKey(), Equal("s_ordered"))
 	})
 
 	t.Run("Helper", func(t *testing.T) {
-		data, err := confmq2.MarshalV("123")
+		data, err := mq.MarshalV("123")
 		Expect(t, err, Succeed())
 		Expect(t, data, Equal([]byte("123")))
 
-		data, err = confmq2.MarshalV([]byte("123"))
+		data, err = mq.MarshalV([]byte("123"))
 		Expect(t, err, Succeed())
 		Expect(t, data, Equal([]byte("123")))
 
-		data, err = confmq2.MarshalV(nil)
+		data, err = mq.MarshalV(nil)
 		Expect(t, err, Succeed())
 		Expect(t, data, Equal[[]byte](nil))
 
 		x := any(new(string))
-		Expect(t, confmq2.UnmarshalV([]byte("123"), x), Succeed())
+		Expect(t, mq.UnmarshalV([]byte("123"), x), Succeed())
 		Expect(t, *(x.(*string)), Equal("123"))
 
 		x = any(new([]byte))
-		Expect(t, confmq2.UnmarshalV([]byte("123"), x), Succeed())
+		Expect(t, mq.UnmarshalV([]byte("123"), x), Succeed())
 		Expect(t, *(x.(*[]byte)), Equal([]byte("123")))
 
 		x = any(new(int))
-		Expect(t, confmq2.UnmarshalV([]byte("123"), x), Succeed())
+		Expect(t, mq.UnmarshalV([]byte("123"), x), Succeed())
 		Expect(t, *(x.(*int)), Equal(123))
 
 		x = any(new(JSONArshaler))
-		Expect(t, confmq2.UnmarshalV([]byte(`{"x":1,"y":"2"}`), x), Succeed())
+		Expect(t, mq.UnmarshalV([]byte(`{"x":1,"y":"2"}`), x), Succeed())
 		Expect(t, *(x.(*JSONArshaler)), Equal(JSONArshaler{X: 1, Y: "2"}))
 
 		x = any(new(TextArshaler))
-		Expect(t, confmq2.UnmarshalV([]byte(`{"x":1,"y":"2"}`), x), Succeed())
+		Expect(t, mq.UnmarshalV([]byte(`{"x":1,"y":"2"}`), x), Succeed())
 		Expect(t, *(x.(*TextArshaler)), Equal(TextArshaler{X: 1, Y: "2"}))
 
-		Expect(t, confmq2.UnmarshalV(nil, nil), Succeed())
+		Expect(t, mq.UnmarshalV(nil, nil), Succeed())
 	})
 	t.Run("Failed", func(t *testing.T) {
-		_, err := confmq2.ParseMessage([]byte(`{`))
+		_, err := mq.ParseMessage([]byte(`{`))
 		Expect(t, err, Failed())
 	})
 }

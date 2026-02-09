@@ -11,7 +11,7 @@ import (
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
 
-	"github.com/xoctopus/confx/pkg/confmq"
+	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
 type subscriber struct {
@@ -21,7 +21,7 @@ type subscriber struct {
 	sub    pulsar.Consumer
 
 	cancel   context.CancelCauseFunc
-	callback func(pulsar.Consumer, pulsar.Message, confmq.Message, error)
+	callback func(pulsar.Consumer, pulsar.Message, mq.Message, error)
 	autoAck  bool
 }
 
@@ -31,15 +31,15 @@ type subscriber struct {
 //  2. If `autoAck` is not enabled and `callback` is configured, the subscriber
 //     will NOT acknowledge messages automatically.
 //  3. If a callback is configured, it will be invoked after message processed
-func (s *subscriber) Run(ctx context.Context, h func(context.Context, confmq.Message) error) <-chan error {
+func (s *subscriber) Run(ctx context.Context, h func(context.Context, mq.Message) error) <-chan error {
 	ch := make(chan error)
 	ctx, s.cancel = context.WithCancelCause(ctx)
 
-	log := logx.From(ctx)
 	go func() {
 		defer close(ch)
 
 		for {
+			log := logx.From(ctx)
 			msg, err := s.sub.Receive(ctx) // block call until subscriber closed
 			if err != nil {
 				log.Error(err)
@@ -65,10 +65,10 @@ func (s *subscriber) Run(ctx context.Context, h func(context.Context, confmq.Mes
 }
 
 // handle wrapped consumer handle task
-func (s *subscriber) handle(ctx context.Context, msg pulsar.Message, h func(context.Context, confmq.Message) error) (err error) {
+func (s *subscriber) handle(ctx context.Context, msg pulsar.Message, h func(context.Context, mq.Message) error) (err error) {
 	_, log := logx.From(ctx).Start(ctx, "subscriber.Handle", "pub_timestamp", msg.PublishTime())
 
-	var m confmq.Message
+	var m mq.Message
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -86,12 +86,12 @@ func (s *subscriber) handle(ctx context.Context, msg pulsar.Message, h func(cont
 	}()
 
 	data := msg.Payload()
-	m, err = confmq.ParseMessage(data)
+	m, err = mq.ParseMessage(data)
 	if err != nil {
 		err = codex.Wrap(ECODE__PARSE_MESSAGE, err)
 		return err
 	}
-	m.(confmq.MutMessage).SetPubOrderedKey(msg.Key())
+	m.(mq.MutMessage).SetPubOrderedKey(msg.Key())
 	log = log.With("msg_id", m.ID(), "topic", m.Topic())
 
 	return h(ctx, m)

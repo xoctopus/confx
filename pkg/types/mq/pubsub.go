@@ -1,10 +1,9 @@
-package confmq
+package mq
 
 import (
 	"context"
 
 	"github.com/xoctopus/x/contextx"
-	"github.com/xoctopus/x/misc/must"
 )
 
 type Subscriber interface {
@@ -32,21 +31,9 @@ type PubSub interface {
 
 type tCtxPubSub struct{}
 
-func From(ctx context.Context) (PubSub, bool) {
-	ps, ok := ctx.Value(tCtxPubSub{}).(PubSub)
-	return ps, ok
-}
-
-func Must(ctx context.Context) PubSub {
-	return must.BeTrueV(From(ctx))
-}
-
-func With(ctx context.Context, ps PubSub) context.Context {
-	return context.WithValue(ctx, tCtxPubSub{}, ps)
-}
-
-func Carry(ps PubSub) contextx.Carrier {
-	return func(ctx context.Context) context.Context {
-		return With(ctx, ps)
-	}
-}
+var (
+	From  = contextx.From[tCtxPubSub, PubSub]
+	Must  = contextx.Must[tCtxPubSub, PubSub]
+	With  = contextx.With[tCtxPubSub, PubSub]
+	Carry = contextx.Carry[tCtxPubSub, PubSub]
+)

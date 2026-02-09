@@ -8,8 +8,8 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	. "github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/pkg/confmq"
 	. "github.com/xoctopus/confx/pkg/confpulsar/v1"
+	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
 func TestPulsarOption(t *testing.T) {
@@ -29,7 +29,7 @@ func TestPulsarOption(t *testing.T) {
 
 	po := opt.PubOption(
 		WithPubTopic(topic),
-		WithPublishCallback(func(confmq.Message, error) {}),
+		WithPublishCallback(func(mq.Message, error) {}),
 		WithSyncPublish(),
 		WithPubSendTimeout(time.Minute),
 		WithPubEnableBlockIfQueueFull(),
@@ -57,7 +57,7 @@ func TestPulsarOption(t *testing.T) {
 			RetryEnable: true,
 		}),
 		WithSubDisableAutoAck(),
-		WithSubCallback(func(pulsar.Consumer, pulsar.Message, confmq.Message, error) {}),
+		WithSubCallback(func(pulsar.Consumer, pulsar.Message, mq.Message, error) {}),
 		WithSubTopic(topic),
 		WithSubTopic(topic, topic),
 		WithSubTopicPattern("^order"),

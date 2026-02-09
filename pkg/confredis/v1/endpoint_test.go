@@ -8,9 +8,9 @@ import (
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/hack"
-	"github.com/xoctopus/confx/pkg/confkv"
 	"github.com/xoctopus/confx/pkg/confredis/v1"
 	"github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types/kv"
 )
 
 func TestRedisEndpointV1(t *testing.T) {
@@ -62,7 +62,7 @@ func TestRedisEndpointV1(t *testing.T) {
 	t.Run("Established", func(t *testing.T) {
 		ctx1 := hack.WithRedis(hack.Context(t), t, "redis://:123456@127.0.0.1:16379/0?prefix=unittest")
 
-		ep := confkv.Must(ctx1)
+		ep := kv.Must(ctx1)
 		_, err := ep.Exec("set", ep.Key("abc"), 1)
 		Expect(t, err, Succeed())
 
