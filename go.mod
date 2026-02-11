@@ -5,20 +5,15 @@ go 1.25.6
 require (
 	github.com/go-think/openssl v1.20.0
 	github.com/xoctopus/genx v0.1.16
-	github.com/xoctopus/logx v0.2.1
+	github.com/xoctopus/logx v0.2.3
 	github.com/xoctopus/sfid v0.0.6
 	github.com/xoctopus/x v0.3.0
 )
 
 require (
 	github.com/onsi/gomega v1.38.2 // indirect
-	github.com/rs/zerolog v1.34.0 // indirect
-	github.com/samber/lo v1.52.0 // indirect
-	github.com/samber/slog-common v0.20.0 // indirect
-	github.com/samber/slog-zerolog/v2 v2.9.1 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.27.1 // indirect
-	go.uber.org/zap/exp v0.3.0 // indirect
 )
 
 // cobra
