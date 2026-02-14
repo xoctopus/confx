@@ -70,6 +70,8 @@ func (v *Option) DocOf(names ...string) ([]string, bool) {
 			return []string{"[SUB] retry nack message interval"}, true
 		case "MaxNackRetry":
 			return []string{"[SUB] max retry times for nack message"}, true
+		case "WorkerSize":
+			return []string{"[SUB] worker size for concurrency of consuming"}, true
 		case "DisablePersistent":
 			return []string{"[TOPIC] if disable persistent. set true the topic prefix", "use `non-persistent`.", "eg:", "persistent://tenant/namespace/topic", "non-persistent://tenant/namespace/topic"}, true
 		}

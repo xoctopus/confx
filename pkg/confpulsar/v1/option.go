@@ -2,8 +2,8 @@ package confpulsar
 
 import (
 	"fmt"
-	"io"
 	"log/slog"
+	"os"
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
@@ -70,6 +70,18 @@ type Option struct {
 	NackRetryInterval types.Duration `url:",default=1m"`
 	// MaxNackRetry [SUB] max retry times for nack message
 	MaxNackRetry uint32 `url:",default=3"`
+	// WorkerSize defines the concurrency level for message consumption.
+	// Behavior based on ConsumeMode:
+	// eg:
+	//	- mq.GlobalOrdered: Forced to 1 to ensure strict sequential processing.
+	//	- mq.PartitionOrdered: Messages are dispatched to specific workers based on
+	//	  a hash of the partition key, ensuring order within the same key.
+	//	- mq.Concurrent: messages are distributed across all workers (e.g., round-robin)
+	//	  to maximize throughput.
+	WorkerSize uint16 `url:",default=16"`
+	// WorkerBufferSize [SUB] will prefetch message from broker for improves
+	// consumption throughput and reducing wait
+	WorkerBufferSize uint16 `url:",default=64"`
 
 	// DisablePersistent [TOPIC] if disable persistent. set true the topic prefix
 	// use `non-persistent`.
@@ -114,7 +126,7 @@ func (o *Option) SetDefault() {
 				CompressionLevel:        compressLevel,
 				DisableBatching:         disableBatching,
 				BatchingMaxMessages:     o.BatchingMaxMessages,
-				BackOffPolicyFunc:       func() backoff.Policy { return &backoff.DefaultBackoff{} },
+				BackOffPolicyFunc:       func() backoff.Policy { return backoff.NewDefaultBackoff() },
 				ProducerAccessMode:      accessMode,
 			},
 		}
@@ -143,6 +155,9 @@ func (o *Option) SetDefault() {
 				NackRedeliveryDelay:            time.Duration(o.NackRetryInterval),
 				EnableDefaultNackBackoffPolicy: true,
 			},
+			worker:     o.WorkerSize,
+			hasher:     mq.CRC,
+			bufferSize: o.WorkerBufferSize,
 		}
 		o.defaultSubOption._initialized = true
 	}
@@ -162,7 +177,7 @@ func (o *Option) Topic(topic string) string {
 }
 
 func (o *Option) ClientOption(url string) pulsar.ClientOptions {
-	l := slog.New(slog.NewJSONHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	l := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
 
 	return pulsar.ClientOptions{
 		URL:                     url,
@@ -188,6 +203,20 @@ func (o *Option) SubOption(appliers ...mq.OptionApplier) *SubOption {
 	for _, applier := range appliers {
 		applier.Apply(&opt)
 	}
+
+	if opt.mode == mq.GlobalOrdered {
+		opt.worker = 1
+	}
+	if opt.worker == 0 {
+		opt.worker = 16
+	}
+	if opt.bufferSize == 0 {
+		opt.bufferSize = 256
+	}
+	if opt.mode == mq.PartitionOrdered && opt.hasher == nil {
+		opt.hasher = mq.CRC
+	}
+
 	return &opt
 }
 
@@ -297,6 +326,17 @@ type SubOption struct {
 	disableAutoAck bool
 	// callback it is called when message handled
 	callback func(pulsar.Consumer, pulsar.Message, mq.Message, error)
+	// handler process mq.Message
+	handler mq.Handler
+	// worker specifies the consumer concurrency level. the default is defined
+	// in Option.WorkerSize (16 by default).
+	worker uint16
+	// bufferSize
+	bufferSize uint16
+	// hasher helps to hash message partition key
+	hasher mq.Hasher
+	// mode consumer handling mode
+	mode mq.ConsumeMode
 	// options pulsar consumer options
 	options pulsar.ConsumerOptions
 }
@@ -382,6 +422,38 @@ func WithSubEnableRetryNack(retryDelay time.Duration, maxRetry uint32) mq.Option
 			}
 			x.options.DLQ.MaxDeliveries = maxRetry
 			x.options.DLQ.DeadLetterTopic = x.options.Topic + "_DLQ"
+		}
+	})
+}
+
+func WithSubWorkerSize(n uint16) mq.OptionApplier {
+	return mq.OptionApplyFunc(func(opt mq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.bufferSize = n
+		}
+	})
+}
+
+func WithSubWorkerBufferSize(n uint16) mq.OptionApplier {
+	return mq.OptionApplyFunc(func(opt mq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.worker = n
+		}
+	})
+}
+
+func WithSubOrderedKeyHasher(h mq.Hasher) mq.OptionApplier {
+	return mq.OptionApplyFunc(func(opt mq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.hasher = h
+		}
+	})
+}
+
+func WithSubConsumingMode(mode mq.ConsumeMode) mq.OptionApplier {
+	return mq.OptionApplyFunc(func(opt mq.Option) {
+		if x, ok := opt.(*SubOption); ok {
+			x.mode = mode
 		}
 	})
 }

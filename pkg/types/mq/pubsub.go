@@ -8,7 +8,7 @@ import (
 
 type Subscriber interface {
 	// Run starts consuming and handling messages with h
-	Run(ctx context.Context, h func(context.Context, Message) error) <-chan error
+	Run(ctx context.Context, h func(context.Context, Message) error) error
 	// Close closes this subscriber
 	Close()
 }

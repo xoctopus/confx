@@ -21,9 +21,11 @@ func (e ecode) Message() string {
 		return "[confpulsar.ecode:4] client closed"
 	case ECODE__SUBSCRIBER_CLOSED:
 		return "[confpulsar.ecode:5] subscriber closed"
+	case ECODE__SUBSCRIBER_BOOTED:
+		return "[confpulsar.ecode:6] subscriber is already booted"
 	case ECODE__PUBLISHER_CLOSED:
-		return "[confpulsar.ecode:6] publisher closed"
+		return "[confpulsar.ecode:7] publisher closed"
 	case ECODE__PUB_INVALID_MESSAGE:
-		return "[confpulsar.ecode:7] publish invalid message"
+		return "[confpulsar.ecode:8] publish invalid message"
 	}
 }

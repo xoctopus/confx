@@ -16,6 +16,7 @@ services:
     command: bin/pulsar standalone
     ports:
       - "16650:6650"
+      - "18080:8080"
 
   mysql:
     image: mysql:latest
@@ -34,7 +35,7 @@ services:
 
   postgres:
     image: postgres:18
-    container_name: postgres_18
+    container_name: postgres_confx
     environment:
       POSTGRES_PASSWORD:
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -44,3 +45,29 @@ services:
     volumes:
       - ./init_postgres.sql:/docker-entrypoint-initdb.d/init.sql
     restart: always
+
+  pulsar-manager:
+    image: apachepulsar/pulsar-manager:v0.4.0
+    container_name: pulsar_manager_confx
+    platform: linux/amd64
+    restart: always
+    depends_on:
+      - pulsar
+    ports:
+      - "19527:9527" # Web UI
+      - "17750:7750" # Manager Backend API
+    environment:
+      - SPRING_CONFIGURATION_FILE=/pulsar-manager/pulsar-manager/application.properties
+      - USERNAME=admin
+      - PASSWORD=admin123
+
+  # pulsar-init-helper:
+  #   image: curlimages/curl:latest
+  #   container_name: pulsar_init_helper_confx
+  #   depends_on:
+  #     - pulsar
+  #     - pulsar-manager
+  #   volumes:
+  #     - ./pulsar-entrypoint.sh:/pulsar-entrypoint.sh
+  #   entrypoint: [ "/bin/sh", "/pulsar-entrypoint.sh" ]
+

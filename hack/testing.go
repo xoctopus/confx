@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/xoctopus/logx"
-	"github.com/xoctopus/logx/handlers"
 	"github.com/xoctopus/sfid/pkg/sfid"
 	"github.com/xoctopus/x/contextx"
 	"github.com/xoctopus/x/misc/retry"
@@ -35,7 +34,7 @@ func Check(t testing.TB) {
 
 func Context(t testing.TB) context.Context {
 	t.Helper()
-	handlers.SetLogFormat(handlers.LogFormatJSON)
+	logx.SetLogFormat(logx.LogFormatJSON)
 
 	t.Setenv(types.DEPLOY_ENVIRONMENT, "test_hack")
 	t.Setenv(types.TARGET_PROJECT, "test_local")

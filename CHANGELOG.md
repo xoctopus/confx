@@ -1,12 +1,22 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.22...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.23...HEAD)
 
-> 2026-02-02
+> 0001-01-01
+
+
+<a name="v0.2.23"></a>
+## [v0.2.23](https://github.com/xoctopus/confx/compare/v0.2.22...v0.2.23)
+
+> 2026-02-10
 
 ### Doc
 
 * update CHANGELOG
+
+### Refact
+
+* packages refacted
 
 
 <a name="v0.2.22"></a>

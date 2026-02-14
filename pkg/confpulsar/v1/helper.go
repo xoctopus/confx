@@ -35,8 +35,17 @@ func (r *manager[T]) Close() {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 
-	for e := r.lst.Front(); e != nil; e = e.Next() {
-		v := e.Value.(T)
-		v.close()
+	for r.lst.Len() > 0 {
+		if e := r.lst.Front(); e != nil {
+			v := e.Value.(T)
+			v.close()
+			r.lst.Remove(e)
+		}
 	}
+}
+
+func (r *manager[T]) Len() int {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	return r.lst.Len()
 }

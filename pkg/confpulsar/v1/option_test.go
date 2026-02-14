@@ -45,7 +45,7 @@ func TestPulsarOption(t *testing.T) {
 	Expect(t, po.CompressionLevel, Equal(pulsar.Default))
 	Expect(t, po.CompressionType, Equal(pulsar.LZ4))
 	Expect(t, po.ProducerAccessMode, Equal(pulsar.ProducerAccessModeWaitForExclusive))
-	Expect(t, po.BackOffPolicyFunc(), Equal[backoff.Policy](&backoff.DefaultBackoff{}))
+	Expect(t, po.BackOffPolicyFunc(), NotBeNil[backoff.Policy]())
 
 	po = opt.PubOption(
 		WithPublisherOptions(pulsar.ProducerOptions{Name: topic}),
@@ -65,6 +65,9 @@ func TestPulsarOption(t *testing.T) {
 		WithSubType(pulsar.Shared),
 		WithSubEnableRetryNack(time.Minute, 100),
 		WithSubEnableRetryNack(time.Minute, 0),
+		WithSubWorkerSize(8),
+		WithSubWorkerBufferSize(16),
+		WithSubOrderedKeyHasher(mq.CRC),
 	).Options()
 
 	Expect(t, so.Topic, Equal(topic))
@@ -72,8 +75,8 @@ func TestPulsarOption(t *testing.T) {
 	Expect(t, so.Type, Equal(pulsar.Shared))
 	Expect(t, so.NackRedeliveryDelay, Equal(time.Minute))
 
-	backoff := so.NackBackoffPolicy
-	Expect(t, backoff.Next(0), Equal(time.Minute))
-	Expect(t, backoff.Next(2), Equal(2*time.Minute))
-	Expect(t, backoff.Next(100), Equal(10*time.Minute))
+	policy := so.NackBackoffPolicy
+	Expect(t, policy.Next(0), Equal(time.Minute))
+	Expect(t, policy.Next(2), Equal(2*time.Minute))
+	Expect(t, policy.Next(100), Equal(10*time.Minute))
 }

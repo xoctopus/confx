@@ -62,7 +62,7 @@ func (e *Endpoint) Init(ctx context.Context) error {
 	if e.client == nil {
 		client, err := pulsar.NewClient(opt)
 		if err != nil {
-			return err
+			return codex.Wrap(ECODE__FAILED_TO_INIT_CLIENT, err)
 		}
 		e.client = client
 	}
@@ -80,10 +80,23 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 		return
 	}
 
+	var (
+		echo = make(chan struct{}, 1)
+		msg  = mq.NewMessage(ctx, "liveness", nil)
+		span func() time.Duration
+	)
+
+	defer close(echo)
+
 	s, err := e.Subscriber(
 		ctx,
 		WithSubTopic("liveness"),
 		WithSubType(pulsar.Exclusive),
+		WithSubCallback(func(c pulsar.Consumer, m pulsar.Message, x mq.Message, _ error) {
+			if msg != nil && x != nil && x.ID() == msg.ID() {
+				echo <- struct{}{}
+			}
+		}),
 	)
 	if err != nil {
 		v.Message = err.Error()
@@ -91,7 +104,6 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 	}
 	defer s.Close()
 
-	span := types.Cost()
 	p, err := e.Publisher(
 		ctx,
 		WithPubTopic("liveness"),
@@ -104,27 +116,32 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v types.LivenessData) {
 	}
 	defer p.Close()
 
-	msg := mq.NewMessage(ctx, "liveness", nil)
+	span = types.Cost()
 	if err = p.PublishMessage(ctx, msg); err != nil {
 		v.Message = err.Error()
 		return
 	}
 
+	var (
+		cancel    context.CancelFunc
+		etimedout = errors.New("liveness check timeout")
+	)
+	ctx, cancel = context.WithTimeoutCause(ctx, time.Second<<2, etimedout)
+	defer cancel()
+
+	go func() {
+		err = s.Run(ctx, func(context.Context, mq.Message) error { return nil })
+	}()
+
 	select {
-	case <-s.Run(ctx, func(ctx context.Context, m mq.Message) error {
-		if m.ID() == msg.ID() {
-			v.RTT = types.Duration(span())
-			v.Reachable = true
-			s.Close()
-		}
-		return nil
-	}):
-	case <-time.After(time.Second << 2):
+	case <-echo:
+		v.RTT = types.Duration(span())
+		v.Reachable = true
+	case <-ctx.Done():
 		v.RTT = types.Duration(span())
 		v.Reachable = false
-		v.Message = "liveness check timeout"
+		v.Message = errors.Join(ctx.Err(), context.Cause(ctx)).Error()
 	}
-
 	return
 }
 
@@ -196,18 +213,22 @@ func (e *Endpoint) Subscriber(ctx context.Context, options ...mq.OptionApplier) 
 		opt.options.Topics[i] = e.Option.String() + opt.options.Topics[i]
 	}
 
-	log = log.With("topic", opt.options.Topic, "name", opt.options.SubscriptionName)
-
+	log = log.With("subscription", opt.options.SubscriptionName)
 	s, err := e.client.Subscribe(opt.options)
 	if err != nil {
 		return nil, err
 	}
+	log = log.With("consumer", s.Name())
 
 	sub := &subscriber{
-		sub:      s,
-		cli:      e,
-		callback: opt.callback,
-		autoAck:  !opt.disableAutoAck,
+		sub:        s,
+		cli:        e,
+		callback:   opt.callback,
+		autoAck:    !opt.disableAutoAck,
+		mode:       opt.mode,
+		worker:     opt.worker,
+		hasher:     opt.hasher,
+		bufferSize: opt.bufferSize,
 	}
 	e.consumers.Add(sub)
 	return sub, nil
@@ -238,4 +259,12 @@ func (e *Endpoint) ClosePublisher(pub mq.Publisher) {
 	if p, ok := pub.(*publisher); ok {
 		e.producers.Remove(p)
 	}
+}
+
+func (e *Endpoint) ConsumerCount() int {
+	return e.consumers.Len()
+}
+
+func (e *Endpoint) ProducerCount() int {
+	return e.producers.Len()
 }

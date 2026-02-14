@@ -4,14 +4,12 @@ import (
 	"context"
 	_ "embed"
 	"errors"
+	"net/url"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
-	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/xoctopus/x/codex"
-	. "github.com/xoctopus/x/testx"
+	"github.com/xoctopus/x/testx/bdd"
 
 	"github.com/xoctopus/confx/hack"
 	"github.com/xoctopus/confx/pkg/confpulsar/v1"
@@ -29,10 +27,11 @@ var (
 	ca string
 )
 
-func TopicFor(t *testing.T) string {
+func TopicFor(t testing.TB) string {
 	return strings.ReplaceAll(t.Name(), "/", "_")
 }
 
+/*
 func TestPulsarEndpointV1(t *testing.T) {
 	t.Run("SetDefault", func(t *testing.T) {
 		ep := &confpulsar.Endpoint{}
@@ -264,3 +263,285 @@ func TestPulsarEndpointV1(t *testing.T) {
 		})
 	})
 }
+*/
+
+func TestEndpointV1_2(t *testing.T) {
+	bdd.From(t).Given("EmptyEndpoint", func(t bdd.T) {
+		ep := &confpulsar.Endpoint{}
+		t.When("SetDefault", func(t bdd.T) {
+			ep.SetDefault()
+			t.Then(
+				"AddressIsDefaultLocalPulsarEndpoint",
+				bdd.Equal(ep.Address, "pulsar://localhost:6650"),
+			)
+		})
+	})
+
+	bdd.From(t).Given("InvalidDSN", func(t bdd.T) {
+		ep := &confpulsar.Endpoint{
+			Endpoint: types.Endpoint[confpulsar.Option]{
+				Address: "pulsar://localhost:6379/%zz",
+			},
+		}
+		t.When("Init", func(b bdd.T) {
+			err := ep.Init(hack.Context(t))
+			err2 := &url.Error{}
+			t.Then("FailedToInitCausedByURL", bdd.BeTrue(errors.As(err, &err2)))
+		})
+	})
+
+	bdd.From(t).Given("UnreachableDSNAndTLSConfig", func(t bdd.T) {
+		ep := &confpulsar.Endpoint{
+			Endpoint: types.Endpoint[confpulsar.Option]{
+				Address: "pulsar://localhost:6650",
+				Cert:    conftls.X509KeyPair{Key: key, Crt: crt, CA: ca},
+			},
+		}
+		t.When("InitWithTLS", func(t bdd.T) {
+			ep.SetDefault()
+			err := ep.Init(hack.Context(t))
+			t.Then("FailedToInitCausedByTimeout", bdd.ErrorContains("", err))
+		})
+	})
+
+	bdd.From(t).Given("UnreachableDSN", func(t bdd.T) {
+		dsn := "pulsar://localhost:6650?connectionTimeout=100ms"
+		t.When("TryToConnectAndNewProducer", func(t bdd.T) {
+			ctx := hack.WithPulsarLost(hack.Context(t), t, dsn)
+			_, err := mq.Must(ctx).Publisher(ctx, confpulsar.WithPubTopic(TopicFor(t)))
+			t.Then("GotConnectionError", bdd.ErrorContains("connection error", err))
+		})
+	})
+
+	bdd.From(t).Given("InvalidEndpointOption", func(t bdd.T) {
+		dsn := "pulsar://localhost:16650?connectionMaxIdleTime=30s"
+		t.When("Init", func(t bdd.T) {
+			ep := confpulsar.Endpoint{
+				Endpoint: types.Endpoint[confpulsar.Option]{
+					Address: dsn,
+				},
+			}
+			defer func() { _ = ep.Close() }()
+			ep.SetDefault()
+			err := ep.Init(hack.Context(t))
+			t.Then(
+				"FailedToInitCausedByInvalidPulsarConfig",
+				bdd.IsCodeError(confpulsar.ECODE__FAILED_TO_INIT_CLIENT, err),
+			)
+		})
+	})
+
+	bdd.From(t).Given("ReachableEndpoint", func(t bdd.T) {
+		dsn := "pulsar://localhost:16650"
+		t.When("Init", func(t bdd.T) {
+			var (
+				ctx    = hack.WithPulsar(hack.Context(t), t, dsn)
+				ps     = mq.Must(ctx)
+				cause  = errors.New("exceeded unit test deadline")
+				cancel context.CancelFunc
+			)
+			// force finished after 1 minute
+			ctx, cancel = context.WithTimeoutCause(ctx, time.Minute, cause)
+
+			defer func() {
+				_ = ps.Close()
+				cancel()
+			}()
+
+			t.Then("Reachable", bdd.NotBeNil(ps))
+
+			var (
+				pub   mq.Publisher
+				sub   mq.Subscriber
+				err   error
+				msg   mq.Message
+				topic = "TestPulsarEndpoint"
+			)
+
+			t.When("CreatePublisher", func(t bdd.T) {
+				pub, err = ps.Publisher(
+					ctx,
+					confpulsar.WithPubTopic(topic),
+					confpulsar.WithSyncPublish(),
+				)
+				t.Then("Succeed", bdd.Succeed(err))
+			})
+
+			t.When("CreateSubscriber", func(t bdd.T) {
+				sub, err = ps.Subscriber(
+					ctx,
+					confpulsar.WithSubTopic(topic),
+					confpulsar.WithSubConsumingMode(mq.PartitionOrdered),
+					confpulsar.WithSubWorkerSize(8),
+					confpulsar.WithSubWorkerBufferSize(4),
+				)
+				t.Then("Succeed", bdd.Succeed(err))
+			})
+
+			t.When("CreatePublishersAndSubscribers", func(t bdd.T) {
+				_, err = ps.Publisher(ctx, confpulsar.WithPubTopic("1"))
+				t.Then("Succeed", bdd.Succeed(err))
+				_, err = ps.Publisher(ctx, confpulsar.WithPubTopic("2"))
+				t.Then("Succeed", bdd.Succeed(err))
+				_, err = ps.Publisher(ctx, confpulsar.WithPubTopic("3"))
+				t.Then("Succeed", bdd.Succeed(err))
+
+				_, err = ps.Subscriber(ctx, confpulsar.WithSubTopic("1"))
+				t.Then("Succeed", bdd.Succeed(err))
+				_, err = ps.Subscriber(ctx, confpulsar.WithSubTopic("2"))
+				t.Then("Succeed", bdd.Succeed(err))
+				_, err = ps.Subscriber(ctx, confpulsar.WithSubTopic("3"))
+				t.Then("Succeed", bdd.Succeed(err))
+
+				ep := ps.(*confpulsar.Endpoint)
+				t.Then("MatchConsumerCount", bdd.Equal(ep.ConsumerCount(), 4))
+				t.Then("MatchProducerCount", bdd.Equal(ep.ProducerCount(), 4))
+			})
+
+			t.When("PublishMessageNotMatchPublisherTopic", func(t bdd.T) {
+				err = pub.PublishMessage(ctx, mq.NewMessage(ctx, "any_other", nil))
+				t.Then(
+					"FailedCausedByInvalidMessage",
+					bdd.IsCodeError(confpulsar.ECODE__PUB_INVALID_MESSAGE, err),
+				)
+			})
+
+			t.When("PublishMessage", func(t bdd.T) {
+				msg = mq.NewMessage(ctx, topic, "any")
+				msg.(mq.MutMessage).SetPubOrderedKey("biz_ordered_key")
+
+				err = pub.PublishMessage(ctx, msg)
+				t.Then("Success", bdd.Succeed(err))
+			})
+
+			t.When("PublishOnClosedPublisher", func(t bdd.T) {
+				pub.Close()
+				err = pub.PublishMessage(ctx, mq.NewMessage(ctx, topic, nil))
+				t.Then(
+					"FailedCausedByPublisherClosedError",
+					bdd.IsCodeError(confpulsar.ECODE__PUBLISHER_CLOSED, err),
+				)
+			})
+
+			t.When("Subscribing", func(t bdd.T) {
+				var msgID int64
+				err = sub.Run(ctx, func(ctx context.Context, m mq.Message) error {
+					if m.ID() == msg.ID() {
+						msgID = msg.ID()
+						sub.Close()
+					}
+					return nil
+				})
+				t.Then(
+					"SubscriptionCanceledAfterSubscribed",
+					bdd.IsCodeError(confpulsar.ECODE__SUBSCRIPTION_CANCELED, err),
+				)
+				t.Then("ExpectedMessage", bdd.Equal(msgID, msg.ID()))
+			})
+
+			t.When("RerunSubscribing", func(t bdd.T) {
+				err = sub.Run(ctx, nil)
+				t.Then(
+					"FailedCausedByRerunError",
+					bdd.IsCodeError(confpulsar.ECODE__SUBSCRIBER_BOOTED, err),
+				)
+			})
+
+			t.When("EndpointClosed", func(t bdd.T) {
+				t.Then("ClosedSucceed", bdd.Succeed(ps.Close()))
+
+				t.When("CreatePublisher", func(t bdd.T) {
+					_, err = ps.Publisher(ctx, confpulsar.WithPubTopic("any"))
+					t.Then(
+						"FailedCausedByClientClosed",
+						bdd.IsCodeError(confpulsar.ECODE__CLIENT_CLOSED, err),
+					)
+				})
+				t.When("CreateSubscriber", func(t bdd.T) {
+					_, err = ps.Subscriber(ctx, confpulsar.WithPubTopic("any"))
+					t.Then(
+						"FailedCausedByClientClosed",
+						bdd.IsCodeError(confpulsar.ECODE__CLIENT_CLOSED, err),
+					)
+				})
+				t.When("LivenessCheck", func(t bdd.T) {
+					r := ps.(types.LivenessChecker).LivenessCheck(ctx)
+					t.Then(
+						"FailedCausedByClientClosed",
+						bdd.ContainsSubString(r.Message, "client closed"),
+					)
+				})
+
+				t.When("Publish", func(t bdd.T) {
+					err = pub.Publish(ctx, nil)
+					t.Then(
+						"FailedCausedByClientClosedError",
+						bdd.IsCodeError(confpulsar.ECODE__CLIENT_CLOSED, err),
+					)
+				})
+
+				ep := ps.(*confpulsar.Endpoint)
+				t.Then("MatchProducerCount", bdd.BeTrue(ep.ConsumerCount() == 0))
+				t.Then("MatchConsumerCount", bdd.BeTrue(ep.ProducerCount() == 0))
+			})
+		})
+	})
+}
+
+/* FOR testing gracefully closing and side effects when closing rudely
+
+func TestPublishMany(t *testing.T) {
+	var (
+		ctx = hack.WithPulsar(hack.Context(t), t, "pulsar://localhost:16650")
+		cli = mq.Must(ctx)
+	)
+
+	pub, err := cli.Publisher(
+		ctx,
+		confpulsar.WithPubTopic("TEST_RUDE_CLOSE"),
+		confpulsar.WithSyncPublish(),
+	)
+	Expect(t, err, Succeed())
+
+	for range 1000 {
+		err = pub.Publish(ctx, nil)
+		Expect(t, err, Succeed())
+	}
+}
+
+func TestSubscribe_NoClose(t *testing.T) {
+	var (
+		ctx    = hack.WithPulsar(hack.Context(t), t, "pulsar://localhost:16650")
+		cli    = mq.Must(ctx)
+		cancel context.CancelFunc
+	)
+
+	once := 0
+
+	sub, err := cli.Subscriber(
+		ctx,
+		confpulsar.WithSubTopic("TEST_RUDE_CLOSE"),
+		confpulsar.WithSubWorkerSize(1),
+		confpulsar.WithSubWorkerBufferSize(1),
+		confpulsar.WithSubDisableAutoAck(),
+		confpulsar.WithSubCallback(func(s pulsar.Consumer, m pulsar.Message, _ mq.Message, err error) {
+			if once == 0 {
+				_ = s.Ack(m)
+			}
+			once++
+		}),
+	)
+	Expect(t, err, Succeed())
+
+	ctx, cancel = context.WithTimeout(ctx, time.Second<<1)
+	cancel()
+
+	err = sub.Run(ctx, func(ctx context.Context, msg mq.Message) error {
+		t.Log(msg.ID())
+		return nil
+	})
+	t.Log(err)
+	sub.Close()
+	time.Sleep(time.Hour)
+}
+*/

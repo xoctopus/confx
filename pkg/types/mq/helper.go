@@ -1,8 +1,12 @@
 package mq
 
 import (
+	"context"
 	"encoding"
 	"encoding/json"
+	"hash/crc32"
+	"hash/fnv"
+	"math"
 )
 
 func MarshalV(v any) ([]byte, error) {
@@ -41,3 +45,33 @@ func UnmarshalV(data []byte, v any) error {
 		return json.Unmarshal(data, x)
 	}
 }
+
+// Hasher help to hash message.Key to dispatch message to task worker
+type Hasher func(string) uint16
+
+func Fnv(k string) uint16 {
+	h := fnv.New32a()
+	h.Reset()
+	_, _ = h.Write([]byte(k))
+	return uint16(h.Sum32() % math.MaxUint16)
+}
+
+func CRC(k string) uint16 {
+	return uint16(crc32.ChecksumIEEE([]byte(k)) & math.MaxUint16)
+}
+
+type ConsumeMode int
+
+const (
+	// GlobalOrdered messages are processed strictly one by one in the order
+	// they were received globally.
+	GlobalOrdered ConsumeMode = iota
+	// PartitionOrdered messages with the same partition key are processed sequentially,
+	// while messages with different keys are handled in parallel.
+	PartitionOrdered
+	// Concurrent messages are processed in parallel with no guarantee of ordering.
+	// this mode offers the highest throughput.
+	Concurrent
+)
+
+type Handler func(context.Context, Message) error
