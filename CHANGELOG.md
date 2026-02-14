@@ -2,7 +2,11 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.23...HEAD)
 
-> 0001-01-01
+> 2026-02-15
+
+### Feat
+
+* **confpulsar:** processing mode for subscribing
 
 
 <a name="v0.2.23"></a>
