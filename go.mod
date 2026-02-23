@@ -1,13 +1,13 @@
 module github.com/xoctopus/confx
 
-go 1.25.6
+go 1.26.0
 
 require (
 	github.com/go-think/openssl v1.20.0
 	github.com/xoctopus/genx v0.1.16
-	github.com/xoctopus/logx v0.2.3
+	github.com/xoctopus/logx v0.2.4
 	github.com/xoctopus/sfid v0.0.6
-	github.com/xoctopus/x v0.3.2
+	github.com/xoctopus/x v0.3.3
 )
 
 // cobra
@@ -65,7 +65,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.10
-	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xoctopus/pkgx v0.1.10 // indirect
 	github.com/xoctopus/typx v0.3.4 // indirect
