@@ -1,6 +1,7 @@
 package types_test
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"testing"
@@ -139,6 +140,7 @@ func TestEndpoint(t *testing.T) {
 			}
 			Expect(t, ep.Init(), Succeed())
 			Expect(t, ep.Endpoint(), Equal("redis://localhost:6379/1"))
+			Expect(t, ep.Scheme(), Equal("redis"))
 			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
 			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
 		})
@@ -154,6 +156,12 @@ func TestEndpoint(t *testing.T) {
 			Expect(t, ep.Endpoint(), Equal("redis://localhost:6379/1"))
 			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
 			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
+		})
+		t.Run("LivenessCheck", func(t *testing.T) {
+			ep := &Endpoint{Address: "https://www.google.com"}
+			Expect(t, ep.Init(), Succeed())
+			v := ep.LivenessCheck(context.Background())
+			Expect(t, v.FailureReason(), Succeed())
 		})
 	})
 

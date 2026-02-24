@@ -1,172 +1,164 @@
 package mq
 
-import (
-	"context"
-	"encoding/json"
-	"time"
+import "time"
 
-	"github.com/xoctopus/sfid/pkg/sfid"
-	"github.com/xoctopus/x/misc/must"
-)
-
-type Message interface {
+type HasTopic interface {
 	Topic() string
-	ID() int64
-	Timestamp() time.Time
-
-	Data() []byte
-	Extra() map[string][]string
 }
 
-type MessageArshaler interface {
-	Marshal() ([]byte, error)
-	Unmarshal([]byte) error
+type CanSetTopic interface {
+	SetTopic(string)
 }
 
-type MutMessage interface {
-	Message
-
-	AddExtra(string, string)
-	SetSubOrderedKey(string)
-	SetPubOrderedKey(string)
+type HasPayload interface {
+	Payload() []byte
 }
 
-type OrderedMessage interface {
-	Message
-
-	PubOrderedKey() string
-	SubOrderedKey() string
+type CanSetPayload interface {
+	SetPayload([]byte)
 }
 
-// ParseMessage data from message queue consumer
-func ParseMessage(data []byte) (Message, error) {
-	m := &message{}
-	if err := m.Unmarshal(data); err != nil {
-		return nil, err
-	}
-	return m, nil
+type HasSequenceID interface {
+	SequenceID() int64
 }
 
-func NewMessage(ctx context.Context, topic string, v any) Message {
-	raw := must.NoErrorV(MarshalV(v))
-	return NewMessageFromRaw(ctx, topic, raw)
+type CanSetSequenceID interface {
+	SetSequenceID(int64)
 }
 
-func NewMessageWithID(topic string, id int64, v any) Message {
-	raw := must.NoErrorV(MarshalV(v))
-	return &message{
-		topic:     topic,
-		id:        id,
-		data:      raw,
-		timestamp: time.Now(),
-		extra:     make(map[string][]string),
-	}
+type HasExtra interface {
+	// Extra is used to extend message info, eg: TraceID, RetryCount etc.
+	Extra() map[string]string
+	ExtraValueOf(string) (string, bool)
 }
 
-func NewMessageFromRaw(ctx context.Context, topic string, raw []byte) Message {
-	idg := sfid.Must(ctx)
-
-	return &message{
-		topic:     topic,
-		id:        idg.MustID(),
-		data:      raw,
-		timestamp: time.Now(),
-		extra:     make(map[string][]string),
-	}
+type CanAppendExtra interface {
+	AddExtra(k string, v string)
 }
 
-type message struct {
-	// meta
-	topic     string
-	id        int64
-	timestamp time.Time
-
-	// payload
-	data []byte
-
-	// pubOrdered this key presents mq publishing routing policy
-	pubOrderedKey string
-	// subOrdered this key presents mq consuming order policy
-	subOrderedKey string
-
-	// extra
-	extra map[string][]string
+type HasTags interface {
+	Tags() []string
 }
 
-func (m *message) Topic() string {
-	return m.topic
+type CanAppendTags interface {
+	AddTags(...string)
 }
 
-func (m *message) ID() int64 {
-	return m.id
+// HasPartitionKey is used during message production to retrieve or specify
+// the biz partition key for sharding.
+type HasPartitionKey interface {
+	// PartitionKey biz key used for partition hashing
+	PartitionKey() string
 }
 
-func (m *message) Timestamp() time.Time {
-	return m.timestamp
+type CanSetPartitionKey interface {
+	SetPartitionKey(string)
 }
 
-func (m *message) Data() []byte {
-	return m.data
+// HasOrderingKey is used during message consumption to identify the biz
+// key that governs processing order
+type HasOrderingKey interface {
+	OrderingKey() string
 }
 
-func (m *message) Extra() map[string][]string {
-	return m.extra
+type CanSetOrderingKey interface {
+	SetOrderingKey(string)
 }
 
-func (m *message) PubOrderedKey() string {
-	return m.pubOrderedKey
+type HasDelay interface {
+	Delay() time.Duration
 }
 
-func (m *message) SetPubOrderedKey(k string) {
-	m.pubOrderedKey = k
+type CanSetDelay interface {
+	SetDelay(time.Duration)
 }
 
-func (m *message) SubOrderedKey() string {
-	return m.subOrderedKey
+type HasRetryCount interface {
+	RetryCount() uint32
 }
 
-func (m *message) SetSubOrderedKey(k string) {
-	m.subOrderedKey = k
+type CanIncreaseRetryCount interface {
+	AddRetryCount()
 }
 
-func (m *message) AddExtra(key, val string) {
-	m.extra[key] = append(m.extra[key], val)
+type CanModifyRetryCount interface {
+	SetRetryCount(uint32)
 }
 
-func (m message) Marshal() ([]byte, error) {
-	return json.Marshal(newMeta(&m))
+// HasBacklog presents backlog messages when consuming
+type HasBacklog interface {
+	Backlog() int64
 }
 
-func (m *message) Unmarshal(data []byte) error {
-	meta := &messageMeta{}
-	err := json.Unmarshal(data, meta)
-	if err != nil {
-		return err
-	}
-
-	m.topic = meta.Topic
-	m.id = meta.ID
-	m.extra = meta.Extra
-	m.data = meta.Data
-	m.timestamp = meta.Timestamp
-	m.extra = meta.Extra
-	return nil
+type CanSetBacklog interface {
+	SetBacklog(int64)
 }
 
-func newMeta(m Message) *messageMeta {
-	return &messageMeta{
-		Topic:     m.Topic(),
-		ID:        m.ID(),
-		Timestamp: m.Timestamp(),
-		Data:      m.Data(),
-		Extra:     m.Extra(),
-	}
+type HasPartitionID interface {
+	PartitionID() int64
 }
 
-type messageMeta struct {
-	Topic     string              `json:"topic"`
-	ID        int64               `json:"id"`
-	Timestamp time.Time           `json:"timestamp"`
-	Data      []byte              `json:"data,omitempty"`
-	Extra     map[string][]string `json:"extra,omitempty"`
+type CanSetPartitionID interface {
+	SetPartitionID(uint64)
+}
+
+type HasOffset interface {
+	Offset() int64
+}
+
+type CanSetOffset interface {
+	SetOffset(int64)
+}
+
+type HasProducer interface {
+	ProducedBy() string
+}
+
+type CanSetProducer interface {
+	SetProducer(string)
+}
+
+type HasPublishedAt interface {
+	PublishedAt() time.Time
+}
+
+type CanSetPublishedAt interface {
+	SetPublishedAt(time.Time)
+}
+
+type CanRefreshPublishedAt interface {
+	RefreshPublishedAt()
+}
+
+type HasConsumedAt interface {
+	ConsumedAt() time.Time
+}
+
+type CanSetConsumedAt interface {
+	SetConsumedAt(time.Time)
+}
+
+type CanRefreshConsumedAt interface {
+	RefreshConsumedAt()
+}
+
+type HasLatency interface {
+	// Latency duration from event time(first published) to logic subscribed
+	Latency() time.Duration
+}
+
+type HasBrokerLatency interface {
+	// BrokerLatency duration from broker published to logic subscribed
+	BrokerLatency() time.Duration
+}
+
+// HasUnderlying returns or retrieves the raw underlying message value.
+// this is typically used to access driver-specific message type provided by the
+// MQ implementation (e.g. pulsar.Message, kafka.Message, etc.).
+type HasUnderlying[T any] interface {
+	Underlying() T
+}
+
+type CanSetUnderlying[T any] interface {
+	SetUnderlying(T)
 }

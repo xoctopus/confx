@@ -8,28 +8,40 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	. "github.com/xoctopus/x/testx"
 
-	. "github.com/xoctopus/confx/pkg/confpulsar/v1"
+	. "github.com/xoctopus/confx/pkg/confpulsar"
 	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
 func TestPulsarOption(t *testing.T) {
 	opt := &Option{
-		EnablePubShared:   true,
-		EnableSubShared:   true,
-		EnableRetryNack:   true,
-		DisablePersistent: true,
+		EnableSubShared:    true,
+		EnableRetryNack:    true,
+		DisablePersistence: true,
 	}
 	opt.SetDefault()
 
-	Expect(t, opt.Topic("x"), HavePrefix("non-persistent://"))
-	Expect(t, opt.PubOption().OptionScheme(), Equal("pulsar"))
-	Expect(t, opt.SubOption().OptionScheme(), Equal("pulsar"))
+	t.Run("Topic", func(t *testing.T) {
+		topic := "x"
+		opt.PatchTopic(&topic)
+		Expect(t, topic, HavePrefix("non-persistent://"))
+
+		opt2 := opt
+		opt2.Cluster = "cluster"
+		topic = "x"
+		opt2.SetDefault()
+		opt2.PatchTopic(&topic)
+		Expect(t, topic, ContainsSubString(opt2.Cluster))
+	})
+
+	t.Run("OptionScheme", func(t *testing.T) {
+		Expect(t, opt.PubOption(WithPubTopic("x")).OptionScheme(), Equal("pulsar"))
+		Expect(t, opt.SubOption(WithSubTopic("x")).OptionScheme(), Equal("pulsar"))
+	})
 
 	topic := TopicFor(t)
-
 	po := opt.PubOption(
 		WithPubTopic(topic),
-		WithPublishCallback(func(mq.Message, error) {}),
+		WithPublishCallback(func(ProducerMessage, error) {}),
 		WithSyncPublish(),
 		WithPubSendTimeout(time.Minute),
 		WithPubEnableBlockIfQueueFull(),
@@ -38,7 +50,7 @@ func TestPulsarOption(t *testing.T) {
 		WithPubBatchingMaxMessages(100),
 		WithPubAccessMode(pulsar.ProducerAccessModeWaitForExclusive),
 	).Options()
-	Expect(t, po.Topic, Equal(t.Name()))
+	Expect(t, po.Topic, HaveSuffix(topic))
 	Expect(t, po.SendTimeout, Equal(time.Minute))
 	Expect(t, po.DisableBlockIfQueueFull, BeTrue())
 	Expect(t, po.MaxPendingMessages, Equal(101))
@@ -48,29 +60,31 @@ func TestPulsarOption(t *testing.T) {
 	Expect(t, po.BackOffPolicyFunc(), NotBeNil[backoff.Policy]())
 
 	po = opt.PubOption(
-		WithPublisherOptions(pulsar.ProducerOptions{Name: topic}),
+		WithPulsarProducerOptions(pulsar.ProducerOptions{
+			Topic: topic,
+			Name:  topic,
+		}),
 	).Options()
 	Expect(t, po.Name, Equal(t.Name()))
 
 	so := opt.SubOption(
-		WithPulsarConsumerOptions(pulsar.ConsumerOptions{
-			RetryEnable: true,
-		}),
+		WithPulsarConsumerOptions(pulsar.ConsumerOptions{RetryEnable: true}),
+		WithSubConsumingMode(mq.PartitionOrdered),
 		WithSubDisableAutoAck(),
-		WithSubCallback(func(pulsar.Consumer, pulsar.Message, mq.Message, error) {}),
+		WithSubCallback(func(mq.Acknowledger[ConsumerMessage], ConsumerMessage, error) {}),
 		WithSubTopic(topic),
 		WithSubTopic(topic, topic),
 		WithSubTopicPattern("^order"),
-		WithSubName(topic),
+		WithSubGroupName(topic),
 		WithSubType(pulsar.Shared),
 		WithSubEnableRetryNack(time.Minute, 100),
 		WithSubEnableRetryNack(time.Minute, 0),
-		WithSubWorkerSize(8),
-		WithSubWorkerBufferSize(16),
-		WithSubOrderedKeyHasher(mq.CRC),
+		WithSubWorkerSize(0),
+		WithSubWorkerBufferSize(0),
+		WithSubOrderedKeyHasher(nil),
 	).Options()
 
-	Expect(t, so.Topic, Equal(topic))
+	Expect(t, so.Topic, HaveSuffix(topic))
 	Expect(t, so.SubscriptionName, Equal(topic))
 	Expect(t, so.Type, Equal(pulsar.Shared))
 	Expect(t, so.NackRedeliveryDelay, Equal(time.Minute))

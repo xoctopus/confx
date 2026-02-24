@@ -5,20 +5,19 @@ import (
 	"github.com/xoctopus/x/docx"
 )
 
-func (v *ecode) DocOf(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		return []string{}, false
-	}
-	return []string{"presents"}, true
-}
-
 func (v *Endpoint) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "Endpoint":
 			return []string{}, true
+		case "ResourceManager":
+			return []string{}, true
 		}
 		if doc, ok := docx.Of(&v.Endpoint, "", names...); ok {
+			return doc, true
+		}
+
+		if doc, ok := docx.Of(&v.ResourceManager, "", names...); ok {
 			return doc, true
 		}
 		return []string{}, false
@@ -26,8 +25,57 @@ func (v *Endpoint) DocOf(names ...string) ([]string, bool) {
 	return []string{"pulsar component endpoint"}, true
 }
 
-func (v *manager[T]) DocOf(names ...string) ([]string, bool) {
+func (v *consumer) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{}, true
+}
+
+func (v *producer) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{}, true
+}
+
+func (v *Error) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{"presents error codes for confpulsar"}, true
+}
+
+func (v *ExtraKind) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		return []string{}, false
+	}
+	return []string{"defines types of extended metadata for pulsar", "for extending more mq-specific features, implement mq.HasExtra, mq.CanAppendExtra"}, true
+}
+
+func (v *producerMessage) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		case "ProducerMessage":
+			return []string{}, true
+		}
+		if doc, ok := docx.Of(&v.ProducerMessage, "", names...); ok {
+			return doc, true
+		}
+		return []string{}, false
+	}
+	return []string{}, true
+}
+
+func (v *consumerMessage) DocOf(names ...string) ([]string, bool) {
+	if len(names) > 0 {
+		switch names[0] {
+		case "Message":
+			return []string{}, true
+		}
+		if doc, ok := docx.Of(&v.Message, "", names...); ok {
+			return doc, true
+		}
 		return []string{}, false
 	}
 	return []string{}, true
@@ -36,10 +84,14 @@ func (v *manager[T]) DocOf(names ...string) ([]string, bool) {
 func (v *Option) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
+		case "DisablePersistence":
+			return []string{"[TOPIC] denotes topic scheme. default is \"persistent\"", "eg:", "persistent://<tenant>/[<cluster>/]<namespace>/topic", "non-persistent://<tenant>/[<cluster>/]<namespace>/topic"}, true
 		case "Tenant":
-			return []string{"represents the top-level Pulsar tenant.", "It is the highest isolation boundary in Pulsar, usually used to separate", "environments (prod/test/dev) or organizations.", "It maps to the `<tenant>` part of `persistent://<tenant>/<namespace>/<topic>`."}, true
+			return []string{"[TOPIC] represents the top-level Pulsar tenant."}, true
+		case "Cluster":
+			return []string{"[TOPIC] denotes target cluster name of client connection"}, true
 		case "Namespace":
-			return []string{"represents the logical domain under a tenant.", "It is the main unit for policy and resource management in Pulsar, such as:", "retention, TTL, backlog quota, permissions, and schema enforcement.", "It maps to the `<namespace>` part of `persistent://<tenant>/<namespace>/<topic>`."}, true
+			return []string{"[TOPIC] represents the logical domain under a tenant."}, true
 		case "ConnectionTimeout":
 			return []string{"[Client] establishment timeout"}, true
 		case "ConnectionMaxIdleTime":
@@ -60,7 +112,7 @@ func (v *Option) DocOf(names ...string) ([]string, bool) {
 			return []string{"[PUB] specifies if disable message compression, if it is", "enabled use LZ4 compress type"}, true
 		case "BatchingMaxMessages":
 			return []string{"[PUB] specifies the max messages permitted in a batch"}, true
-		case "EnablePubShared":
+		case "DisablePubShared":
 			return []string{"[PUB] if disabled, publisher is required exclusive access", "for producer. failed immediately if there's already a producer connected."}, true
 		case "EnableSubShared":
 			return []string{"[SUB] if disabled, there can be only 1 consumer on the same", "topic with the same subscription name"}, true
@@ -71,9 +123,9 @@ func (v *Option) DocOf(names ...string) ([]string, bool) {
 		case "MaxNackRetry":
 			return []string{"[SUB] max retry times for nack message"}, true
 		case "WorkerSize":
-			return []string{"[SUB] worker size for concurrency of consuming"}, true
-		case "DisablePersistent":
-			return []string{"[TOPIC] if disable persistent. set true the topic prefix", "use `non-persistent`.", "eg:", "persistent://tenant/namespace/topic", "non-persistent://tenant/namespace/topic"}, true
+			return []string{"defines the concurrency level for message consumption.", "Behavior based on ConsumeMode:", "eg:", "- mq.GlobalOrdered: Forced to 1 to ensure strict sequential processing.", "- mq.PartitionOrdered: Messages are dispatched to specific workers based on", "a hash of the partition key, ensuring order within the same key.", "- mq.Concurrent: messages are distributed across all workers (e.g., round-robin)", "to maximize throughput."}, true
+		case "WorkerBufferSize":
+			return []string{"[SUB] will prefetch message from broker for improves", "consumption throughput and reducing wait"}, true
 		}
 		return []string{}, false
 	}
@@ -95,20 +147,6 @@ func (v *SubOption) DocOf(names ...string) ([]string, bool) {
 }
 
 func (v *nackBackoffPolicy) DocOf(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		return []string{}, false
-	}
-	return []string{}, true
-}
-
-func (v *publisher) DocOf(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		return []string{}, false
-	}
-	return []string{}, true
-}
-
-func (v *subscriber) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}

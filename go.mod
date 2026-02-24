@@ -1,13 +1,14 @@
 module github.com/xoctopus/confx
 
-go 1.25.6
+go 1.26.0
 
 require (
 	github.com/go-think/openssl v1.20.0
+	github.com/google/uuid v1.6.0
 	github.com/xoctopus/genx v0.1.16
-	github.com/xoctopus/logx v0.2.3
+	github.com/xoctopus/logx v0.2.4
 	github.com/xoctopus/sfid v0.0.6
-	github.com/xoctopus/x v0.3.2
+	github.com/xoctopus/x v0.3.4
 )
 
 // cobra
@@ -20,8 +21,7 @@ require (
 // middlewares
 require (
 	github.com/apache/pulsar-client-go v0.18.0
-	github.com/gomodule/redigo v1.9.3
-	github.com/redis/go-redis/v9 v9.17.3
+	github.com/redis/go-redis/v9 v9.18.0
 )
 
 // indirect
@@ -65,7 +65,6 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.10
-	github.com/stretchr/testify v1.11.1 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xoctopus/pkgx v0.1.10 // indirect
 	github.com/xoctopus/typx v0.3.4 // indirect
@@ -74,15 +73,15 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
 	go.uber.org/zap v1.27.1 // indirect
-	golang.org/x/crypto v0.46.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/exp v0.0.0-20251219203646-944ab1f22d93
-	golang.org/x/mod v0.31.0 // indirect
-	golang.org/x/net v0.48.0 // indirect
+	golang.org/x/mod v0.33.0 // indirect
+	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/sys v0.39.0 // indirect
-	golang.org/x/text v0.32.0 // indirect
-	golang.org/x/tools v0.40.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/tools v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apimachinery v0.32.3 // indirect

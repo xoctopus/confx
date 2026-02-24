@@ -10,6 +10,7 @@ import (
 	"github.com/xoctopus/x/textx"
 
 	"github.com/xoctopus/confx/pkg/conftls"
+	"github.com/xoctopus/confx/pkg/types/liveness"
 )
 
 // Endpoint a connectable endpoint
@@ -101,7 +102,9 @@ func (e *Endpoint[Option]) Scheme() string {
 	return e.addr.Scheme
 }
 
-func (e *Endpoint[Option]) LivenessCheck(ctx context.Context) LivenessData {
+func (e *Endpoint[Option]) LivenessCheck(ctx context.Context) (v liveness.Result) {
+	v = liveness.NewLivenessData()
+
 	host := e.addr.Host
 	if !strings.Contains(host, ":") {
 		host += ":80"
@@ -110,19 +113,13 @@ func (e *Endpoint[Option]) LivenessCheck(ctx context.Context) LivenessData {
 	ctx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
-	cost := Cost()
+	v.Start()
 	conn, err := (&net.Dialer{}).DialContext(ctx, "tcp", host)
-	if err == nil {
-		defer func() { _ = conn.Close() }()
-		return LivenessData{
-			Reachable: true,
-			RTT:       Duration(cost()),
-		}
+	if conn != nil {
+		_ = conn.Close()
 	}
-	return LivenessData{
-		Reachable: false,
-		Message:   e.String(),
-	}
+	v.End(err)
+	return
 }
 
 func (e *Endpoint[Option]) URL() url.URL {

@@ -2,13 +2,14 @@ package confredis
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/xoctopus/genx/testdata/errors"
 
 	"github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types/liveness"
 )
 
 type Endpoint struct {
@@ -44,30 +45,19 @@ func (e *Endpoint) Init(ctx context.Context) error {
 
 	e.cli = redis.NewUniversalClient(opt)
 
-	if d := e.LivenessCheck(ctx); !d.Reachable {
-		return errors.New(d.Message)
-	}
-
-	return nil
+	d := e.LivenessCheck(ctx)
+	return d.FailureReason()
 }
 
-func (e *Endpoint) LivenessCheck(ctx context.Context) (d types.LivenessData) {
+func (e *Endpoint) LivenessCheck(ctx context.Context) (d liveness.Result) {
+	d = liveness.NewLivenessData()
+
 	if e.cli == nil {
-		d.Message = "lost connection"
+		d.End(errors.New("redis: lost connection"))
 		return
 	}
 
-	span := types.Cost()
-	cmd := e.cli.Ping(ctx)
-	cost := span()
-
-	if err := cmd.Err(); err != nil {
-		d.Message = err.Error()
-		return
-	}
-
-	d.RTT = types.Duration(cost)
-	d.Reachable = true
+	d.End(e.cli.Ping(ctx).Err())
 	return
 }
 
@@ -80,4 +70,13 @@ func (e *Endpoint) Close() error {
 		return e.cli.Close()
 	}
 	return nil
+}
+
+func (e *Endpoint) Key(k string) string {
+	return e.Option.Prefix + ":" + k
+}
+
+func (e *Endpoint) Exec(ctx context.Context, cmd string, args ...any) (any, error) {
+	c := e.cli.Do(ctx, append([]any{cmd}, args...)...)
+	return c.Result()
 }

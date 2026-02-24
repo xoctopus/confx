@@ -9,7 +9,7 @@
 			"_mock.go",
 			"_genx_",
 			"main.go",
-			"testing.go",
+			"hack/",
 			"example/"
 		],
 		"format_ignore": [

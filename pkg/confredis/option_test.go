@@ -6,7 +6,7 @@ import (
 
 	"github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/pkg/confredis/v2"
+	"github.com/xoctopus/confx/pkg/confredis"
 	"github.com/xoctopus/confx/pkg/types"
 )
 

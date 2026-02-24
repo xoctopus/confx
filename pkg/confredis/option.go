@@ -1,7 +1,6 @@
 package confredis
 
 import (
-	"net/url"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -43,7 +42,7 @@ type Option struct {
 }
 
 func (o *Option) SetDefault() {
-	must.NoError(textx.UnmarshalURL(url.Values{}, o))
+	must.NoErrorV(textx.SetDefault(o))
 }
 
 func (o Option) ClientOption() *redis.UniversalOptions {

@@ -25,21 +25,6 @@ func (v *Endpoint[Option]) DocOf(names ...string) ([]string, bool) {
 	return []string{"a connectable endpoint", "Note options in url Param can override option"}, true
 }
 
-func (v *LivenessData) DocOf(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		switch names[0] {
-		case "Reachable":
-			return []string{"if remote endpoint is reachable"}, true
-		case "RTT":
-			return []string{"probes round trip time to remote endpoint"}, true
-		case "Message":
-			return []string{"result or extended message"}, true
-		}
-		return []string{}, false
-	}
-	return []string{"presents LivenessChecker result"}, true
-}
-
 func (v *Password) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false

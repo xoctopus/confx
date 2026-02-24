@@ -4,30 +4,41 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	"github.com/apache/pulsar-client-go/pulsar/log"
+	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/textx"
 
 	"github.com/xoctopus/confx/pkg/types"
 	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
+const (
+	PERSISTENT     = "persistent://"
+	NON_PERSISTENT = "non-persistent://"
+)
+
 // Option presents pulsar client options and default pub/sub options. it can be
 // overridden by option applier when call Endpoint.Publish and Endpoint.Subscribe
 type Option struct {
-	// Tenant represents the top-level Pulsar tenant.
-	// It is the highest isolation boundary in Pulsar, usually used to separate
-	// environments (prod/test/dev) or organizations.
-	// It maps to the `<tenant>` part of `persistent://<tenant>/<namespace>/<topic>`.
+	// DisablePersistence [TOPIC] denotes topic scheme. default is "persistent"
+	// eg:
+	// persistent://<tenant>/[<cluster>/]<namespace>/topic
+	// non-persistent://<tenant>/[<cluster>/]<namespace>/topic
+	DisablePersistence bool `url:",default=false"`
+	// Tenant [TOPIC] represents the top-level Pulsar tenant.
 	Tenant string `url:",default=public"`
-
-	// Namespace represents the logical domain under a tenant.
-	// It is the main unit for policy and resource management in Pulsar, such as:
-	// retention, TTL, backlog quota, permissions, and schema enforcement.
-	// It maps to the `<namespace>` part of `persistent://<tenant>/<namespace>/<topic>`.
+	// Cluster [TOPIC] denotes target cluster name of client connection
+	Cluster string `url:",default="`
+	// Namespace [TOPIC] represents the logical domain under a tenant.
 	Namespace string `url:",default=default"`
+	// prefix persistent topic url prefix
+	prefix string
 
 	// ConnectionTimeout [Client] establishment timeout
 	ConnectionTimeout types.Duration `url:",default=1s"`
@@ -55,9 +66,9 @@ type Option struct {
 	DisableCompress bool `url:",default=false"`
 	// BatchingMaxMessages [PUB] specifies the max messages permitted in a batch
 	BatchingMaxMessages uint
-	// EnablePubShared [PUB] if disabled, publisher is required exclusive access
+	// DisablePubShared [PUB] if disabled, publisher is required exclusive access
 	// for producer. failed immediately if there's already a producer connected.
-	EnablePubShared bool `url:",default=false"`
+	DisablePubShared bool `url:",default=false"`
 
 	// EnableSubShared [SUB] if disabled, there can be only 1 consumer on the same
 	// topic with the same subscription name
@@ -83,15 +94,6 @@ type Option struct {
 	// consumption throughput and reducing wait
 	WorkerBufferSize uint16 `url:",default=64"`
 
-	// DisablePersistent [TOPIC] if disable persistent. set true the topic prefix
-	// use `non-persistent`.
-	// eg:
-	// persistent://tenant/namespace/topic
-	// non-persistent://tenant/namespace/topic
-	DisablePersistent bool `url:",default=false"`
-
-	// prefix persistent url prefix
-	prefix string
 	// defaultPubOption default publisher option
 	defaultPubOption *PubOption
 	// defaultPubOption default subscriber option
@@ -99,6 +101,8 @@ type Option struct {
 }
 
 func (o *Option) SetDefault() {
+	must.NoErrorV(textx.SetDefault(o))
+
 	if o.defaultPubOption == nil {
 		o.defaultPubOption = &PubOption{}
 	}
@@ -112,9 +116,9 @@ func (o *Option) SetDefault() {
 		if o.BatchingMaxMessages == 0 {
 			disableBatching = true
 		}
-		accessMode := pulsar.ProducerAccessModeExclusive
-		if o.EnablePubShared {
-			accessMode = pulsar.ProducerAccessModeShared
+		accessMode := pulsar.ProducerAccessModeShared
+		if o.DisablePubShared {
+			accessMode = pulsar.ProducerAccessModeExclusive
 		}
 
 		o.defaultPubOption = &PubOption{
@@ -162,23 +166,20 @@ func (o *Option) SetDefault() {
 		o.defaultSubOption._initialized = true
 	}
 
-	o.prefix = "persistent"
-	if o.DisablePersistent {
-		o.prefix = "non-persistent"
+	scheme := PERSISTENT
+	if o.DisablePersistence {
+		scheme = NON_PERSISTENT
+	}
+
+	if len(o.Cluster) == 0 {
+		o.prefix = fmt.Sprintf("%s%s/%s/", scheme, o.Tenant, o.Namespace)
+	} else {
+		o.prefix = fmt.Sprintf("%s%s/%s/%s/", scheme, o.Tenant, o.Cluster, o.Namespace)
 	}
 }
 
-func (o *Option) String() string {
-	return fmt.Sprintf("%s://%s/%s/", o.prefix, o.Tenant, o.Namespace)
-}
-
-func (o *Option) Topic(topic string) string {
-	return fmt.Sprintf("%s://%s/%s/%s", o.prefix, o.Tenant, o.Namespace, topic)
-}
-
 func (o *Option) ClientOption(url string) pulsar.ClientOptions {
-	l := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
-
+	l := logx.NewRawStdLogger(os.Stderr, 5, slog.LevelWarn).WithGroup("pulsar")
 	return pulsar.ClientOptions{
 		URL:                     url,
 		ConnectionTimeout:       time.Duration(o.ConnectionTimeout),
@@ -195,6 +196,8 @@ func (o *Option) PubOption(appliers ...mq.OptionApplier) *PubOption {
 	for _, applier := range appliers {
 		applier.Apply(&opt)
 	}
+	must.BeTrueF(opt.options.Topic != "", "producer topic is required")
+	o.PatchTopic(&opt.options.Topic)
 	return &opt
 }
 
@@ -204,27 +207,65 @@ func (o *Option) SubOption(appliers ...mq.OptionApplier) *SubOption {
 		applier.Apply(&opt)
 	}
 
-	if opt.mode == mq.GlobalOrdered {
-		opt.worker = 1
+	if len(opt.options.Topics) > 0 {
+		topics := make([]string, 0, len(opt.options.Topic))
+		for _, v := range opt.options.Topics {
+			if len(v) > 0 {
+				topics = append(topics, v)
+			}
+		}
+		opt.options.Topics = topics
 	}
+
+	must.BeTrueF(
+		len(opt.options.Topic) > 0 || len(opt.options.Topics) > 0 || len(opt.options.TopicsPattern) > 0,
+		"consumer topic is required",
+	)
+	must.BeTrueF(
+		len(opt.options.SubscriptionName) > 0,
+		"consumer subscription name is required",
+	)
+
+	o.PatchTopic(&opt.options.Topic)
+	o.PatchTopic(&opt.options.TopicsPattern)
+	for i := range opt.options.Topics {
+		o.PatchTopic(&opt.options.Topics[i])
+	}
+	if opt.options.DLQ != nil {
+		o.PatchTopic(&opt.options.DLQ.RetryLetterTopic)
+		o.PatchTopic(&opt.options.DLQ.DeadLetterTopic)
+	}
+
 	if opt.worker == 0 {
 		opt.worker = 16
 	}
-	if opt.bufferSize == 0 {
-		opt.bufferSize = 256
+	if opt.mode == mq.GlobalOrdered {
+		opt.worker = 1
 	}
-	if opt.mode == mq.PartitionOrdered && opt.hasher == nil {
+	if opt.bufferSize == 0 {
+		opt.bufferSize = 16
+	}
+	if opt.hasher == nil {
 		opt.hasher = mq.CRC
 	}
 
 	return &opt
 }
 
+func (o *Option) PatchTopic(t *string) {
+	if len(*t) == 0 {
+		return
+	}
+	if !strings.HasPrefix(*t, PERSISTENT) && !strings.HasPrefix(*t, NON_PERSISTENT) {
+		*t = o.prefix + *t
+	}
+}
+
 type PubOption struct {
 	_initialized bool
 	// callback when async send mode enabled. callback will be called when message
 	// sent completed
-	callback func(mq.Message, error)
+	callback mq.AsyncPubCallback[ProducerMessage]
 	// sync decides use Send or SendAsync in pulsar client
 	sync bool
 	// options pulsar producer option
@@ -237,7 +278,7 @@ func (o *PubOption) Options() pulsar.ProducerOptions {
 
 func (*PubOption) OptionScheme() string { return "pulsar" }
 
-func WithPublishCallback(f func(mq.Message, error)) mq.OptionApplier {
+func WithPublishCallback(f mq.AsyncPubCallback[ProducerMessage]) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.callback = f
@@ -257,6 +298,14 @@ func WithPubTopic(topic string) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options.Topic = topic
+		}
+	})
+}
+
+func WithPublisherName(name string) mq.OptionApplier {
+	return mq.OptionApplyFunc(func(opt mq.Option) {
+		if x, ok := opt.(*PubOption); ok {
+			x.options.Name = name
 		}
 	})
 }
@@ -311,7 +360,7 @@ func WithPubAccessMode(m pulsar.ProducerAccessMode) mq.OptionApplier {
 	})
 }
 
-func WithPublisherOptions(o pulsar.ProducerOptions) mq.OptionApplier {
+func WithPulsarProducerOptions(o pulsar.ProducerOptions) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*PubOption); ok {
 			x.options = o
@@ -325,9 +374,9 @@ type SubOption struct {
 	// should be handled by callback.
 	disableAutoAck bool
 	// callback it is called when message handled
-	callback func(pulsar.Consumer, pulsar.Message, mq.Message, error)
+	callback mq.SubCallback[ConsumerMessage]
 	// handler process mq.Message
-	handler mq.Handler
+	handler mq.SubHandler[ConsumerMessage]
 	// worker specifies the consumer concurrency level. the default is defined
 	// in Option.WorkerSize (16 by default).
 	worker uint16
@@ -336,7 +385,7 @@ type SubOption struct {
 	// hasher helps to hash message partition key
 	hasher mq.Hasher
 	// mode consumer handling mode
-	mode mq.ConsumeMode
+	mode mq.ConsumeHandleMode
 	// options pulsar consumer options
 	options pulsar.ConsumerOptions
 }
@@ -358,7 +407,7 @@ func WithSubDisableAutoAck() mq.OptionApplier {
 }
 
 // WithSubCallback set subscriber's callback when message is handled.
-func WithSubCallback(f func(pulsar.Consumer, pulsar.Message, mq.Message, error)) mq.OptionApplier {
+func WithSubCallback(f mq.SubCallback[ConsumerMessage]) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.callback = f
@@ -392,7 +441,7 @@ func WithSubTopicPattern(pattern string) mq.OptionApplier {
 	})
 }
 
-func WithSubName(name string) mq.OptionApplier {
+func WithSubGroupName(name string) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.options.SubscriptionName = name
@@ -421,6 +470,7 @@ func WithSubEnableRetryNack(retryDelay time.Duration, maxRetry uint32) mq.Option
 				x.options.DLQ = &pulsar.DLQPolicy{}
 			}
 			x.options.DLQ.MaxDeliveries = maxRetry
+			x.options.DLQ.RetryLetterTopic = x.options.Topic
 			x.options.DLQ.DeadLetterTopic = x.options.Topic + "_DLQ"
 		}
 	})
@@ -429,7 +479,7 @@ func WithSubEnableRetryNack(retryDelay time.Duration, maxRetry uint32) mq.Option
 func WithSubWorkerSize(n uint16) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*SubOption); ok {
-			x.bufferSize = n
+			x.worker = n
 		}
 	})
 }
@@ -437,7 +487,7 @@ func WithSubWorkerSize(n uint16) mq.OptionApplier {
 func WithSubWorkerBufferSize(n uint16) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*SubOption); ok {
-			x.worker = n
+			x.bufferSize = n
 		}
 	})
 }
@@ -450,7 +500,7 @@ func WithSubOrderedKeyHasher(h mq.Hasher) mq.OptionApplier {
 	})
 }
 
-func WithSubConsumingMode(mode mq.ConsumeMode) mq.OptionApplier {
+func WithSubConsumingMode(mode mq.ConsumeHandleMode) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*SubOption); ok {
 			x.mode = mode
@@ -476,3 +526,10 @@ func (p *nackBackoffPolicy) Next(count uint32) time.Duration {
 	count = min(count, p.maxRetry)
 	return min(p.retryDelay*time.Duration(count), time.Minute*10)
 }
+
+type (
+	Producer = mq.Producer[ProducerMessage]
+	Consumer = mq.Consumer[ConsumerMessage]
+	Observer = mq.Observer[ConsumerMessage]
+	PubSub   = mq.PubSub[Producer, Consumer]
+)
