@@ -136,6 +136,7 @@ lint: dep
 	@echo "==> linting"
 	@echo ">>>golangci-lint"
 	@golangci-lint run
+	@go vet ./...
 	@echo "done"
 
 clean:

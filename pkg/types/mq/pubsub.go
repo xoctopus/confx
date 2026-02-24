@@ -30,8 +30,14 @@ type Observer[M any] interface {
 type Acknowledger[M any] interface {
 	Ack(M) error
 	Nack(M) error
-	// Discard discards message
-	// Discard(M) error
+}
+
+type AcknowledgerCanDiscard[M any] interface {
+	Acknowledger[M]
+
+	// Discard discards message. deliveries message to DLQ directly when biz assures
+	// message M cannot be handled, such as message cannot be unmarshalled
+	Discard(M) error
 }
 
 // Unsubscriber release subscription resource at broker end.
@@ -65,6 +71,20 @@ type PubSub[PM any, CM any] interface {
 	// NewConsumer creates and returns a consumer; topic, subscription name, consume mode, etc. may be set via OptionApplier.
 	NewConsumer(context.Context, ...OptionApplier) (Consumer[CM], error)
 	// Close closes the pub/sub endpoint and releases underlying connection pools and resources.
+	Close() error
+}
+
+type Suite[PM any, CM any] interface {
+	// Topic returns the topic name bound to this producer.
+	Topic() string
+	// Publish publishes payload to the given topic.
+	Publish(ctx context.Context, topic string, payload []byte) (PM, error)
+	// PublishMessage publishes message
+	PublishMessage(context.Context, PM) error
+
+	Run(ctx context.Context, h SubHandler[CM]) error
+	Acknowledger[CM]
+
 	Close() error
 }
 
