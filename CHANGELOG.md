@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.2.24...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.0...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.3.0"></a>
+## [v0.3.0](https://github.com/xoctopus/confx/compare/v0.2.24...v0.3.0)
+
+> 2026-02-24
+
+### Refactor
+
+* **pkg:** refactor: confpulsar, mq
 
 
 <a name="v0.2.24"></a>
