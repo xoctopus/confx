@@ -67,7 +67,7 @@ func (p *producer) PublishMessage(ctx context.Context, msg ProducerMessage) (err
 	}
 
 	msg.RefreshPublishedAt()
-	log = log.With("pub_at", msg.PublishedAt())
+	log = log.With("last_sequence", p.pub.LastSequenceID(), "pub_at", msg.PublishedAt())
 	raw := msg.Underlying()
 
 	if p.sync {

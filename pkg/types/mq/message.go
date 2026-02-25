@@ -44,6 +44,17 @@ type CanAppendTags interface {
 	AddTags(...string)
 }
 
+type HasExpiredAt interface {
+	ExpiredAt() int64
+}
+
+type CanSetExpiredAt interface {
+	// SetExpiredAt use epoch second timestamp
+	SetExpiredAt(int64)
+	// SetExpiredAfter base now
+	SetExpiredAfter(time.Duration)
+}
+
 // HasPartitionKey is used during message production to retrieve or specify
 // the biz partition key for sharding.
 type HasPartitionKey interface {
@@ -71,17 +82,15 @@ type HasDelay interface {
 
 type CanSetDelay interface {
 	SetDelay(time.Duration)
+	SetDeliveryAt(time.Time)
 }
 
 type HasRetryCount interface {
 	RetryCount() uint32
 }
 
-type CanIncreaseRetryCount interface {
+type CanSetRetryCount interface {
 	AddRetryCount()
-}
-
-type CanModifyRetryCount interface {
 	SetRetryCount(uint32)
 }
 

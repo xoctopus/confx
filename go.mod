@@ -3,8 +3,6 @@ module github.com/xoctopus/confx
 go 1.26.0
 
 require (
-	github.com/go-think/openssl v1.20.0
-	github.com/google/uuid v1.6.0
 	github.com/xoctopus/genx v0.1.16
 	github.com/xoctopus/logx v0.2.5
 	github.com/xoctopus/sfid v0.0.6
@@ -21,7 +19,15 @@ require (
 // middlewares
 require (
 	github.com/apache/pulsar-client-go v0.18.0
+	github.com/rabbitmq/amqp091-go v1.10.0
 	github.com/redis/go-redis/v9 v9.18.0
+	github.com/segmentio/kafka-go v0.4.50
+	github.com/wagslane/go-rabbitmq v0.15.0
+)
+
+require (
+	github.com/go-think/openssl v1.20.0
+	github.com/google/uuid v1.6.0
 )
 
 // indirect

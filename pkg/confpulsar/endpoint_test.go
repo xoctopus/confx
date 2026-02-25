@@ -47,8 +47,8 @@ func TestEndpoint(t *testing.T) {
 		}
 		t.When("Init", func(b bdd.T) {
 			err := ep.Init(hack.Context(t))
-			err2 := &url.Error{}
-			t.Then("FailedToInitCausedByURL", bdd.BeTrue(errors.As(err, &err2)))
+			_, ok := errors.AsType[*url.Error](err)
+			t.Then("FailedToInitCausedByURL", bdd.BeTrue(ok))
 		})
 	})
 
@@ -107,6 +107,7 @@ func TestEndpoint(t *testing.T) {
 			termsig = make(chan struct{}, 1)
 		)
 		mp.SetDelay(time.Second)
+		mp.SetExpiredAt(9000000000)
 
 		hack.RunPulsarPubSubTestSuite(
 			hack.Context(t), t, dsn,
@@ -123,17 +124,18 @@ func TestEndpoint(t *testing.T) {
 				Expect(t, mc.RetryCount(), Equal(uint32(0)))
 				Expect(t, mc.ProducedBy(), Equal(mp.Topic()))
 				Expect(t, mc.Underlying().ID().PartitionIdx(), Equal(int32(mc.PartitionID())))
-				v, _ := mc.ExtraValueOf(EXTRA_KIND__DELIVERY_DELAYED.String())
-				Expect(t, v, Equal("1000"))
+
+				v, _ := mc.ExtraValueOf(EXTRA_KEY__EXPIRED_AT)
+				Expect(t, v, Equal("9000000000"))
 				_, ok := mc.Extra()["none"]
 				Expect(t, ok, BeFalse())
 				_, ok = mc.ExtraValueOf("none")
 				Expect(t, ok, BeFalse())
+
 				d1 := mc.Latency()
 				d2 := mc.BrokerLatency()
-				if d2 != 0 {
-					Expect(t, d1 < d2, BeTrue())
-				}
+				Expect(t, d2 == 0 || d1 < d2, BeTrue())
+
 				termsig <- struct{}{}
 				return nil
 			},

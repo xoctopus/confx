@@ -1,10 +1,12 @@
 package confpulsar
 
 import (
+	"math"
 	"strconv"
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
+	"github.com/xoctopus/x/misc/must"
 
 	"github.com/xoctopus/confx/pkg/types/mq"
 )
@@ -16,6 +18,8 @@ type ProducerMessage interface {
 	mq.CanSetPayload
 	mq.HasExtra
 	mq.CanAppendExtra
+	mq.HasExpiredAt
+	mq.CanSetExpiredAt
 	mq.HasPartitionKey
 	mq.CanSetPartitionKey
 	mq.HasOrderingKey
@@ -72,6 +76,25 @@ func (x *producerMessage) AddExtra(k, v string) {
 	x.Properties[k] = v
 }
 
+func (x *producerMessage) ExpiredAt() int64 {
+	expiredAt := int64(math.MaxInt64)
+	if val, ok := x.ExtraValueOf(EXTRA_KEY__EXPIRED_AT); ok {
+		if v, err := strconv.ParseInt(val, 10, 64); err == nil {
+			expiredAt = v
+		}
+	}
+	return expiredAt
+}
+
+func (x *producerMessage) SetExpiredAt(expiredAt int64) {
+	must.BeTrueF(expiredAt > time.Now().Unix(), "invalid expired timestamp")
+	x.AddExtra(EXTRA_KEY__EXPIRED_AT, strconv.FormatInt(expiredAt, 10))
+}
+
+func (x *producerMessage) SetExpiredAfter(du time.Duration) {
+	x.AddExtra(EXTRA_KEY__EXPIRED_AT, strconv.FormatInt(time.Now().Add(du).Unix(), 10))
+}
+
 func (x *producerMessage) PartitionKey() string {
 	return x.Key
 }
@@ -103,8 +126,11 @@ func (x *producerMessage) Delay() time.Duration {
 func (x *producerMessage) SetDelay(du time.Duration) {
 	if du > 0 {
 		x.DeliverAfter = du
-		x.AddExtra(EXTRA_KIND__DELIVERY_DELAYED.String(), strconv.Itoa(int(du.Milliseconds())))
 	}
+}
+
+func (x *producerMessage) SetDeliveryAt(t time.Time) {
+	x.DeliverAt = t
 }
 
 func (x *producerMessage) Underlying() *pulsar.ProducerMessage {
@@ -115,6 +141,7 @@ type ConsumerMessage interface {
 	mq.HasTopic
 	mq.HasPayload
 	mq.HasExtra
+	mq.HasExpiredAt
 	mq.HasPartitionKey
 	mq.HasOrderingKey
 	mq.HasPartitionID
@@ -149,6 +176,16 @@ func (x *consumerMessage) ExtraValueOf(k string) (string, bool) {
 		return v, ok
 	}
 	return "", false
+}
+
+func (x *consumerMessage) ExpiredAt() int64 {
+	expiredAt := int64(math.MaxInt64)
+	if val, ok := x.ExtraValueOf(EXTRA_KEY__EXPIRED_AT); ok {
+		if v, err := strconv.ParseInt(val, 10, 64); err == nil {
+			expiredAt = v
+		}
+	}
+	return expiredAt
 }
 
 func (x *consumerMessage) PartitionKey() string {

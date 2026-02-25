@@ -46,11 +46,11 @@ func (v *Error) DocOf(names ...string) ([]string, bool) {
 	return []string{"presents error codes for confpulsar"}, true
 }
 
-func (v *ExtraKind) DocOf(names ...string) ([]string, bool) {
+func (v *ExtraKey) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}
-	return []string{"defines types of extended metadata for pulsar", "for extending more mq-specific features, implement mq.HasExtra, mq.CanAppendExtra"}, true
+	return []string{"defines keys for extended metadata for extending more mq-specific features"}, true
 }
 
 func (v *producerMessage) DocOf(names ...string) ([]string, bool) {

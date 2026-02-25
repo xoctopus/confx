@@ -2,11 +2,19 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.0...HEAD)
 
-> 2026-02-24
+> 2026-02-25
+
+### Chore
+
+* **deps:** bump github.com/xoctopus/logx to v0.2.5
 
 ### Doc
 
 * update CHANGELOG
+
+### Feat
+
+* **mq:** add pubsub suite define
 
 
 <a name="v0.3.0"></a>

@@ -1,6 +1,7 @@
 package confpulsar_test
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -20,6 +21,9 @@ func TestProducerMessage(t *testing.T) {
 	mp.SetOrderingKey("ordering_key")
 	mp.SetDelay(time.Second)
 
+	exp := time.Now().Unix() + 100
+	mp.SetExpiredAt(exp)
+
 	Expect(t, mp.Topic(), Equal(topic))
 	Expect(t, mp.Payload(), Equal(body))
 	Expect(t, mp.PartitionKey(), Equal("abc"))
@@ -28,8 +32,8 @@ func TestProducerMessage(t *testing.T) {
 	Expect(t, mp.Delay(), Equal(time.Second))
 
 	Expect(t, len(mp.Extra()), Equal(1))
-	v, _ := mp.ExtraValueOf(EXTRA_KIND__DELIVERY_DELAYED.String())
-	Expect(t, v, Equal("1000"))
+	v, _ := mp.ExtraValueOf(EXTRA_KEY__EXPIRED_AT)
+	Expect(t, v, Equal(strconv.FormatInt(exp, 10)))
 
 	// modify through underlying
 	u := mp.Underlying()
