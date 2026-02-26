@@ -18,21 +18,6 @@ services:
       - "16650:6650"
       - "18080:8080"
 
-  mysql:
-    image: mysql:latest
-    container_name: mysql_confx
-    environment:
-      MYSQL_ROOT_PASSWORD: ""
-      MYSQL_ALLOW_EMPTY_PASSWORD: true
-      MYSQL_USER: "user"
-      MYSQL_PASSWORD: ""
-      TZ: "Asia/Shanghai"
-    ports:
-      - "13306:3306"
-    volumes:
-      - ./init_mysql.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: always
-
   postgres:
     image: postgres:18
     container_name: postgres_confx
@@ -43,7 +28,7 @@ services:
     ports:
       - "15432:5432"
     volumes:
-      - ./init_postgres.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./scripts/postgres.sql:/docker-entrypoint-initdb.d/init.sql
     restart: always
 
   pulsar-manager:
@@ -61,13 +46,13 @@ services:
       - USERNAME=admin
       - PASSWORD=admin123
 
-  # pulsar-init-helper:
-  #   image: curlimages/curl:latest
-  #   container_name: pulsar_init_helper_confx
-  #   depends_on:
-  #     - pulsar
-  #     - pulsar-manager
-  #   volumes:
-  #     - ./pulsar-entrypoint.sh:/pulsar-entrypoint.sh
-  #   entrypoint: [ "/bin/sh", "/pulsar-entrypoint.sh" ]
+  pulsar-init-helper:
+    image: curlimages/curl:latest
+    container_name: pulsar_init_helper_confx
+    depends_on:
+      - pulsar
+      - pulsar-manager
+    volumes:
+      - ./scripts/pulsar-entrypoint.sh:/pulsar-entrypoint.sh
+    entrypoint: [ "/bin/sh", "/pulsar-entrypoint.sh" ]
 

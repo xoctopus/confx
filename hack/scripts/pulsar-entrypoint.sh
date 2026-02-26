@@ -6,8 +6,14 @@ set -e
 #   PM_HOST=localhost PM_PORT=17750 sh pulsar_init.sh
 PM_HOST=${PM_HOST:-pulsar-manager}
 PM_PORT=${PM_PORT:-7750}
-
+USERNAME=${USERNAME:-admin}
+PASSWORD=${PASSWORD:-pulsar}
 BASE_URL="http://${PM_HOST}:${PM_PORT}/pulsar-manager"
+
+printf "==> envs:\n"
+printf "\t%s\n"   "$BASE_URL"
+printf "\t%s\n"   "$USERNAME"
+printf "\t%s\n\n" "$PASSWORD"
 
 printf "==> Waiting for pulsar-manager ...\n"
 until curl -s "${BASE_URL}/csrf-token" > /dev/null; do
@@ -16,34 +22,34 @@ done
 printf "\n"
 
 printf "==> Extracting CSRF Token...\n"
-TOKEN=$(curl -sf "${BASE_URL}/csrf-token")
-printf "CSRF_TOKEN = %s\n\n" "${TOKEN}"
-
-if [ -z "$TOKEN" ]; then
-  echo "Failed to get CSRF token"
-  exit 1
-fi
+CSRF_TOKEN=$(curl -sf "${BASE_URL}/csrf-token")
+printf "CSRF_TOKEN = %s\n\n" "${CSRF_TOKEN}"
 
 printf "==> Create administrator...\n"
+PAYLOAD=$(printf '{"name":"%s","password":"%s","description":"dev","email":"any@any.com"}' "$USERNAME" "$PASSWORD")
 curl -sf -X PUT "${BASE_URL}/users/superuser" \
-  -H "X-XSRF-TOKEN: $TOKEN" \
-  -H "Cookie: XSRF-TOKEN=$TOKEN" \
+  -H "X-XSRF-TOKEN: $CSRF_TOKEN" \
+  -H "Cookie: XSRF-TOKEN=$CSRF_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"name":"admin","password":"admin123","description":"dev","email":"any@any.com"}'
-printf "\n* username: admin"
-printf "\n* password: admin123\n\n"
+  -d "$PAYLOAD"
+printf "\n* username: %s" "$USERNAME"
+printf "\n* password: %s\n\n" "$PASSWORD"
 
-#printf "==> Create environments ...\n"
-printf "Pulsar manager initialized\n"
+printf "==> Logging in...\n\n"
+PAYLOAD=$(printf '{"username":"%s","password":"%s"}' "$USERNAME" "$PASSWORD")
+RESP=$(curl -s -i -X POST "$BASE_URL/login" \
+  -H "Content-Type: application/json;charset=UTF-8" \
+  -H "Cookie: XSRF-TOKEN=$CSRF_TOKEN" \
+  -H "X-XSRF-TOKEN: $CSRF_TOKEN" \
+  -d "$PAYLOAD")
+JSESSIONID=$(echo "$RESP" | awk -F'[=;]' '/Set-Cookie: JSESSIONID/ {print $2}')
+TOKEN=$(echo "$RESP" | awk '/^token:/ {print $2}' | tr -d '\r')
 
-#创建环境
-#echo '{"name":"confx","broker":"http://pulsar:8080","bookie":"pulsar://pulsar:6650"}' | http put http://localhost:19527/pulsar-manager/environments/environment \
-#token:$TOKEN \
-#X-XSRF-TOKEN:$CSRF \
-#username:admin \
-#Cookie:'Admin-Token=$TOKEN; JSESSIONID=$JSESSIONID; XSRF-TOKEN=e385dd76-a41b-4849-88dd-3e8b5ccf5fdc; e385dd76-a41b-4849-88dd-3e8b5ccf5fdc=e385dd76-a41b-4849-88dd-3e8b5ccf5fdc'
-
-#登陆
-#echo '{"username":"admin","password":"admin123"}' | http post http://localhost:19527/pulsar-manager/login \
-#Cookie:'XSRF-TOKEN=318f3737-9107-43a9-a724-47d04def1d44; JSESSIONID=AC5237080D4C8C30457A82BA33DE1343' \
-#X-XSRF-TOKEN:318f3737-9107-43a9-a724-47d04def1d44
+printf "==> Create environment\n"
+curl -X PUT "$BASE_URL/environments/environment" \
+  -H "Content-Type: application/json" \
+  -H "token: $TOKEN" \
+  -H "X-XSRF-TOKEN: $CSRF_TOKEN" \
+  -H "username: $USERNAME" \
+  -H "Cookie: Admin-Token=$TOKEN; JSESSIONID=$JSESSIONID; XSRF-TOKEN=$CSRF_TOKEN; $CSRF_TOKEN=$CSRF_TOKEN" \
+  -d '{"name":"confx","broker":"http://pulsar:8080","bookie":"pulsar://pulsar:6650"}'

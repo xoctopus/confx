@@ -8,6 +8,10 @@
 
 * fix devgen doc
 
+### Test
+
+* add unit test
+
 
 <a name="v0.3.1"></a>
 ## [v0.3.1](https://github.com/xoctopus/confx/compare/v0.3.0...v0.3.1)
