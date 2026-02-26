@@ -44,6 +44,8 @@ type CanAppendTags interface {
 	AddTags(...string)
 }
 
+// HasExpiredAt helps consumer to check if message is expired to decide if
+// consumer need to handle and effectiveness
 type HasExpiredAt interface {
 	ExpiredAt() int64
 }

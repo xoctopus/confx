@@ -46,13 +46,6 @@ func (v *Error) DocOf(names ...string) ([]string, bool) {
 	return []string{"presents error codes for confpulsar"}, true
 }
 
-func (v *ExtraKey) DocOf(names ...string) ([]string, bool) {
-	if len(names) > 0 {
-		return []string{}, false
-	}
-	return []string{"defines keys for extended metadata for extending more mq-specific features"}, true
-}
-
 func (v *producerMessage) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
