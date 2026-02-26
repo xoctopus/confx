@@ -51,7 +51,7 @@ func (e *Endpoint) Init(ctx context.Context) (err error) {
 		return err
 	}
 
-	opt := e.Option.ClientOption(e.Endpoint.Endpoint())
+	opt := e.Option.ClientOption(e.Endpoint.Key())
 	if !e.Endpoint.Cert.IsZero() {
 		u := e.URL()
 		opt.URL = (&url.URL{

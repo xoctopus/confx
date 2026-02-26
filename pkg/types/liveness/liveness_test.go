@@ -12,7 +12,7 @@ import (
 )
 
 func ExampleCheckLiveness() {
-	endpoints := []liveness.HasSchemeEndpoint{
+	endpoints := []liveness.SchemeEndpoint{
 		&types.EndpointNoOption{Address: "redis://example:6379/1"},
 		&types.EndpointNoOption{Address: "https://www.google.com:443"},
 		&types.EndpointNoOption{Address: "mysql://example:3306/mysql"},

@@ -72,19 +72,19 @@ type Checker interface {
 	LivenessCheck(ctx context.Context) Result
 }
 
-type HasSchemeEndpoint interface {
+type SchemeEndpoint interface {
 	Scheme() string
-	Endpoint() string
+	Key() string
 }
 
-func CheckLiveness(ctx context.Context, endpoints ...HasSchemeEndpoint) map[string]map[string]Result {
+func CheckLiveness(ctx context.Context, endpoints ...SchemeEndpoint) map[string]map[string]Result {
 	m := map[string]map[string]Result{}
 	for _, ep := range endpoints {
 		if checker, ok := ep.(Checker); ok {
 			if m[ep.Scheme()] == nil {
 				m[ep.Scheme()] = map[string]Result{}
 			}
-			m[ep.Scheme()][ep.Endpoint()] = checker.LivenessCheck(ctx)
+			m[ep.Scheme()][ep.Key()] = checker.LivenessCheck(ctx)
 		}
 	}
 	return m

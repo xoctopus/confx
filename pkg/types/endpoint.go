@@ -2,8 +2,10 @@ package types
 
 import (
 	"context"
+	"maps"
 	"net"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,6 +20,8 @@ import (
 type Endpoint[Option any] struct {
 	// Address component connection endpoint address
 	Address string
+	// ExtraAddress for cluster multi-endpoint
+	ExtraAddress []string
 	// Auth support Endpoint auth info with username and password
 	Auth Userinfo
 	// Option component Option. if no option use EndpointNoOption
@@ -46,6 +50,28 @@ func (e *Endpoint[Option]) Init() (err error) {
 	if err != nil {
 		return
 	}
+
+	main := key(e.addr)
+	followers := map[string]string{}
+	for i := range e.ExtraAddress {
+		s := e.ExtraAddress[i]
+		u := (*url.URL)(nil)
+		if u, err = url.Parse(s); err != nil {
+			return
+		}
+
+		u = &url.URL{
+			Scheme: e.addr.Scheme,
+			Host:   u.Host,
+			Path:   u.Path,
+		}
+		ep := key(u)
+		if _, ok := followers[ep]; ok || ep == main {
+			continue
+		}
+		followers[ep] = u.String()
+	}
+	e.ExtraAddress = slices.Collect(maps.Values(followers))
 
 	if e.Auth.IsZero() {
 		password, _ := e.addr.User.Password()
@@ -76,14 +102,18 @@ func (e *Endpoint[Option]) Init() (err error) {
 	return nil
 }
 
-// Endpoint returns Scheme, Host and Path. this method helps to identify a unique
-// component
-func (e *Endpoint[Option]) Endpoint() string {
+func key(u *url.URL) string {
 	return (&url.URL{
-		Scheme: e.addr.Scheme,
-		Host:   e.addr.Host,
-		Path:   e.addr.Path,
+		Scheme: u.Scheme,
+		Host:   u.Host,
+		Path:   u.Path,
 	}).String()
+}
+
+// Key returns Scheme, Host and Path. this method helps to identify a unique
+// component
+func (e *Endpoint[Option]) Key() string {
+	return key(e.addr)
 }
 
 // String returns full address info includes options and auth info
