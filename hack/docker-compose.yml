@@ -18,19 +18,6 @@ services:
       - "16650:6650"
       - "18080:8080"
 
-  postgres:
-    image: postgres:18
-    container_name: postgres_confx
-    environment:
-      POSTGRES_PASSWORD:
-      POSTGRES_HOST_AUTH_METHOD: trust
-      TZ: "Asia/Shanghai"
-    ports:
-      - "15432:5432"
-    volumes:
-      - ./scripts/postgres.sql:/docker-entrypoint-initdb.d/init.sql
-    restart: always
-
   pulsar-manager:
     image: apachepulsar/pulsar-manager:v0.4.0
     container_name: pulsar_manager_confx
@@ -55,4 +42,48 @@ services:
     volumes:
       - ./scripts/pulsar-entrypoint.sh:/pulsar-entrypoint.sh
     entrypoint: [ "/bin/sh", "/pulsar-entrypoint.sh" ]
+
+  kafka:
+    image: confluentinc/cp-kafka:8.0.4
+    container_name: kafka_confx
+    ports:
+      - "19092:19092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'           # node role: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:9093'     # eq controller
+      # 9092  container internal(plaintext,ui-manager,etc.)
+      # 9093  container internal(controller,metadata channel)
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:19092'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:9092,EXTERNAL://localhost:19092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      # cluster MUST 22 byte base64 string
+      # openssl rand -base64 16 | tr '+/' '-_' | tr -d '='
+      CLUSTER_ID: 'Q_dgzl40n4tHpLgP4mTOEQ'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: kafka_manager_confx
+    ports:
+      - "18082:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local-kraft
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka_confx:9092
+
+  postgres:
+    image: postgres:18
+    container_name: postgres_confx
+    environment:
+      POSTGRES_PASSWORD:
+      POSTGRES_HOST_AUTH_METHOD: trust
+      TZ: "Asia/Shanghai"
+    ports:
+      - "15432:5432"
+    volumes:
+      - ./scripts/postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
 
