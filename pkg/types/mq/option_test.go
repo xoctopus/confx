@@ -3,6 +3,8 @@ package mq_test
 import (
 	"testing"
 
+	"github.com/xoctopus/x/testx"
+
 	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
@@ -30,4 +32,24 @@ func TestHasher(t *testing.T) {
 	t.Log(mq.CRC("any"))
 	t.Log(mq.CRC(""))
 	t.Log(mq.CRC("too________________________________________long"))
+}
+
+type MockOption struct {
+	v any
+}
+
+func (*MockOption) OptionScheme() string {
+	return "testing"
+}
+
+func WithV(o mq.Option) {
+	if x, ok := o.(*MockOption); ok {
+		x.v = 1
+	}
+}
+
+func TestOptionApplyFunc_Apply(t *testing.T) {
+	o := &MockOption{v: 0}
+	mq.OptionApplyFunc(WithV).Apply(o)
+	testx.Expect(t, o.v, testx.Equal[any](1))
 }

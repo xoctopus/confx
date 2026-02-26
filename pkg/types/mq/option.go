@@ -17,7 +17,9 @@ type OptionApplier interface {
 
 type OptionApplyFunc func(Option)
 
-func (f OptionApplyFunc) Apply(opt Option) { f(opt) }
+func (f OptionApplyFunc) Apply(opt Option) {
+	f(opt)
+}
 
 // Hasher help to hash message.Key to dispatch message to task worker
 type Hasher func(string) uint16

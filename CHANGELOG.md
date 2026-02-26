@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.0...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.1...HEAD)
 
-> 2026-02-25
+> 2026-02-26
+
+### Chore
+
+* fix devgen doc
+
+
+<a name="v0.3.1"></a>
+## [v0.3.1](https://github.com/xoctopus/confx/compare/v0.3.0...v0.3.1)
+
+> 2026-02-26
 
 ### Chore
 
@@ -14,6 +24,7 @@
 
 ### Feat
 
+* **confpulsar:** message ExpiredAt
 * **mq:** add pubsub suite define
 
 

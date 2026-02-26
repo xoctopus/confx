@@ -39,7 +39,7 @@ func (r *manager) Add(v Resource) {
 	v.SetElem(r.lst.PushBack(v))
 }
 
-func (r *manager) Remove(v Resource, options ...ReleaseOptionFunc) error {
+func (r *manager) Remove(v Resource, options ...ReleaseOptionFunc) (err error) {
 	defer func() {
 		r.mtx.Lock()
 		defer r.mtx.Unlock()
@@ -47,9 +47,9 @@ func (r *manager) Remove(v Resource, options ...ReleaseOptionFunc) error {
 	}()
 
 	if x, ok := any(v).(CanBeReleased); ok {
-		return x.Release(options...)
+		err = x.Release(options...)
 	}
-	return nil
+	return
 }
 
 func (r *manager) Close() error {
