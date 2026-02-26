@@ -1,12 +1,22 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.1...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.2...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.3.2"></a>
+## [v0.3.2](https://github.com/xoctopus/confx/compare/v0.3.1...v0.3.2)
 
 > 2026-02-26
 
 ### Chore
 
 * fix devgen doc
+
+### Ci
+
+* **hack:** add pulsar-manager init
 
 ### Test
 

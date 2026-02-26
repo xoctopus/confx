@@ -89,6 +89,11 @@ func TestEndpoint(t *testing.T) {
 	t.Run("InvalidAddress", func(t *testing.T) {
 		ep := &Endpoint{Address: "https://example.com/%zz"}
 		Expect(t, ep.Init(), Failed())
+		ep = &Endpoint{
+			Address:      "x://y/z",
+			ExtraAddress: []string{"https://example.com/%zz"},
+		}
+		Expect(t, ep.Init(), Failed())
 	})
 	t.Run("InvalidAuth", func(t *testing.T) {
 		t.Setenv("PASSWORD_DEC_KEY", "def")
@@ -139,7 +144,7 @@ func TestEndpoint(t *testing.T) {
 				Address: "redis://username:password@localhost:6379/1?timeout=3s&name=abc",
 			}
 			Expect(t, ep.Init(), Succeed())
-			Expect(t, ep.Endpoint(), Equal("redis://localhost:6379/1"))
+			Expect(t, ep.Key(), Equal("redis://localhost:6379/1"))
 			Expect(t, ep.Scheme(), Equal("redis"))
 			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
 			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
@@ -153,9 +158,25 @@ func TestEndpoint(t *testing.T) {
 				},
 			}
 			Expect(t, ep.Init(), Succeed())
-			Expect(t, ep.Endpoint(), Equal("redis://localhost:6379/1"))
+			Expect(t, ep.Key(), Equal("redis://localhost:6379/1"))
 			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
 			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
+		})
+		t.Run("HasExtraAddress", func(t *testing.T) {
+			ep := &Endpoint{
+				Address: "redis://username:password@localhost:6379/1?timeout=3s&name=abc",
+				ExtraAddress: []string{
+					"http://abc:def@localhost:6379/1",
+					"redis://localhost:6379/1",
+					"redis://example1:6379/2",
+					"redis://example2:6379/2",
+				},
+			}
+			Expect(t, ep.Init(), Succeed())
+			Expect(t, ep.ExtraAddress, EquivalentSlice([]string{
+				"redis://example1:6379/2",
+				"redis://example2:6379/2",
+			}))
 		})
 		t.Run("LivenessCheck", func(t *testing.T) {
 			ep := &Endpoint{Address: "https://www.google.com"}
