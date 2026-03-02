@@ -6,7 +6,7 @@ require (
 	github.com/xoctopus/genx v0.1.16
 	github.com/xoctopus/logx v0.2.5
 	github.com/xoctopus/sfid v0.0.6
-	github.com/xoctopus/x v0.3.4
+	github.com/xoctopus/x v0.3.7
 )
 
 // cobra
