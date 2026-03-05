@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	"cgtech.gitlab.com/saitox/x/misc/must"
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/xoctopus/x/misc/must"
 
-	"github.com/xoctopus/confx/pkg/types/mq"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/mq"
 )
 
 type ProducerMessage interface {

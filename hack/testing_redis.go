@@ -5,11 +5,11 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/xoctopus/x/contextx"
-	. "github.com/xoctopus/x/testx"
+	"cgtech.gitlab.com/saitox/x/contextx"
+	. "cgtech.gitlab.com/saitox/x/testx"
 
-	"github.com/xoctopus/confx/pkg/confredis"
-	"github.com/xoctopus/confx/pkg/types/kv"
+	"cgtech.gitlab.com/saitox/confx/pkg/confredis"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/kv"
 )
 
 func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Context {

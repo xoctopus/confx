@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xoctopus/x/textx"
+	"cgtech.gitlab.com/saitox/x/textx"
 
-	"github.com/xoctopus/confx/pkg/conftls"
-	"github.com/xoctopus/confx/pkg/types/liveness"
+	"cgtech.gitlab.com/saitox/confx/pkg/conftls"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/liveness"
 )
 
 // Endpoint a connectable endpoint

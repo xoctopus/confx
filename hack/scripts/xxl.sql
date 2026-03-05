@@ -209,7 +209,10 @@ INSERT INTO xxl_job_info
   schedule_type,
   schedule_conf,
   executor_handler,
-  trigger_status
+  trigger_status,
+  glue_updatetime,
+  executor_block_strategy,
+  executor_route_strategy
 )
 VALUES
 (
@@ -218,7 +221,10 @@ VALUES
   'test',
   'BEAN',
   'CRON',
-  '0 0/3 * * * ?',
+  '0/5 * * * * ?', -- per 5 second
   'confx_test',
-  1
+  1,
+  now(),
+  'SERIAL_EXECUTION',
+  'ROUND'
 );

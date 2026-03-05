@@ -2,14 +2,14 @@ package confredis
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/url"
 
 	"github.com/redis/go-redis/v9"
-	"github.com/xoctopus/genx/testdata/errors"
 
-	"github.com/xoctopus/confx/pkg/types"
-	"github.com/xoctopus/confx/pkg/types/liveness"
+	"cgtech.gitlab.com/saitox/confx/pkg/types"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/liveness"
 )
 
 type Endpoint struct {

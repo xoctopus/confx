@@ -3,11 +3,11 @@ package confredis
 import (
 	"time"
 
+	"cgtech.gitlab.com/saitox/x/misc/must"
+	"cgtech.gitlab.com/saitox/x/textx"
 	"github.com/redis/go-redis/v9"
-	"github.com/xoctopus/x/misc/must"
-	"github.com/xoctopus/x/textx"
 
-	"github.com/xoctopus/confx/pkg/types"
+	"cgtech.gitlab.com/saitox/confx/pkg/types"
 )
 
 type Option struct {

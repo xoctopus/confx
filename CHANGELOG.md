@@ -2,7 +2,15 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.2...HEAD)
 
-> 0001-01-01
+> 2026-03-02
+
+### Ci
+
+* **hack:** add xxl-job database constraints
+
+### Feat
+
+* **types:** types.Endpoint support cluster multi-address
 
 
 <a name="v0.3.2"></a>

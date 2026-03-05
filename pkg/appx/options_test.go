@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/xoctopus/x/testx"
+	. "cgtech.gitlab.com/saitox/x/testx"
 
-	"github.com/xoctopus/confx/pkg/appx"
+	"cgtech.gitlab.com/saitox/confx/pkg/appx"
 )
 
 func TestMeta(t *testing.T) {

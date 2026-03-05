@@ -4,12 +4,12 @@ import (
 	"testing"
 	"time"
 
+	. "cgtech.gitlab.com/saitox/x/testx"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
-	. "github.com/xoctopus/x/testx"
 
-	. "github.com/xoctopus/confx/pkg/confpulsar"
-	"github.com/xoctopus/confx/pkg/types/mq"
+	. "cgtech.gitlab.com/saitox/confx/pkg/confpulsar"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/mq"
 )
 
 func TestPulsarOption(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"container/list"
 	"fmt"
 
-	"github.com/xoctopus/confx/pkg/types/mq"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/mq"
 )
 
 type MockResource struct {

@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	. "github.com/xoctopus/x/testx"
+	. "cgtech.gitlab.com/saitox/x/testx"
 
-	"github.com/xoctopus/confx/pkg/confpulsar"
-	"github.com/xoctopus/confx/pkg/types/mq"
+	"cgtech.gitlab.com/saitox/confx/pkg/confpulsar"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/mq"
 )
 
 func TestInjector(t *testing.T) {

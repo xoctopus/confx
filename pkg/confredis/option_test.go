@@ -4,10 +4,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xoctopus/x/testx"
+	"cgtech.gitlab.com/saitox/x/testx"
 
-	"github.com/xoctopus/confx/pkg/confredis"
-	"github.com/xoctopus/confx/pkg/types"
+	"cgtech.gitlab.com/saitox/confx/pkg/confredis"
+	"cgtech.gitlab.com/saitox/confx/pkg/types"
 )
 
 func TestOption_SetDefault(t *testing.T) {

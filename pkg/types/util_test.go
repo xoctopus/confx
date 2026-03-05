@@ -4,14 +4,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xoctopus/x/testx"
+	"cgtech.gitlab.com/saitox/x/testx"
 
-	"github.com/xoctopus/confx/pkg/types"
+	"cgtech.gitlab.com/saitox/confx/pkg/types"
 )
 
 func TestCost(t *testing.T) {
 	du := time.Millisecond * 100
-	span := types.Cost()
+	span := types.Span()
 	time.Sleep(du)
 	testx.Expect(t, span() >= du, testx.BeTrue())
 }

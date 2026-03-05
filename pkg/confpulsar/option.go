@@ -7,15 +7,15 @@ import (
 	"strings"
 	"time"
 
+	"cgtech.gitlab.com/saitox/logx"
+	"cgtech.gitlab.com/saitox/x/misc/must"
+	"cgtech.gitlab.com/saitox/x/textx"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	"github.com/apache/pulsar-client-go/pulsar/log"
-	"github.com/xoctopus/logx"
-	"github.com/xoctopus/x/misc/must"
-	"github.com/xoctopus/x/textx"
 
-	"github.com/xoctopus/confx/pkg/types"
-	"github.com/xoctopus/confx/pkg/types/mq"
+	"cgtech.gitlab.com/saitox/confx/pkg/types"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/mq"
 )
 
 const (

@@ -10,10 +10,10 @@ import (
 	"os"
 	"testing"
 
+	"cgtech.gitlab.com/saitox/x/testx"
 	"github.com/spf13/cobra"
-	"github.com/xoctopus/x/testx"
 
-	"github.com/xoctopus/confx/pkg/cmdx"
+	"cgtech.gitlab.com/saitox/confx/pkg/cmdx"
 )
 
 type Basics struct {

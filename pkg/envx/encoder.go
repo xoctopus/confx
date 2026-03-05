@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/xoctopus/x/codex"
-	"github.com/xoctopus/x/reflectx"
-	"github.com/xoctopus/x/textx"
+	"cgtech.gitlab.com/saitox/x/codex"
+	"cgtech.gitlab.com/saitox/x/reflectx"
+	"cgtech.gitlab.com/saitox/x/textx"
 )
 
 func NewEncoder(g *Group) *Encoder {

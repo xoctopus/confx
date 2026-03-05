@@ -6,11 +6,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/xoctopus/confx/example/appx/pkg/modules/module1"
-	"github.com/xoctopus/confx/example/appx/pkg/modules/module2"
-	"github.com/xoctopus/confx/example/appx/pkg/modules/module3"
-	"github.com/xoctopus/confx/pkg/appx"
-	"github.com/xoctopus/confx/pkg/types"
+	"cgtech.gitlab.com/saitox/confx/example/appx/pkg/modules/module1"
+	"cgtech.gitlab.com/saitox/confx/example/appx/pkg/modules/module2"
+	"cgtech.gitlab.com/saitox/confx/example/appx/pkg/modules/module3"
+	"cgtech.gitlab.com/saitox/confx/pkg/appx"
+	"cgtech.gitlab.com/saitox/confx/pkg/types"
 )
 
 var (

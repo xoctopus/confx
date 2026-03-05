@@ -8,7 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/xoctopus/confx/pkg/cmdx"
+	"cgtech.gitlab.com/saitox/confx/pkg/cmdx"
 )
 
 // Server start an echo server

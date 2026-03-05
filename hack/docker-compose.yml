@@ -18,6 +18,22 @@ services:
       - "16650:6650"
       - "18080:8080"
 
+  mysql:
+    image: mysql:latest
+    container_name: mysql_confx
+    environment:
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_ALLOW_EMPTY_PASSWORD: true
+      MYSQL_USER: "user"
+      MYSQL_PASSWORD: ""
+      TZ: "Asia/Shanghai"
+    ports:
+      - "13306:3306"
+    volumes:
+      - ./scripts/mysql.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./scripts/xxl.sql:/docker-entrypoint-initdb.d/init_xxl.sql
+    restart: always
+
   postgres:
     image: postgres:18
     container_name: postgres_confx
@@ -56,3 +72,30 @@ services:
       - ./scripts/pulsar-entrypoint.sh:/pulsar-entrypoint.sh
     entrypoint: [ "/bin/sh", "/pulsar-entrypoint.sh" ]
 
+  xxl-job-admin:
+    image: xuxueli/xxl-job-admin:3.2.0
+    container_name: xxl_confx
+    platform: linux/amd64
+    restart: always
+    depends_on:
+      - mysql
+    environment:
+      PARAMS: >-
+        --spring.datasource.username=root
+        --spring.datasource.password=
+        --xxl.job.accessToken=l6MOJuZ12RKzfaM1
+        --xxl.job.logpath=/data/xxl-job
+        --xxl.job.logretentiondays=1
+      SPRING_DATASOURCE_URL: >-
+        jdbc:mysql://mysql:3306/xxl_job
+        ?useUnicode=true
+        &characterEncoding=UTF-8
+        &autoReconnect=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD:
+      XXL_JOB_LOGIN_USERNAME: admin
+      XXL_JOB_LOGIN_PASSWORD: xxljob
+      XXL_JOB_I18N: en
+      SERVER_PORT: 8081
+    ports:
+      - "18081:8081"

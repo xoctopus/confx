@@ -3,7 +3,7 @@ package testdata
 import (
 	_ "embed"
 
-	"github.com/xoctopus/confx/pkg/conftls"
+	"cgtech.gitlab.com/saitox/confx/pkg/conftls"
 )
 
 var (

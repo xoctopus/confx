@@ -1,12 +1,11 @@
-module github.com/xoctopus/confx
+module cgtech.gitlab.com/saitox/confx
 
 go 1.26.0
 
 require (
-	github.com/xoctopus/genx v0.1.16
-	github.com/xoctopus/logx v0.2.5
-	github.com/xoctopus/sfid v0.0.6
-	github.com/xoctopus/x v0.3.4
+	cgtech.gitlab.com/saitox/logx v0.2.7
+	cgtech.gitlab.com/saitox/sfid v0.0.7
+	cgtech.gitlab.com/saitox/x v0.3.8
 )
 
 // cobra
@@ -72,8 +71,6 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.10
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xoctopus/pkgx v0.1.10 // indirect
-	github.com/xoctopus/typx v0.3.4 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/trace v1.39.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
@@ -84,10 +81,8 @@ require (
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/oauth2 v0.28.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
-	golang.org/x/tools v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apimachinery v0.32.3 // indirect

@@ -5,11 +5,11 @@ import (
 	"context"
 	"sync/atomic"
 
+	"cgtech.gitlab.com/saitox/logx"
+	"cgtech.gitlab.com/saitox/x/codex"
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/xoctopus/logx"
-	"github.com/xoctopus/x/codex"
 
-	"github.com/xoctopus/confx/pkg/types/mq"
+	"cgtech.gitlab.com/saitox/confx/pkg/types/mq"
 )
 
 type producer struct {

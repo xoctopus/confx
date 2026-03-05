@@ -13,6 +13,8 @@ func (v *Endpoint[Option]) DocOf(names ...string) ([]string, bool) {
 		switch names[0] {
 		case "Address":
 			return []string{"component connection endpoint address"}, true
+		case "ExtraAddress":
+			return []string{"for cluster multi-endpoint"}, true
 		case "Auth":
 			return []string{"support Endpoint auth info with username and password"}, true
 		case "Option":
