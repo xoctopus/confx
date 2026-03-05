@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.2...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.3...HEAD)
 
-> 2026-03-02
+> 0001-01-01
+
+
+<a name="v0.3.3"></a>
+## [v0.3.3](https://github.com/xoctopus/confx/compare/v0.3.2...v0.3.3)
+
+> 2026-03-05
+
+### Chore
+
+* rename module
 
 ### Ci
 

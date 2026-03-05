@@ -4,6 +4,7 @@ go 1.26.0
 
 require (
 	cgtech.gitlab.com/saitox/logx v0.2.7
+	cgtech.gitlab.com/saitox/schex v0.0.6
 	cgtech.gitlab.com/saitox/sfid v0.0.7
 	cgtech.gitlab.com/saitox/x v0.3.8
 )

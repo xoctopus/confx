@@ -1,5 +1,7 @@
 cgtech.gitlab.com/saitox/logx v0.2.7 h1:pUdVVn04b48ivUgd+Nf05tubEOlzCJPtOf2DiP3ckv4=
 cgtech.gitlab.com/saitox/logx v0.2.7/go.mod h1:7sGwOwFO8ZUIEE+jRFK7WfFc5dgPXGxITFUht4/k5oA=
+cgtech.gitlab.com/saitox/schex v0.0.6 h1:6HsrIkmuRqoxshqswbqC881WB9CeZ4aHXIGiFgM6Jy0=
+cgtech.gitlab.com/saitox/schex v0.0.6/go.mod h1:4ziGIjYUHBsOT4/VSxy60gr59Ju6M2oYR3Ags8uR3ps=
 cgtech.gitlab.com/saitox/sfid v0.0.7 h1:57P+1NvhgViPWItZoa1x5QS0YqIeBG63TothUXIsdhA=
 cgtech.gitlab.com/saitox/sfid v0.0.7/go.mod h1:8vuBoi/NeNcYQKKuc5qWc3CyGMq/NUBMclpkbSZAX/A=
 cgtech.gitlab.com/saitox/x v0.3.8 h1:HxyDvfhtmCIjGZRHrTY+pMbdwdxaDSjF6cAfJQ6BQnE=
