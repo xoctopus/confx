@@ -3,6 +3,7 @@ package confxxl
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 
 	"cgtech.gitlab.com/saitox/schex/pkg/schex"
 	"cgtech.gitlab.com/saitox/schex/pkg/synapse"
@@ -18,10 +19,12 @@ type Task interface {
 	Push(context.Context, *TriggerRequest) error
 	// Pending returns pending task count
 	Pending() int
+	// Scheduling returns scheduling task count
+	Scheduling() int
 	// SkipPreviousAndPush appending task after skip previous tasks
 	SkipPreviousAndPush(ctx context.Context, r *TriggerRequest) error
-	// PushIfNoPending appending task if current scheduler is idle
-	PushIfNoPending(ctx context.Context, r *TriggerRequest) error
+	// PushIfIdle appending task if current scheduler is idle
+	PushIfIdle(ctx context.Context, r *TriggerRequest) error
 }
 
 func newScheduler(ctx context.Context, name string, fn JobHandler, appliers ...JobOptionApplier) (Task, error) {
@@ -32,9 +35,14 @@ func newScheduler(ctx context.Context, name string, fn JobHandler, appliers ...J
 
 	j := &task{
 		name:     name,
-		fn:       schex.JobFunc[*TriggerRequest](fn),
 		backlogs: o.backlogs,
 	}
+	j.fn = schex.JobFunc[*TriggerRequest](func(ctx context.Context, r *TriggerRequest) error {
+		j.scheduling.Add(1)
+		defer j.scheduling.Add(-1)
+		return fn(ctx, r)
+	})
+
 	if o.cb != nil {
 		j.cb = schex.HandlerCallback[*TriggerRequest](o.cb)
 	}
@@ -48,10 +56,11 @@ func newScheduler(ctx context.Context, name string, fn JobHandler, appliers ...J
 }
 
 type task struct {
-	name     string
-	fn       schex.Job[*TriggerRequest]
-	cb       schex.HandlerCallback[*TriggerRequest]
-	backlogs int
+	name       string
+	fn         schex.Job[*TriggerRequest]
+	cb         schex.HandlerCallback[*TriggerRequest]
+	backlogs   int
+	scheduling atomic.Int32
 
 	// mtx keep syn(switch when skipping) and sche in critical zone
 	mtx  sync.Mutex
@@ -116,11 +125,11 @@ func (j *task) Push(ctx context.Context, r *TriggerRequest) error {
 	return nil
 }
 
-func (j *task) PushIfNoPending(ctx context.Context, r *TriggerRequest) error {
+func (j *task) PushIfIdle(ctx context.Context, r *TriggerRequest) error {
 	j.mtx.Lock()
 	defer j.mtx.Unlock()
 	if !j.syn.Canceled() {
-		if j.sche.Pending() == 0 {
+		if j.Pending()+j.Scheduling() == 0 {
 			return j.sche.Push(ctx, r)
 		}
 		return codex.New(ERROR__JOB_SCHEDULER_BUSY)
@@ -144,4 +153,8 @@ func (j *task) Pending() int {
 	j.mtx.Lock()
 	defer j.mtx.Unlock()
 	return j.sche.Pending()
+}
+
+func (j *task) Scheduling() int {
+	return int(j.scheduling.Load())
 }

@@ -96,7 +96,7 @@ func (x *jobManager) Schedule(ctx context.Context, name string, r *TriggerReques
 	case enums.BLOCK_STRATEGY__COVER_EARLY:
 		return j.SkipPreviousAndPush(ctx, r)
 	case enums.BLOCK_STRATEGY__DISCARD_LATER:
-		return j.PushIfNoPending(ctx, r)
+		return j.PushIfIdle(ctx, r)
 	case enums.BLOCK_STRATEGY__SERIAL_EXECUTION:
 		return j.Push(ctx, r)
 	default:

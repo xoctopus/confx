@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.3...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.4...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.3.4"></a>
+## [v0.3.4](https://github.com/xoctopus/confx/compare/v0.3.3...v0.3.4)
+
+> 2026-03-05
+
+### Feat
+
+* **confxxl:** for xxl-job conf entry
 
 
 <a name="v0.3.3"></a>
