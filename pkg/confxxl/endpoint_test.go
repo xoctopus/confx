@@ -2,6 +2,7 @@ package confxxl_test
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -16,16 +17,19 @@ func TestEndpoint(t *testing.T) {
 		ctx    = hack.Context(t)
 		cancel context.CancelFunc
 	)
-	ctx, cancel = context.WithTimeout(ctx, time.Minute)
+	ctx, cancel = context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
 	ctx = hack.WithXXLRegistry(ctx, t, "http://localhost:18081/xxl-job-admin", "confx")
 
 	registry := confxxl.Must(ctx)
 	defer func() { _ = registry.Close() }()
+
+	triggered := atomic.Bool{}
 	err := registry.RegisterJob(
 		"confx",      // executor name
 		"confx_test", // job name
 		func(ctx context.Context, r *confxxl.TriggerRequest) error {
+			triggered.Store(true)
 			t.Log(r.LogID, r.ExecutorHandler, time.Now().Unix())
 			return nil
 		},
@@ -41,10 +45,11 @@ func TestEndpoint(t *testing.T) {
 		default:
 			if registry.IsActive("confx") {
 				active = true
-			} else {
-				active = false
+				if triggered.Load() {
+					return
+				}
 			}
-			time.Sleep(time.Second)
 		}
+		time.Sleep(time.Second)
 	}
 }
