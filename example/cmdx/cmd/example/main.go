@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/spf13/cobra"
 
-	"cgtech.gitlab.com/saitox/confx/example/cmdx/pkg/cmds"
+	"github.com/xoctopus/confx/example/cmdx/pkg/cmds"
 )
 
 var (

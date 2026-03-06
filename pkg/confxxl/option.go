@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"cgtech.gitlab.com/saitox/logx"
-	"cgtech.gitlab.com/saitox/x/misc/must"
-	"cgtech.gitlab.com/saitox/x/textx"
+	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/textx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 type Option struct {

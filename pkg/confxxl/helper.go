@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/confxxl/enums"
+	"github.com/xoctopus/confx/pkg/confxxl/enums"
 )
 
 type TriggerRequest struct {

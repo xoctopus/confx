@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"cgtech.gitlab.com/saitox/x/testx"
+	"github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 func TestCost(t *testing.T) {

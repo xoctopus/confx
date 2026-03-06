@@ -3,7 +3,7 @@ package mq
 import (
 	"context"
 
-	"cgtech.gitlab.com/saitox/x/contextx"
+	"github.com/xoctopus/x/contextx"
 )
 
 // Consumer is the universal subscriber interface for message queues.

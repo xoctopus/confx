@@ -3,9 +3,9 @@ package helper_test
 import (
 	"testing"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
+	. "github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/helper"
+	"github.com/xoctopus/confx/pkg/helper"
 )
 
 func TestHostIdentifier(t *testing.T) {

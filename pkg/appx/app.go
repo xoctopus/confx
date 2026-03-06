@@ -9,14 +9,14 @@ import (
 	"sort"
 	"strings"
 
-	"cgtech.gitlab.com/saitox/x/initializer"
-	"cgtech.gitlab.com/saitox/x/misc/must"
-	"cgtech.gitlab.com/saitox/x/reflectx"
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/initializer"
+	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/reflectx"
 	"gopkg.in/yaml.v3"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/envx"
 )
 
 type Option func(*AppCtx)

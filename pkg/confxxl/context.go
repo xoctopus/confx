@@ -3,7 +3,7 @@ package confxxl
 import (
 	"context"
 
-	"cgtech.gitlab.com/saitox/x/contextx"
+	"github.com/xoctopus/x/contextx"
 )
 
 type Registry interface {

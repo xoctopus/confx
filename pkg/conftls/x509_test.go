@@ -4,9 +4,9 @@ import (
 	_ "embed"
 	"testing"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
+	. "github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/conftls"
+	"github.com/xoctopus/confx/pkg/conftls"
 )
 
 var (

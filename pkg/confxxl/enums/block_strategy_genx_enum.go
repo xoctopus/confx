@@ -6,7 +6,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 
-	"cgtech.gitlab.com/saitox/x/enumx"
+	"github.com/xoctopus/x/enumx"
 )
 
 var _ enumx.Enum[BlockStrategy] = (*BlockStrategy)(nil)

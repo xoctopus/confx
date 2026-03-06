@@ -4,9 +4,9 @@ import (
 	"os"
 	"testing"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
+	. "github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/appx"
+	"github.com/xoctopus/confx/pkg/appx"
 )
 
 func TestGetRuntime(t *testing.T) {

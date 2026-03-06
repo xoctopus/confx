@@ -8,8 +8,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/types"
-	"cgtech.gitlab.com/saitox/confx/pkg/types/liveness"
+	"github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types/liveness"
 )
 
 type Endpoint struct {

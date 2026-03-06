@@ -3,7 +3,7 @@ package cmds
 import (
 	"github.com/spf13/cobra"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/cmdx"
+	"github.com/xoctopus/confx/pkg/cmdx"
 )
 
 // Version output command version

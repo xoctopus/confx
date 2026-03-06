@@ -3,12 +3,12 @@ package confxxl
 import (
 	"context"
 
-	"cgtech.gitlab.com/saitox/logx"
-	"cgtech.gitlab.com/saitox/schex/pkg/synapse"
-	"cgtech.gitlab.com/saitox/x/codex"
-	"cgtech.gitlab.com/saitox/x/syncx"
+	"github.com/xoctopus/logx"
+	"github.com/xoctopus/schex/pkg/synapse"
+	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/syncx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/confxxl/enums"
+	"github.com/xoctopus/confx/pkg/confxxl/enums"
 )
 
 type JobManager interface {

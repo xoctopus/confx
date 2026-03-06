@@ -5,9 +5,9 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"cgtech.gitlab.com/saitox/schex/pkg/schex"
-	"cgtech.gitlab.com/saitox/schex/pkg/synapse"
-	"cgtech.gitlab.com/saitox/x/codex"
+	"github.com/xoctopus/schex/pkg/schex"
+	"github.com/xoctopus/schex/pkg/synapse"
+	"github.com/xoctopus/x/codex"
 )
 
 type Task interface {

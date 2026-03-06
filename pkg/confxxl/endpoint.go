@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"cgtech.gitlab.com/saitox/logx"
-	"cgtech.gitlab.com/saitox/schex/pkg/synapse"
-	"cgtech.gitlab.com/saitox/x/codex"
-	"cgtech.gitlab.com/saitox/x/urlx"
+	"github.com/xoctopus/logx"
+	"github.com/xoctopus/schex/pkg/synapse"
+	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/urlx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/helper"
-	"cgtech.gitlab.com/saitox/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/helper"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 type Endpoint struct {

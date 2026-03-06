@@ -3,9 +3,9 @@ package mq_test
 import (
 	"testing"
 
-	"cgtech.gitlab.com/saitox/x/testx"
+	"github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/types/mq"
+	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
 func BenchmarkHasher(b *testing.B) {

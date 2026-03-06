@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
+	. "github.com/xoctopus/x/testx"
 
-	. "cgtech.gitlab.com/saitox/confx/pkg/confpulsar"
+	. "github.com/xoctopus/confx/pkg/confpulsar"
 )
 
 func TestProducerMessage(t *testing.T) {

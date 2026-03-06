@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"cgtech.gitlab.com/saitox/x/stringsx"
+	"github.com/xoctopus/x/stringsx"
 	"golang.org/x/exp/maps"
 )
 

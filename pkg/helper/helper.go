@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"cgtech.gitlab.com/saitox/x/stringsx"
+	"github.com/xoctopus/x/stringsx"
 )
 
 func HostIdentifier(app string) string {

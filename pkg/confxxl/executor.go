@@ -10,12 +10,12 @@ import (
 	"sync/atomic"
 	"time"
 
-	"cgtech.gitlab.com/saitox/logx"
-	"cgtech.gitlab.com/saitox/schex/pkg/synapse"
-	"cgtech.gitlab.com/saitox/x/codex"
-	"cgtech.gitlab.com/saitox/x/syncx"
+	"github.com/xoctopus/logx"
+	"github.com/xoctopus/schex/pkg/synapse"
+	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/syncx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 func NewExecutor(ctx context.Context, executorName, remoteAddr, listenAddr string, appliers ...ExecutorOptionApplier) (Executor, error) {

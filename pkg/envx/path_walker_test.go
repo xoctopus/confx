@@ -3,9 +3,9 @@ package envx_test
 import (
 	"testing"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
+	. "github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/envx"
 )
 
 type stringer string

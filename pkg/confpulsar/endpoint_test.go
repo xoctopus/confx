@@ -10,17 +10,17 @@ import (
 	"testing"
 	"time"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
-	"cgtech.gitlab.com/saitox/x/testx/bdd"
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/google/uuid"
+	. "github.com/xoctopus/x/testx"
+	"github.com/xoctopus/x/testx/bdd"
 
-	"cgtech.gitlab.com/saitox/confx/hack"
-	. "cgtech.gitlab.com/saitox/confx/pkg/confpulsar"
-	"cgtech.gitlab.com/saitox/confx/pkg/testdata"
-	"cgtech.gitlab.com/saitox/confx/pkg/types"
-	"cgtech.gitlab.com/saitox/confx/pkg/types/liveness"
-	"cgtech.gitlab.com/saitox/confx/pkg/types/mq"
+	"github.com/xoctopus/confx/hack"
+	. "github.com/xoctopus/confx/pkg/confpulsar"
+	"github.com/xoctopus/confx/pkg/testdata"
+	"github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types/liveness"
+	"github.com/xoctopus/confx/pkg/types/mq"
 )
 
 func TopicFor(t testing.TB) string {

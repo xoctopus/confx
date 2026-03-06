@@ -5,10 +5,10 @@ import (
 	"net/url"
 	"testing"
 
-	"cgtech.gitlab.com/saitox/x/contextx"
-	. "cgtech.gitlab.com/saitox/x/testx"
+	"github.com/xoctopus/x/contextx"
+	. "github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/confxxl"
+	"github.com/xoctopus/confx/pkg/confxxl"
 )
 
 func WithXXLRegistry(ctx context.Context, t testing.TB, dsn string, executors ...string) context.Context {

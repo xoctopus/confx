@@ -3,12 +3,12 @@ package confredis_test
 import (
 	"testing"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
 	"github.com/redis/go-redis/v9"
+	. "github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/hack"
-	"cgtech.gitlab.com/saitox/confx/pkg/confredis"
-	"cgtech.gitlab.com/saitox/confx/pkg/types/kv"
+	"github.com/xoctopus/confx/hack"
+	"github.com/xoctopus/confx/pkg/confredis"
+	"github.com/xoctopus/confx/pkg/types/kv"
 )
 
 func TestEndpoint(t *testing.T) {

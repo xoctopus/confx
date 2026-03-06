@@ -2,7 +2,7 @@
 package confpulsar
 
 import (
-	"cgtech.gitlab.com/saitox/x/docx"
+	"github.com/xoctopus/x/docx"
 )
 
 func (v *Endpoint) DocOf(names ...string) ([]string, bool) {

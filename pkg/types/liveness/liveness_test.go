@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"log"
 
-	"cgtech.gitlab.com/saitox/x/misc/must"
+	"github.com/xoctopus/x/misc/must"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/types"
-	"cgtech.gitlab.com/saitox/confx/pkg/types/liveness"
+	"github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types/liveness"
 )
 
 func ExampleCheckLiveness() {

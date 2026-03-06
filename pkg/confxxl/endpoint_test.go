@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
+	. "github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/hack"
-	"cgtech.gitlab.com/saitox/confx/pkg/confxxl"
+	"github.com/xoctopus/confx/hack"
+	"github.com/xoctopus/confx/pkg/confxxl"
 )
 
 func TestEndpoint(t *testing.T) {

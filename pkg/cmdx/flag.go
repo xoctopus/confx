@@ -7,16 +7,16 @@ import (
 	"reflect"
 	"strings"
 
-	"cgtech.gitlab.com/saitox/x/docx"
-	"cgtech.gitlab.com/saitox/x/misc/must"
-	"cgtech.gitlab.com/saitox/x/ptrx"
-	"cgtech.gitlab.com/saitox/x/reflectx"
-	"cgtech.gitlab.com/saitox/x/stringsx"
-	"cgtech.gitlab.com/saitox/x/textx"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"github.com/xoctopus/x/docx"
+	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/ptrx"
+	"github.com/xoctopus/x/reflectx"
+	"github.com/xoctopus/x/stringsx"
+	"github.com/xoctopus/x/textx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/envx"
 )
 
 var (

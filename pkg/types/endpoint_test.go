@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	. "cgtech.gitlab.com/saitox/x/testx"
+	. "github.com/xoctopus/x/testx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/conftls"
-	"cgtech.gitlab.com/saitox/confx/pkg/envx"
-	"cgtech.gitlab.com/saitox/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/conftls"
+	"github.com/xoctopus/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 type MockOption struct {

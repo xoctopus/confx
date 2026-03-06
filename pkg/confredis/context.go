@@ -3,9 +3,9 @@ package confredis
 import (
 	"context"
 
-	"cgtech.gitlab.com/saitox/x/contextx"
-	"cgtech.gitlab.com/saitox/x/misc/must"
 	"github.com/redis/go-redis/v9"
+	"github.com/xoctopus/x/contextx"
+	"github.com/xoctopus/x/misc/must"
 )
 
 type EndpointClient interface {

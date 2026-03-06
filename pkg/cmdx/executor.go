@@ -4,12 +4,12 @@ import (
 	"reflect"
 	"strings"
 
-	"cgtech.gitlab.com/saitox/x/docx"
-	"cgtech.gitlab.com/saitox/x/misc/must"
-	"cgtech.gitlab.com/saitox/x/stringsx"
 	"github.com/spf13/cobra"
+	"github.com/xoctopus/x/docx"
+	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/stringsx"
 
-	"cgtech.gitlab.com/saitox/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/envx"
 )
 
 // Command used to generate a cobra.Command
