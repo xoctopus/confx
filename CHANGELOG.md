@@ -13,6 +13,10 @@
 
 * **confxxl:** xxl-job response
 
+### Test
+
+* **confxxl:** optimize unit test
+
 
 <a name="v0.3.4"></a>
 ## [v0.3.4](https://github.com/xoctopus/confx/compare/v0.3.3...v0.3.4)
