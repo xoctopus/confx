@@ -56,10 +56,9 @@ func bind(r *http.Request, v any) error {
 	return err
 }
 
-// these consts defines exposed api parameters key in path
-// eg: /{host-unique-identifier}/{executor}/{job_name}/{action}
+// these constants defines exposed api parameters key in path
+// eg: /{host-unique-identifier}/{executor}/{action}
 const (
 	PATH_EXECUTOR = "executor"
-	PATH_JOB_NAME = "job_name"
 	PATH_ACTION   = "action"
 )

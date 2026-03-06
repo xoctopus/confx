@@ -2,7 +2,12 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.4...HEAD)
 
-> 0001-01-01
+> 2026-03-07
+
+### Feat
+
+* **confxxl:** Scheduling API
+* **confxxl:** add xxl-job local Scheduling API
 
 
 <a name="v0.3.4"></a>

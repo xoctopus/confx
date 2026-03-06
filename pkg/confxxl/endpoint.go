@@ -177,7 +177,7 @@ func (e *Endpoint) handle(w http.ResponseWriter, r *http.Request) {
 			log.Error(err)
 		} else {
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"code":200,"msg","success"}`))
+			_, _ = w.Write([]byte(`{"code":200,"msg":"success"}`))
 			log.Info("handled")
 		}
 	}()
