@@ -3,10 +3,10 @@ module github.com/xoctopus/confx
 go 1.26.0
 
 require (
-	github.com/xoctopus/logx v0.2.6
-	github.com/xoctopus/schex v0.0.5
-	github.com/xoctopus/sfid v0.0.6
-	github.com/xoctopus/x v0.3.8
+	github.com/xoctopus/logx v0.3.0
+	github.com/xoctopus/schex v0.1.0
+	github.com/xoctopus/sfid v0.1.0
+	github.com/xoctopus/x v0.4.0
 )
 
 // cobra
