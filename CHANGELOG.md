@@ -16,6 +16,7 @@
 ### Test
 
 * **confxxl:** optimize unit test
+* **confxxl:** optimize unit test
 
 
 <a name="v0.3.4"></a>
