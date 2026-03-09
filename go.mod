@@ -6,7 +6,7 @@ require (
 	github.com/xoctopus/logx v0.3.0
 	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
-	github.com/xoctopus/x v0.4.0
+	github.com/xoctopus/x v0.4.2
 )
 
 // cobra
