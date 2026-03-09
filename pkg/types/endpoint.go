@@ -39,7 +39,7 @@ func (e *Endpoint[Option]) IsZero() bool {
 }
 
 func (e *Endpoint[Option]) SetDefault() {
-	if x, ok := any(&e.Option).(interface{ SetDefault() }); ok {
+	if x, ok := any(&e.Option).(Defaulter); ok {
 		x.SetDefault()
 	}
 	e.Auth.SetDefault()

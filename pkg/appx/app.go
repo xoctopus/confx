@@ -11,12 +11,12 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/xoctopus/x/initializer"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/reflectx"
 	"gopkg.in/yaml.v3"
 
 	"github.com/xoctopus/confx/pkg/envx"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 type Option func(*AppCtx)
@@ -168,9 +168,9 @@ func (app *AppCtx) scanEnvironment(group string, v any) *envx.Group {
 }
 
 func initialize(ctx context.Context, v reflect.Value, g *envx.Group, field string) {
-	if initializer.CanBeInitialized(v) {
+	if types.CanBeInitialized(v) {
 		must.NoErrorF(
-			initializer.InitByContext(ctx, v),
+			types.InitByContext(ctx, v),
 			"failed to init [group:%s] [field:%s]", g.Name(), field,
 		)
 		return
