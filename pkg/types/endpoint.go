@@ -124,6 +124,9 @@ func (e *Endpoint[Option]) String() string {
 // SecurityString like String but auth info is hidden
 func (e *Endpoint[Option]) SecurityString() string {
 	u := *e.addr
+	if pass, ok := u.User.Password(); ok && len(pass) > 0 {
+		u.User = url.UserPassword(u.User.Username(), MaskedPassword)
+	}
 	u.User = nil
 	return u.String()
 }

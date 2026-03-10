@@ -1,8 +1,31 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.3.4...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.0...HEAD)
 
-> 2026-03-07
+> 2026-03-09
+
+### Chore
+
+* **deps:** bump xoctopus/{x,logx,schex,sfid} to latest
+
+### Ci
+
+* update golangci.yml
+* update Makefile
+
+### Feat
+
+* add initializer, closable interfaces
+
+
+<a name="v0.4.0"></a>
+## [v0.4.0](https://github.com/xoctopus/confx/compare/v0.3.4...v0.4.0)
+
+> 2026-03-08
+
+### Doc
+
+* update CHANGELOG
 
 ### Feat
 

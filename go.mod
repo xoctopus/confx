@@ -6,32 +6,42 @@ require (
 	github.com/xoctopus/logx v0.3.0
 	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
-	github.com/xoctopus/x v0.4.0
-)
-
-// cobra
-require (
-	github.com/fatih/color v1.18.0
-	github.com/spf13/cobra v1.10.2
-	gopkg.in/yaml.v3 v3.0.1
+	github.com/xoctopus/sqlx v0.2.2
+	github.com/xoctopus/x v0.4.2
 )
 
 // middlewares
+// message queue
 require (
 	github.com/apache/pulsar-client-go v0.18.0
 	github.com/rabbitmq/amqp091-go v1.10.0
-	github.com/redis/go-redis/v9 v9.18.0
 	github.com/segmentio/kafka-go v0.4.50
 	github.com/wagslane/go-rabbitmq v0.15.0
 )
 
+// ralational database storage
 require (
+	github.com/go-sql-driver/mysql v1.9.3
+	github.com/jackc/pgx/v5 v5.8.0
+	modernc.org/sqlite v1.46.1
+)
+
+// key-value storage
+require github.com/redis/go-redis/v9 v9.18.0
+
+require (
+	github.com/fatih/color v1.18.0
 	github.com/go-think/openssl v1.20.0
 	github.com/google/uuid v1.6.0
+	github.com/spf13/cobra v1.10.2
+	gopkg.in/yaml.v3 v3.0.1
 )
+
+require github.com/shopspring/decimal v1.4.0 // indirect
 
 // indirect
 require (
+	filippo.io/edwards25519 v1.1.1 // indirect
 	github.com/AthenZ/athenz v1.12.13 // indirect
 	github.com/DataDog/zstd v1.5.0 // indirect
 	github.com/RoaringBitmap/roaring/v2 v2.8.0 // indirect
@@ -40,6 +50,7 @@ require (
 	github.com/bits-and-blooms/bitset v1.12.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/fxamacker/cbor/v2 v2.7.0 // indirect
@@ -50,9 +61,13 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
+	github.com/google/pprof v0.0.0-20250403155104-27863c87afa6 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/hamba/avro/v2 v2.29.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.18.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
@@ -63,6 +78,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/onsi/gomega v1.38.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -70,12 +86,14 @@ require (
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.55.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
+	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/shirou/gopsutil/v3 v3.24.5 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.10
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/xoctopus/typx v0.4.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/trace v1.39.0 // indirect
@@ -87,14 +105,19 @@ require (
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/net v0.50.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/text v0.34.0 // indirect
+	golang.org/x/tools v0.42.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apimachinery v0.32.3 // indirect
 	k8s.io/client-go v0.32.3 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/utils v0.0.0-20250321185631-1f6e0b77f77e // indirect
+	modernc.org/libc v1.67.6 // indirect
+	modernc.org/mathutil v1.7.1 // indirect
+	modernc.org/memory v1.11.0 // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.2 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
