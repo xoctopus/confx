@@ -100,6 +100,15 @@ func (e *Endpoint) Init(ctx context.Context) (err error) {
 		e.executors[name] = ex
 	}
 
+	// pattern served http handler pattern for accepting triggers from xxl-job
+	// :listen.Port/{host-identifier}/{executor}/{job-name}/{xxl-actions}
+	pattern := fmt.Sprintf("%s/{%s}/{%s}", e.listen.Path, PATH_EXECUTOR, PATH_ACTION)
+	mux := http.NewServeMux()
+	mux.HandleFunc("POST "+pattern, e.handle)
+	e.server = &http.Server{
+		Addr:    ":" + strconv.Itoa(int(e.listen.Port())),
+		Handler: mux,
+	}
 	return e.syn.Spawn(e.serve)
 }
 
@@ -134,32 +143,11 @@ func (e *Endpoint) IsActive(exec string) bool {
 }
 
 func (e *Endpoint) serve(ctx context.Context) {
-	var err error
-
-	// pattern served http handler pattern for accepting triggers from xxl-job
-	// :listen.Port/{host-identifier}/{executor}/{job-name}/{xxl-actions}
-	pattern := fmt.Sprintf("%s/{%s}/{%s}", e.listen.Path, PATH_EXECUTOR, PATH_ACTION)
-
-	log := logx.From(ctx).With("port", e.listen.Port(), "api", pattern)
+	log := logx.From(ctx).With("port", e.listen.Port())
 	log.Info("xxl-job serve started")
-	defer func() {
-		if err != nil {
-			log.Error(fmt.Errorf("xxl-job serve closed cause by: %w", err))
-		}
-	}()
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("POST "+pattern, e.handle)
-
-	e.server = &http.Server{
-		Addr:    ":" + strconv.Itoa(int(e.listen.Port())),
-		Handler: mux,
+	if err := e.server.ListenAndServe(); err != nil {
+		log.Error(fmt.Errorf("xxl-job serve closed cause by: %w", err))
 	}
-
-	if !e.Cert.IsZero() {
-		e.server.TLSConfig = e.Cert.Config()
-	}
-	err = e.server.ListenAndServe()
 }
 
 func (e *Endpoint) handle(w http.ResponseWriter, r *http.Request) {
