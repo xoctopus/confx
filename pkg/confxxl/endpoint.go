@@ -62,11 +62,12 @@ func (e *Endpoint) Init(ctx context.Context) (err error) {
 	e.syn = synapse.NewSynapse(
 		ctx,
 		synapse.WithBeforeCloseFunc(func(ctx context.Context) {
+			log := logx.From(ctx)
 			if e.server != nil {
-				_ = e.server.Shutdown(ctx)
+				log.With("result", e.server.Close()).Info("http server closed")
 			}
-			for _, ex := range e.executors {
-				_ = ex.Close()
+			for name, ex := range e.executors {
+				log.With("executor", name, "result", ex.Close()).Info("executor closed")
 			}
 			logx.From(ctx).Info("endpoint: executors closed")
 		}),
