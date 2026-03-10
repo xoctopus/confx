@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.0...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.1...HEAD)
 
-> 2026-03-09
+> 2026-03-10
+
+### Chore
+
+* reordered go.mod
+
+
+<a name="v0.4.1"></a>
+## [v0.4.1](https://github.com/xoctopus/confx/compare/v0.4.0...v0.4.1)
+
+> 2026-03-10
 
 ### Chore
 
@@ -16,6 +26,7 @@
 ### Feat
 
 * add initializer, closable interfaces
+* **confrdb:** universal config entry for relational database. based on sqlx
 
 
 <a name="v0.4.0"></a>
