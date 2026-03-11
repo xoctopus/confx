@@ -234,10 +234,10 @@ func (e *executor) callback(r *TriggerRequest, err error) {
 	if err != nil {
 		code, msg = http.StatusInternalServerError, err.Error()
 	}
-	body := []byte(fmt.Sprintf(
+	body := fmt.Appendf(nil,
 		`[{"logID":%d,"logDataTim":%d,"handleCode":%d,"handleMsg":"%s"}]`,
 		r.LogID, r.LogDateTime, code, msg,
-	))
+	)
 	if _err := e.post(e.remote+"/callback", body); _err != nil {
 		e.logger.Error(codex.Wrap(ERROR__EXECUTOR_CALLBACK_FAILED, _err))
 	}

@@ -53,16 +53,16 @@ type proxy struct {
 
 func (r proxy) MarshalJSON() ([]byte, error) {
 	if r.reason == nil {
-		return []byte(fmt.Sprintf(
+		return fmt.Appendf(nil,
 			`{"reachable":true,"rtt(ms)":%d,"msg":"success"}`,
 			r.RTT().Milliseconds(),
-		)), nil
+		), nil
 	}
 
-	return []byte(fmt.Sprintf(
+	return fmt.Appendf(nil,
 		`{"reachable":false,"rtt(ms)":%d,"msg":"%s"}`,
 		r.RTT().Milliseconds(), r.FailureReason().Error(),
-	)), nil
+	), nil
 }
 
 // Checker check remote endpoint liveness

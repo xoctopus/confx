@@ -1,12 +1,49 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.1...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.5...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.4.5"></a>
+## [v0.4.5](https://github.com/xoctopus/confx/compare/v0.4.4...v0.4.5)
+
+> 2026-03-11
+
+### Fix
+
+* **confpulsar:** ignore pulsar.Endpoing ResourceManager in env parsing
+
+
+<a name="v0.4.4"></a>
+## [v0.4.4](https://github.com/xoctopus/confx/compare/v0.4.3...v0.4.4)
+
+> 2026-03-11
+
+### Fix
+
+* init xxl-job trigger accepting server before spawn
+
+
+<a name="v0.4.3"></a>
+## [v0.4.3](https://github.com/xoctopus/confx/compare/v0.4.2...v0.4.3)
+
+> 2026-03-10
+
+### Fix
+
+* close xxl-job http serve use Close instead of Shutdown
+
+
+<a name="v0.4.2"></a>
+## [v0.4.2](https://github.com/xoctopus/confx/compare/v0.4.1...v0.4.2)
 
 > 2026-03-10
 
 ### Chore
 
 * reordered go.mod
+* **deps:** bump sqlx to v0.2.3
 
 
 <a name="v0.4.1"></a>

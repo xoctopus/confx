@@ -91,10 +91,10 @@ func (o *ExecutorOption) init(name, remote, listen string, appliers ...ExecutorO
 		applier(o)
 	}
 
-	o.report = []byte(fmt.Sprintf(
+	o.report = fmt.Appendf(nil,
 		`{"registryGroup":"EXECUTOR","registryKey":"%s","registryValue":"%s"}`,
 		o.name, o.listen,
-	))
+	)
 	if o.logger == nil {
 		o.logger = logx.NewDefault().With("executor", o.name)
 	}

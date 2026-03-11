@@ -162,7 +162,7 @@ func (e *Endpoint) handle(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = w.Write([]byte(fmt.Sprintf(`{"code":500,"msg","%v"}`, err)))
+			_, _ = w.Write(fmt.Appendf(nil, `{"code":500,"msg","%v"}`, err))
 			log.Error(err)
 		} else {
 			w.WriteHeader(http.StatusOK)

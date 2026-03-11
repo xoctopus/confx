@@ -86,12 +86,10 @@ func BatchRun(runners ...func()) {
 	wg := &sync.WaitGroup{}
 	for i := range runners {
 		run := runners[i]
-		wg.Add(1)
 
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			run()
-		}()
+		})
 	}
 	wg.Wait()
 }
