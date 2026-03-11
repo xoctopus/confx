@@ -28,7 +28,7 @@ type Endpoint struct {
 	client pulsar.Client
 	closed atomic.Bool
 
-	mq.ResourceManager
+	mq.ResourceManager `env:"-"`
 }
 
 var _ mq.PubSub[ProducerMessage, ConsumerMessage] = (*Endpoint)(nil)
