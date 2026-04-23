@@ -7,7 +7,7 @@ require (
 	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
 	github.com/xoctopus/sqlx v0.2.3
-	github.com/xoctopus/x v0.4.4
+	github.com/xoctopus/x v0.4.5
 )
 
 // middlewares
