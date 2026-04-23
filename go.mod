@@ -6,8 +6,8 @@ require (
 	github.com/xoctopus/logx v0.3.1
 	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
-	github.com/xoctopus/sqlx v0.2.3
-	github.com/xoctopus/x v0.4.3
+	github.com/xoctopus/sqlx v0.2.6
+	github.com/xoctopus/x v0.4.4
 )
 
 // middlewares
@@ -92,7 +92,7 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.10
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xoctopus/typx v0.4.0 // indirect
+	github.com/xoctopus/typx v0.4.3 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
 	go.opentelemetry.io/otel/metric v1.39.0 // indirect
 	go.opentelemetry.io/otel/trace v1.39.0 // indirect
