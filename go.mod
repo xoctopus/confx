@@ -14,7 +14,7 @@ require (
 // message queue
 require (
 	github.com/apache/pulsar-client-go v0.18.0
-	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/rabbitmq/amqp091-go v1.11.0
 	github.com/segmentio/kafka-go v0.4.50
 	github.com/wagslane/go-rabbitmq v0.15.0
 )
