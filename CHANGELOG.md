@@ -2,7 +2,11 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.5...HEAD)
 
-> 0001-01-01
+> 2026-03-12
+
+### Chore
+
+* go fix for mordernization
 
 
 <a name="v0.4.5"></a>

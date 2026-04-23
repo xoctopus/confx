@@ -99,3 +99,57 @@ services:
       SERVER_PORT: 8081
     ports:
       - "18081:8081"
+
+  doris-manager:
+    image: apache/doris:fe-4.0.0
+    container_name: doris_manager_confx
+    hostname: doris_manager_confx
+    environment:
+      - FE_SERVERS=fe1:172.20.80.2:9010
+      - FE_ID=1
+      - PRIORITY_NETWORKS=172.20.80.0/24
+    ports:
+      - "8030:8030" # web
+      - "9030:9030" # mysql client
+    networks:
+      doris_net:
+        ipv4_address: 172.20.80.2
+
+  doris:
+    image: apache/doris:be-4.0.0
+    container_name: doris_confx
+    hostname: doris_confx
+    depends_on:
+      - doris-manager
+    environment:
+      - FE_SERVERS=fe1:172.20.80.2:9010
+      - BE_ADDR=172.20.80.2:9050
+      - PRIORITY_NETWORKS=172.20.80.0/24
+    ports:
+      - "8040:8040"
+    ulimits:
+      nofile:
+        soft: 200000
+        hard: 200000
+    networks:
+      doris_net:
+        ipv4_address: 172.20.80.3
+
+  doris-init:
+    image: mysql:latest
+    container_name: doris_init
+    depends_on:
+      - doris-manager
+      - doris
+    networks:
+      - doris_net
+    volumes:
+      - ./scripts/doris.sh:/doris.sh
+    entrypoint: [ "/bin/bash", "/doris.sh" ]
+
+networks:
+  doris_net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.80.0/24
