@@ -47,8 +47,8 @@ func (r Auth) Output(ctx context.Context) (any, error) {
 	return nil, fmt.Errorf("NoClaims")
 }
 
-func AuthorizationFrom[T any](ctx context.Context) T {
-	return ctx.Value(tCtxAuthorization{}).(T)
+func AuthorizationFrom(ctx context.Context) string {
+	return ctx.Value(tCtxAuthorization{}).(string)
 }
 
 type (

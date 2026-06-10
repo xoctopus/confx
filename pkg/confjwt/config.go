@@ -4,39 +4,39 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/xoctopus/x/contextx"
 
 	"github.com/xoctopus/confx/pkg/types"
 )
 
-type JWTv4 struct {
+type JWT struct {
 	Issuer  string         `url:""`
 	ExpIn   types.Duration `url:""`
 	SignKey string         `url:""`
 }
 
-func (c *JWTv4) SetDefault() {
+func (c *JWT) SetDefault() {
 	if c.ExpIn == 0 {
 		c.ExpIn = types.Duration(time.Hour)
 	}
 }
 
-func (c *JWTv4) Init() error {
+func (c *JWT) Init() error {
 	if c.SignKey == "" {
 		return fmt.Errorf("invalid jwt sign key, got empty")
 	}
 	return nil
 }
 
-func (c *JWTv4) ExpiresAt() *jwt.NumericDate {
+func (c *JWT) ExpiresAt() *jwt.NumericDate {
 	if c.ExpIn == 0 {
 		return nil
 	}
 	return &jwt.NumericDate{Time: time.Now().UTC().Add(time.Duration(c.ExpIn))}
 }
 
-func (c *JWTv4) Generate(payload interface{}) (string, error) {
+func (c *JWT) Generate(payload any) (string, error) {
 	claim := &Claims{
 		Payload: payload,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -48,7 +48,7 @@ func (c *JWTv4) Generate(payload interface{}) (string, error) {
 	return token.SignedString([]byte(c.SignKey))
 }
 
-func (c *JWTv4) GenerateNoExpiration(payload interface{}) (string, error) {
+func (c *JWT) GenerateNoExpiration(payload any) (string, error) {
 	claim := &Claims{
 		Payload: payload,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -60,7 +60,7 @@ func (c *JWTv4) GenerateNoExpiration(payload interface{}) (string, error) {
 	return token.SignedString([]byte(c.SignKey))
 }
 
-func (c *JWTv4) Parse(v string) (*Claims, error) {
+func (c *JWT) Parse(v string) (*Claims, error) {
 	t, err := jwt.ParseWithClaims(
 		v,
 		&Claims{},
@@ -86,11 +86,11 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-type tCtxJWTv4 struct{}
+type tCtxJWT struct{}
 
 var (
-	JWTv4From  = contextx.From[tCtxJWTv4, *JWTv4]
-	MustJWTv4  = contextx.Must[tCtxJWTv4, *JWTv4]
-	WithJWTv4  = contextx.With[tCtxJWTv4, *JWTv4]
-	CarryJWTv4 = contextx.Carry[tCtxJWTv4, *JWTv4]
+	JWTv4From  = contextx.From[tCtxJWT, *JWT]
+	MustJWTv4  = contextx.Must[tCtxJWT, *JWT]
+	WithJWTv4  = contextx.With[tCtxJWT, *JWT]
+	CarryJWTv4 = contextx.Carry[tCtxJWT, *JWT]
 )
