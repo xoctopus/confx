@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/xoctopus/x/docx"
 	"github.com/xoctopus/x/misc/must"
-	"github.com/xoctopus/x/ptrx"
 	"github.com/xoctopus/x/reflectx"
 	"github.com/xoctopus/x/stringsx"
 	"github.com/xoctopus/x/textx"
@@ -115,7 +114,7 @@ func parseFlags(rv reflect.Value, pw *envx.PathWalker, walked map[string]map[str
 					f.required = true
 				case OPTION_DEFAULT:
 					if v := opt.Unquoted(); len(v) > 0 {
-						f.defaults = ptrx.Ptr(strings.ToLower(v))
+						f.defaults = new(strings.ToLower(v))
 					}
 				case OPTION_SHORTHAND:
 					if v := opt.Unquoted(); len(v) > 0 {
@@ -129,7 +128,7 @@ func parseFlags(rv reflect.Value, pw *envx.PathWalker, walked map[string]map[str
 				}
 			}
 			if o := flag.Option(OPTION_NOOP_DEFAULT); o != nil {
-				f.noOptDef = ptrx.Ptr(o.Unquoted())
+				f.noOptDef = new(o.Unquoted())
 			}
 		}
 

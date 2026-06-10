@@ -37,6 +37,19 @@ func ParseGlueType(key string) (GlueType, error) {
 	}
 }
 
+// EnumValues implements enumx.CanBeEnum
+func (GlueType) EnumValues() []any {
+	return []any{
+		GLUE_TYPE__BEAN,
+		GLUE_TYPE__GLUE_GROOVY,
+		GLUE_TYPE__GLUE_SHELL,
+		GLUE_TYPE__GLUE_PYTHON,
+		GLUE_TYPE__GLUE_PHP,
+		GLUE_TYPE__GLUE_NODEJS,
+		GLUE_TYPE__GLUE_POWERSHELL,
+	}
+}
+
 // Values returns enum value list of GlueType
 func (GlueType) Values() []GlueType {
 	return []GlueType{

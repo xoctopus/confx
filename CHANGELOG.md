@@ -2,11 +2,22 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.5...HEAD)
 
-> 2026-03-12
+> 2026-04-24
+
+### Build
+
+* **deps:** bump github.com/xoctopus/x from 0.4.3 to 0.4.4
+* **deps:** bump github.com/xoctopus/logx from 0.3.0 to 0.3.1
 
 ### Chore
 
 * go fix for mordernization
+* **deps:** bump dependencies
+* **deps:** bump dependencies
+
+### Ci
+
+* add doris dependencies
 
 
 <a name="v0.4.5"></a>

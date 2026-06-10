@@ -29,6 +29,15 @@ func ParseBlockStrategy(key string) (BlockStrategy, error) {
 	}
 }
 
+// EnumValues implements enumx.CanBeEnum
+func (BlockStrategy) EnumValues() []any {
+	return []any{
+		BLOCK_STRATEGY__SERIAL_EXECUTION,
+		BLOCK_STRATEGY__DISCARD_LATER,
+		BLOCK_STRATEGY__COVER_EARLY,
+	}
+}
+
 // Values returns enum value list of BlockStrategy
 func (BlockStrategy) Values() []BlockStrategy {
 	return []BlockStrategy{
