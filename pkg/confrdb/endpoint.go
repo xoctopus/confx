@@ -52,11 +52,14 @@ func (d *endpoint[A]) SetDefault() {
 }
 
 // ApplyCatalog should do before endpoint initialization
-func (d *endpoint[A]) ApplyCatalog(catalogs ...builder.Catalog) {
+func (d *endpoint[A]) ApplyCatalog(schema string, catalogs ...builder.Catalog) {
 	d.catalog = builder.NewCatalog()
 
 	for _, catalog := range catalogs {
 		for table := range catalog.Tables() {
+			if x, ok := table.(builder.WithSchema); ok {
+				table = x.WithSchema(schema)
+			}
 			d.catalog.Add(table)
 		}
 	}
@@ -86,7 +89,6 @@ func (d *endpoint[A]) Init(ctx context.Context) error {
 
 	main := d.Endpoint
 	d.database = d.Endpoint.Key()
-	d.session = d.Option.Name
 	db, err := adaptor.Open(ctx, main.String())
 	if err != nil {
 		return err
@@ -116,7 +118,7 @@ func (d *endpoint[A]) Init(ctx context.Context) error {
 		d.Option.Apply(d.ro.D())
 	}
 
-	session.Register(d.session, d.catalog)
+	session.Register(d.catalog)
 
 	return d.LivenessCheck(ctx).FailureReason()
 }

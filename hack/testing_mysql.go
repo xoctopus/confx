@@ -21,7 +21,7 @@ func WithMySQL(ctx context.Context, t testing.TB, dsn string, catalogs ...builde
 		},
 	}
 	ep.SetDefault()
-	ep.ApplyCatalog(catalogs...)
+	ep.ApplyCatalog("test_db", catalogs...)
 
 	err := retrier.Do(func() error {
 		return ep.Init(ctx)

@@ -1,8 +1,24 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.5...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc2...HEAD)
 
-> 2026-04-24
+> 0001-01-01
+
+
+<a name="v0.4.6-rc2"></a>
+## [v0.4.6-rc2](https://github.com/xoctopus/confx/compare/v0.4.6-rc1...v0.4.6-rc2)
+
+> 2026-06-10
+
+### Fix
+
+* auth payload extraction
+
+
+<a name="v0.4.6-rc1"></a>
+## [v0.4.6-rc1](https://github.com/xoctopus/confx/compare/v0.4.5...v0.4.6-rc1)
+
+> 2026-06-10
 
 ### Build
 
@@ -18,6 +34,10 @@
 ### Ci
 
 * add doris dependencies
+
+### Feat
+
+* **conjwt:** confjwt and authorization
 
 
 <a name="v0.4.5"></a>
