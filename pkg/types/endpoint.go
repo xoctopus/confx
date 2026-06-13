@@ -5,6 +5,7 @@ import (
 	"maps"
 	"net"
 	"net/url"
+	"path"
 	"slices"
 	"strings"
 	"time"
@@ -157,6 +158,13 @@ func (e *Endpoint[Option]) LivenessCheck(ctx context.Context) (v liveness.Result
 
 func (e *Endpoint[Option]) URL() url.URL {
 	return *e.addr
+}
+
+func (e *Endpoint[Option]) Base() string {
+	if e.addr != nil && e.addr.Path != "" {
+		return strings.Split(path.Base(e.addr.Path), ".")[0]
+	}
+	return ""
 }
 
 func (e *Endpoint[Option]) AddOption(k string, vs ...string) {

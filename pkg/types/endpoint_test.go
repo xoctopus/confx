@@ -149,6 +149,20 @@ func TestEndpoint(t *testing.T) {
 			Expect(t, ep.String(), Equal("redis://username:password@localhost:6379/1?name=abc&timeout=3s"))
 			Expect(t, ep.SecurityString(), Equal("redis://localhost:6379/1?name=abc&timeout=3s"))
 		})
+		t.Run("Base", func(t *testing.T) {
+			ep := &Endpoint{Address: "redis://username:password@localhost:6379/1"}
+
+			Expect(t, ep.Init(), Succeed())
+			Expect(t, ep.Base(), Equal("1"))
+
+			ep = &Endpoint{Address: "sqlite3:///path/to/database.db"}
+			Expect(t, ep.Init(), Succeed())
+			Expect(t, ep.Base(), Equal("database"))
+
+			ep = &Endpoint{Address: "http://localhost:9999"}
+			Expect(t, ep.Init(), Succeed())
+			Expect(t, ep.Base(), Equal(""))
+		})
 		t.Run("URLQueryOverrideOption", func(t *testing.T) {
 			ep := &Endpoint{
 				Address: "redis://username:password@localhost:6379/1?timeout=3s&name=abc",

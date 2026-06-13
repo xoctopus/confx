@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc2...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc3...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.4.6-rc3"></a>
+## [v0.4.6-rc3](https://github.com/xoctopus/confx/compare/v0.4.6-rc2...v0.4.6-rc3)
+
+> 2026-06-13
+
+### Feat
+
+* upgrade sqlx to latest
 
 
 <a name="v0.4.6-rc2"></a>

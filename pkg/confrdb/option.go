@@ -35,8 +35,9 @@ type Option[A any] struct {
 	ConnMaxIdleTime types.Duration `url:"-"`
 
 	// Name denotes a globally **unique** identifier for a database endpoint and
-	// its lifecycle sessions.
-	Name string `url:"-"`
+	// its lifecycle sessions. this well be initialized when endpoint.Init
+	// Name string `url:"-" env:"-"`
+
 	// AdaptorOption for different driver. eg mysql, postgres etc.
 	AdaptorOption A `url:",inline"`
 }

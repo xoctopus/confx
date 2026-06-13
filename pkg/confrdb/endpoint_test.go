@@ -20,7 +20,7 @@ func TestEndpoint(t *testing.T) {
 		ep, err := hack.WithMySQL(ctx, t, "mysql://root@localhost:13306/test", models.Catalog)
 		Expect(t, err, Succeed())
 		s := ep.Session()
-		Expect(t, s.Schema(), Equal("test"))
+		Expect(t, s.Name(), Equal("test_db"))
 		table := s.T(&models.User{})
 		Expect(t, table, NotBeNil[builder.Table]())
 		Expect(t, table.TableName(), Equal("t_user"))

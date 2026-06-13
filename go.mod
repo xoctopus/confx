@@ -6,7 +6,7 @@ require (
 	github.com/xoctopus/logx v0.3.1
 	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
-	github.com/xoctopus/sqlx v0.2.9-rc2
+	github.com/xoctopus/sqlx v0.2.9-rc4
 	github.com/xoctopus/x v0.4.7-rc3
 )
 

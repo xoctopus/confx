@@ -7,6 +7,8 @@ import (
 	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/reflectx"
 	"github.com/xoctopus/x/textx"
+
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 func NewDecoder(g *Group) *Decoder {
@@ -48,7 +50,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		return codex.Errorf(CODE__DEC_INVALID_VALUE_CANNOT_SET, "at %s", pw.String())
 	}
 
-	if dft, ok := rv.Addr().Interface().(interface{ SetDefault() }); ok {
+	if dft, ok := rv.Addr().Interface().(types.Defaulter); ok {
 		dft.SetDefault()
 	}
 

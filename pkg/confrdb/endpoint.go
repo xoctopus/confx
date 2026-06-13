@@ -1,12 +1,12 @@
 package confrdb
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/xoctopus/sqlx/pkg/builder"
 	"github.com/xoctopus/sqlx/pkg/frag"
@@ -14,6 +14,7 @@ import (
 	"github.com/xoctopus/sqlx/pkg/session"
 	"github.com/xoctopus/sqlx/pkg/sql/adaptor"
 	_ "github.com/xoctopus/sqlx/pkg/sql/adaptor/mysql"
+	"github.com/xoctopus/x/contextx"
 	"github.com/xoctopus/x/flagx"
 
 	"github.com/xoctopus/confx/pkg/confrdb/option"
@@ -34,17 +35,21 @@ type endpoint[A any] struct {
 	types.Endpoint[Option[A]]
 	Readonly types.Endpoint[Option[A]]
 
+	// database endpoint string
 	database string
-	session  string
-	catalog  builder.Catalog
-	db       adaptor.Adaptor
-	ro       adaptor.Adaptor
+	// name logic database name
+	name string
+
+	catalog builder.Catalog
+	db      adaptor.Adaptor
+	ro      adaptor.Adaptor
 }
 
 type (
 	EndpointMySQL    = endpoint[option.MySQL]
 	EndpointPostgres = endpoint[option.Postgres]
 	EndpointSQLite   = endpoint[option.SQLite]
+	EndpointDuckDB   = endpoint[option.DuckDB]
 )
 
 func (d *endpoint[A]) SetDefault() {
@@ -52,17 +57,16 @@ func (d *endpoint[A]) SetDefault() {
 }
 
 // ApplyCatalog should do before endpoint initialization
-func (d *endpoint[A]) ApplyCatalog(schema string, catalogs ...builder.Catalog) {
+func (d *endpoint[A]) ApplyCatalog(name string, catalogs ...builder.Catalog) {
+	d.name = name
 	d.catalog = builder.NewCatalog()
 
 	for _, catalog := range catalogs {
 		for table := range catalog.Tables() {
-			if x, ok := table.(builder.WithSchema); ok {
-				table = x.WithSchema(schema)
-			}
 			d.catalog.Add(table)
 		}
 	}
+	session.Register(d.catalog)
 }
 
 func (d *endpoint[A]) Init(ctx context.Context) error {
@@ -73,17 +77,10 @@ func (d *endpoint[A]) Init(ctx context.Context) error {
 	if err := d.Endpoint.Init(); err != nil {
 		return fmt.Errorf("failed to init main endpoint: %w", err)
 	}
+
 	if x, ok := any(d.Option.AdaptorOption).(option.TLSConfigPatcher); ok && !d.Endpoint.Cert.IsZero() {
 		if err := x.WithTLS(d.Endpoint.Cert.Config()); err != nil {
 			return fmt.Errorf("failed to patch tls config for adaptor: %w", err)
-		}
-	}
-	if len(d.Option.Name) == 0 && len(d.Endpoint.URL().Path) > 1 {
-		name := strings.TrimPrefix(d.Endpoint.URL().Path, "/")
-		if parts := strings.Split(name, "/"); len(parts) == 1 {
-			d.Option.Name = parts[0]
-		} else {
-			return fmt.Errorf("invalid dsn or session name: %s", d.Endpoint.SecurityString())
 		}
 	}
 
@@ -117,9 +114,6 @@ func (d *endpoint[A]) Init(ctx context.Context) error {
 		d.ro = db
 		d.Option.Apply(d.ro.D())
 	}
-
-	session.Register(d.catalog)
-
 	return d.LivenessCheck(ctx).FailureReason()
 }
 
@@ -140,22 +134,37 @@ func (d *endpoint[A]) LivenessCheck(ctx context.Context) (v liveness.Result) {
 	return
 }
 
-// Session is a logical isolation unit and operational handle for database
-// adapters.
-// eg:
-//
-//	a specific MySQL database
-//	a specific search_path in same PostgreSQL database
-//	a particular SQLite database file.
 func (d *endpoint[A]) Session() session.Session {
 	if d.ro != nil {
-		return session.NewReadonly(d.db, d.ro, d.Option.Name)
+		return session.NewReadonly(d.db, d.ro, d.name)
 	}
-	return session.New(d.db, d.Option.Name)
+	return session.New(d.db, d.name)
+}
+
+func (d *endpoint[A]) WithSession(ctx context.Context) context.Context {
+	s := d.Session()
+	ctx = session.With(ctx, s)
+
+	for t := range d.catalog.Tables() {
+		ctx = session.WithModel(ctx, t, s)
+		if x, ok := t.(builder.WithSchema); ok {
+			t = x.WithSchema(d.name)
+			ctx = session.WithSchemaModel(ctx, t, s)
+		}
+	}
+	return ctx
+}
+
+func (d *endpoint[A]) CarrySession() contextx.Carrier {
+	return d.WithSession
 }
 
 func (d *endpoint[A]) Catalog() builder.Catalog {
 	return d.catalog
+}
+
+func (d *endpoint[A]) DatabaseName() string {
+	return cmp.Or(d.name, d.Endpoint.Base())
 }
 
 func (d *endpoint[A]) Run(ctx context.Context) error {
@@ -173,8 +182,8 @@ func (d *endpoint[A]) Run(ctx context.Context) error {
 		q, err := migrator.Migrate(ctx, d.db, d.catalog)
 		fmt.Println(q)
 
-		if dir, ok := migrator.CtxOutput.From(ctx); ok {
-			filename := filepath.Join(dir, d.Option.Name+".sql")
+		if dir, ok := migrator.CtxOutput.From(ctx); ok && len(dir) > 0 {
+			filename := filepath.Join(dir, d.DatabaseName()+".sql")
 			_ = os.WriteFile(filename, []byte(q), 0o666)
 		}
 
