@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc3...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc4...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.4.6-rc4"></a>
+## [v0.4.6-rc4](https://github.com/xoctopus/confx/compare/v0.4.6-rc3...v0.4.6-rc4)
+
+> 2026-06-13
+
+### Feat
+
+* session injection
 
 
 <a name="v0.4.6-rc3"></a>

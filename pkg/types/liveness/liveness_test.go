@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"testing"
 
 	"github.com/xoctopus/x/misc/must"
 
@@ -55,4 +56,24 @@ func ExampleCheckLiveness() {
 
 	// Output:
 	//
+}
+
+func TestLiveness(t *testing.T) {
+	var v liveness.Result
+	run := func() {
+		var err error
+		v = liveness.NewLivenessData()
+		defer v.End(err)
+	}
+	run()
+	data, _ := json.Marshal(v)
+	t.Log(string(data))
+
+	run2 := func() {
+		v = liveness.NewLivenessData()
+		defer v.End(map[string]string{"a": "1"})
+	}
+	run2()
+	data, _ = json.Marshal(v)
+	t.Log(string(data))
 }

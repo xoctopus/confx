@@ -2,13 +2,20 @@ package liveness
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
+	"sync"
 	"time"
 )
 
 // NewLivenessData creates liveness Data
 func NewLivenessData() Result {
-	r := &proxy{}
+	r := &proxy{
+		underlying: underlying{
+			_once: sync.OnceValue(func() time.Time {
+				return time.Now()
+			}),
+		},
+	}
 	r.Start()
 	return r
 }
@@ -16,27 +23,36 @@ func NewLivenessData() Result {
 type Result interface {
 	// Start starts probing endpoint liveness
 	Start()
-	// End ends probing with reason if failed
-	End(error)
+	// End ends probing with reason if failed or other detail data
+	End(any)
 	// RTT reports rtt of liveness probing
 	RTT() time.Duration
 	// FailureReason denotes failure reason
 	FailureReason() error
+	// Detail returns check detail
+	Detail() any
 }
 
 type underlying struct {
+	_once     func() time.Time
 	timestamp time.Time
 	rtt       time.Duration
 	reason    error
+	detail    any
 }
 
 func (d *underlying) Start() {
-	d.timestamp = time.Now()
+	d.timestamp = d._once()
 }
 
-func (d *underlying) End(err error) {
+func (d *underlying) End(v any) {
 	d.rtt = time.Since(d.timestamp)
-	d.reason = err
+	switch x := v.(type) {
+	case error:
+		d.reason = x
+	default:
+		d.detail = x
+	}
 }
 
 func (d *underlying) RTT() time.Duration {
@@ -47,22 +63,33 @@ func (d *underlying) FailureReason() error {
 	return d.reason
 }
 
+func (d *underlying) Detail() any {
+	return d.detail
+}
+
 type proxy struct {
 	underlying
 }
 
 func (r proxy) MarshalJSON() ([]byte, error) {
-	if r.reason == nil {
-		return fmt.Appendf(nil,
-			`{"reachable":true,"rtt(ms)":%d,"msg":"success"}`,
-			r.RTT().Milliseconds(),
-		), nil
+	msg := "success"
+	if err := r.FailureReason(); err != nil {
+		msg = r.FailureReason().Error()
 	}
 
-	return fmt.Appendf(nil,
-		`{"reachable":false,"rtt(ms)":%d,"msg":"%s"}`,
-		r.RTT().Milliseconds(), r.FailureReason().Error(),
-	), nil
+	var d = struct {
+		Reachable bool   `json:"reachable"`
+		RTT       int64  `json:"rtt(ms)"`
+		Message   string `json:"msg,omitempty"`
+		Detail    any    `json:"detail,omitempty"`
+	}{
+		Reachable: r.reason == nil,
+		RTT:       r.RTT().Milliseconds(),
+		Message:   msg,
+		Detail:    r.Detail(),
+	}
+
+	return json.Marshal(d)
 }
 
 // Checker check remote endpoint liveness
