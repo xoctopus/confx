@@ -2,7 +2,15 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc6...HEAD)
 
-> 0001-01-01
+> 2026-06-25
+
+### Chore
+
+* upgrade dependencies
+
+### Fix
+
+* **confrdb:** lack of rows
 
 
 <a name="v0.4.6-rc6"></a>
