@@ -2,9 +2,9 @@ package confjwt
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
+	"github.com/xoctopus/httpx/pkg/httpx"
 	"github.com/xoctopus/x/contextx"
 )
 
@@ -20,7 +20,7 @@ func (r Auth) ContextKey() any {
 }
 
 func (r Auth) Output(ctx context.Context) (any, error) {
-	c := MustJWTv4(ctx)
+	c := MustJWT(ctx)
 
 	a := r.AuthInQuery
 	if a == "" {
@@ -30,21 +30,22 @@ func (r Auth) Output(ctx context.Context) (any, error) {
 	tok := strings.TrimSpace(strings.Replace(a, "Bearer", " ", 1))
 
 	var payload any
-	if claims, err := c.Parse(tok); err == nil && claims != nil {
+	claims, err := c.Parse(tok)
+	if err == nil && claims != nil {
 		payload = claims.Payload
 
 		if va, ok := PermissionValidatorFrom(ctx); ok && va != nil {
-			err = va(payload)
+			err = va(ctx, payload)
 		}
 
 		if err != nil {
-			return nil, fmt.Errorf("NoPermission: %w", err)
+			return nil, httpx.STATUS__FORBIDDEN.Wrap(err)
 		}
 
 		return payload, nil
 	}
 
-	return nil, fmt.Errorf("NoClaims")
+	return nil, httpx.STATUS__UNAUTHORIZED.Wrap(err)
 }
 
 func AuthorizationFrom(ctx context.Context) string {
@@ -52,7 +53,7 @@ func AuthorizationFrom(ctx context.Context) string {
 }
 
 type (
-	PermissionValidator func(any) error
+	PermissionValidator func(context.Context, any) error
 
 	tCtxPermissionValidator struct{}
 )
