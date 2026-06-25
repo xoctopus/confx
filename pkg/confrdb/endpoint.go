@@ -10,6 +10,7 @@ import (
 
 	"github.com/xoctopus/sqlx/pkg/builder"
 	"github.com/xoctopus/sqlx/pkg/frag"
+	"github.com/xoctopus/sqlx/pkg/helper"
 	"github.com/xoctopus/sqlx/pkg/migrator"
 	"github.com/xoctopus/sqlx/pkg/session"
 	"github.com/xoctopus/sqlx/pkg/sql/adaptor"
@@ -129,8 +130,7 @@ func (d *endpoint[A]) LivenessCheck(ctx context.Context) (v liveness.Result) {
 		return
 	}
 
-	_, err := db.Query(ctx, frag.Query("SELECT 1"))
-	v.End(err)
+	v.End(helper.QueryAndScan(ctx, db, frag.Query("SELECT 1"), nil))
 	return
 }
 

@@ -1,8 +1,29 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc4...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc6...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.4.6-rc6"></a>
+## [v0.4.6-rc6](https://github.com/xoctopus/confx/compare/v0.4.6-rc5...v0.4.6-rc6)
+
+> 2026-06-25
+
+### Chore
+
+* upgrade deps
+* **confjwt:** auth status error and unit tests
+
+
+<a name="v0.4.6-rc5"></a>
+## [v0.4.6-rc5](https://github.com/xoctopus/confx/compare/v0.4.6-rc4...v0.4.6-rc5)
+
+> 2026-06-15
+
+### Feat
+
+* **liveness:** add Detail for liveness result
 
 
 <a name="v0.4.6-rc4"></a>
