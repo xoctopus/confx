@@ -22,7 +22,7 @@ require (
 // ralational database storage
 require (
 	github.com/go-sql-driver/mysql v1.9.3
-	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jackc/pgx/v5 v5.10.0
 	modernc.org/sqlite v1.46.1
 )
 
