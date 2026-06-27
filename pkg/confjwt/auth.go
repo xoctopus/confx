@@ -29,23 +29,35 @@ func (r Auth) Output(ctx context.Context) (any, error) {
 
 	tok := strings.TrimSpace(strings.Replace(a, "Bearer", " ", 1))
 
-	var payload any
-	claims, err := c.Parse(tok)
-	if err == nil && claims != nil {
-		payload = claims.Payload
+	var (
+		payload any
+		err     error
+		valid   bool
+		claims  *Claims
+	)
 
-		if va, ok := PermissionValidatorFrom(ctx); ok && va != nil {
-			err = va(ctx, payload)
-		}
-
-		if err != nil {
-			return nil, httpx.STATUS__FORBIDDEN.Wrap(err)
-		}
-
-		return payload, nil
+	if parser, ok := BuiltinTokenParserFrom(ctx); ok {
+		payload, err, valid = parser(ctx, tok)
 	}
 
-	return nil, httpx.STATUS__UNAUTHORIZED.Wrap(err)
+	if !valid {
+		claims, err = c.Parse(tok)
+		if err == nil && claims != nil {
+			payload = claims.Payload
+		}
+	}
+
+	if err != nil {
+		return nil, httpx.STATUS__UNAUTHORIZED.Wrap(err)
+	}
+
+	if va, ok := PermissionValidatorFrom(ctx); ok && va != nil {
+		if err = va(ctx, payload); err != nil {
+			return nil, httpx.STATUS__FORBIDDEN.Wrap(err)
+		}
+	}
+
+	return payload, nil
 }
 
 func AuthorizationFrom(ctx context.Context) string {
@@ -53,9 +65,11 @@ func AuthorizationFrom(ctx context.Context) string {
 }
 
 type (
+	BuiltinTokenParser  func(ctx context.Context, tok string) (payload any, err error, valid bool)
 	PermissionValidator func(context.Context, any) error
 
 	tCtxPermissionValidator struct{}
+	tCtxBuiltinTokenParser  struct{}
 )
 
 var (
@@ -63,4 +77,9 @@ var (
 	MustPermissionValidator  = contextx.Must[tCtxPermissionValidator, PermissionValidator]
 	WithPermissionValidator  = contextx.With[tCtxPermissionValidator, PermissionValidator]
 	CarryPermissionValidator = contextx.Carry[tCtxPermissionValidator, PermissionValidator]
+
+	BuiltinTokenParserFrom  = contextx.From[tCtxBuiltinTokenParser, BuiltinTokenParser]
+	MustBuiltinTokenParser  = contextx.Must[tCtxBuiltinTokenParser, BuiltinTokenParser]
+	WithBuiltinTokenParser  = contextx.With[tCtxBuiltinTokenParser, BuiltinTokenParser]
+	CarryBuiltinTokenParser = contextx.Carry[tCtxBuiltinTokenParser, BuiltinTokenParser]
 )

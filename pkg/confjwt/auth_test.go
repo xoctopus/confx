@@ -47,6 +47,19 @@ func TestAuthMiddleware(t *testing.T) {
 				Expect(t, pl, Equal(payload))
 			})
 			t.Run("#HasPermissionValidator", func(t *testing.T) {
+				t.Run("#HasBuiltinTokenParser", func(t *testing.T) {
+					ctx := confjwt.WithBuiltinTokenParser(ctx, func(ctx context.Context, tok2 string) (payload any, err error, valid bool) {
+						if tok == tok2 {
+							return "any", nil, true
+						}
+						return nil, nil, false
+					})
+
+					payload2, err := auth.Output(ctx)
+					Expect(t, err, Succeed())
+					Expect(t, payload, Equal(payload2))
+				})
+
 				t.Run("#Denied", func(t *testing.T) {
 					errVa := errors.New("any")
 					va := func(context.Context, any) error { return errVa }
