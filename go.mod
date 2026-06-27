@@ -14,7 +14,7 @@ require (
 // message queue
 require (
 	github.com/apache/pulsar-client-go v0.18.0
-	github.com/rabbitmq/amqp091-go v1.10.0
+	github.com/rabbitmq/amqp091-go v1.12.0
 	github.com/segmentio/kafka-go v0.4.50
 	github.com/wagslane/go-rabbitmq v0.15.0
 )
@@ -23,7 +23,7 @@ require (
 require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/jackc/pgx/v5 v5.10.0
-	modernc.org/sqlite v1.46.1
+	modernc.org/sqlite v1.53.0
 )
 
 // key-value storage
@@ -113,7 +113,7 @@ require (
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2 // indirect
-	modernc.org/libc v1.67.6 // indirect
+	modernc.org/libc v1.73.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
