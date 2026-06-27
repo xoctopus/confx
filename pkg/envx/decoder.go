@@ -112,11 +112,11 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		}
 		for i := 0; i < length; i++ {
 			pw.Enter(i)
-			if d.g.Get(pw.String()) != nil {
-				if err := d.decode(pw, rv.Index(i)); err != nil {
-					return err
-				}
+			// if d.g.Get(pw.String()) != nil {
+			if err := d.decode(pw, rv.Index(i)); err != nil {
+				return err
 			}
+			// }
 			pw.Leave()
 		}
 		return nil

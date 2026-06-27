@@ -1,12 +1,42 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc6...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc9...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.4.6-rc9"></a>
+## [v0.4.6-rc9](https://github.com/xoctopus/confx/compare/v0.4.6-rc8...v0.4.6-rc9)
+
+> 2026-06-27
+
+### Feat
+
+* **conjwt:** BuiltinTokenParser and PermissionValidator
+
+
+<a name="v0.4.6-rc8"></a>
+## [v0.4.6-rc8](https://github.com/xoctopus/confx/compare/v0.4.6-rc7...v0.4.6-rc8)
+
+> 2026-06-26
+
+### Chore
+
+* upgrade dependencies
+
+
+<a name="v0.4.6-rc7"></a>
+## [v0.4.6-rc7](https://github.com/xoctopus/confx/compare/v0.4.6-rc6...v0.4.6-rc7)
 
 > 2026-06-25
 
 ### Chore
 
 * upgrade dependencies
+
+### Doc
+
+* update CHANGELOG
 
 ### Fix
 
