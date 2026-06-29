@@ -13,7 +13,7 @@ import (
 type MySQL struct {
 	Charset           string
 	Collation         string
-	InterpolateParams bool
+	InterpolateParams bool           `url:",default=true"`
 	Loc               string         `url:",defualt=Asia/Shanghai"`
 	MultiStatements   bool           `url:",default=true"`
 	ParseTime         bool           `url:",default=true"`
@@ -21,6 +21,10 @@ type MySQL struct {
 	ReadTimeout       types.Duration `url:",default=30s"`
 	WriteTimeout      types.Duration `url:",default=10s"`
 	TLS               string         `url:",default=false"`
+}
+
+func (o *MySQL) Overwrite() {
+	o.InterpolateParams = true
 }
 
 func (o *MySQL) SetDefault() {

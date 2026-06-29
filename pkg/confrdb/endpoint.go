@@ -75,6 +75,10 @@ func (d *endpoint[A]) Init(ctx context.Context) error {
 		return nil
 	}
 
+	if x, ok := any(d.Option).(option.Overwriter); ok {
+		x.Overwrite()
+	}
+
 	if err := d.Endpoint.Init(); err != nil {
 		return fmt.Errorf("failed to init main endpoint: %w", err)
 	}
