@@ -9,15 +9,26 @@ import (
 )
 
 type (
-	_Initializer                   interface{ Init() }
-	_InitializerWithError          interface{ Init() error }
-	_InitializerByContext          interface{ Init(context.Context) }
-	_InitializerByContextWithError interface{ Init(context.Context) error }
+	Initializer interface {
+		Init()
+	}
+
+	InitializerWithError interface {
+		Init() error
+	}
+
+	InitializerByContext interface {
+		Init(context.Context)
+	}
+
+	InitializerByContextWithError interface {
+		Init(context.Context) error
+	}
 )
 
 func CanBeInitialized(initializer any) bool {
 	switch v := initializer.(type) {
-	case _Initializer, _InitializerWithError, _InitializerByContext, _InitializerByContextWithError:
+	case Initializer, InitializerWithError, InitializerByContext, InitializerByContextWithError:
 		return true
 	case reflect.Value:
 		v = reflectx.IndirectNew(initializer)
@@ -42,24 +53,24 @@ func CanBeInitialized(initializer any) bool {
 	}
 }
 
-var ErrInvalidInitializerValue = errors.New("invalid initializer")
+var ErrSkipInitializing = errors.New("skip initializing")
 
 func InitByContext(ctx context.Context, initializer any) error {
 	switch v := initializer.(type) {
-	case _Initializer:
+	case Initializer:
 		v.Init()
 		return nil
-	case _InitializerWithError:
+	case InitializerWithError:
 		return v.Init()
-	case _InitializerByContext:
+	case InitializerByContext:
 		v.Init(ctx)
 		return nil
-	case _InitializerByContextWithError:
+	case InitializerByContextWithError:
 		return v.Init(ctx)
 	case reflect.Value:
 		v = reflectx.IndirectNew(initializer)
 		if v == reflectx.InvalidValue {
-			return ErrInvalidInitializerValue
+			return ErrSkipInitializing
 		}
 		if v.CanInterface() {
 			if CanBeInitialized(v.Interface()) {

@@ -5,7 +5,7 @@ func (v *Duration) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		return []string{}, false
 	}
-	return []string{"extends time.Duraiton for"}, true
+	return []string{"extends time.Duraiton for arshaling"}, true
 }
 
 func (v *Endpoint[Option]) DocOf(names ...string) ([]string, bool) {

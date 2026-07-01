@@ -3,6 +3,7 @@ package helper
 import (
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/xoctopus/x/stringsx"
 )
@@ -25,4 +26,11 @@ func HostIdentifier(app string) string {
 
 func DefaultHostIdentifier() string {
 	return HostIdentifier("")
+}
+
+func Span() func() time.Duration {
+	ts := time.Now()
+	return func() time.Duration {
+		return time.Since(ts)
+	}
 }

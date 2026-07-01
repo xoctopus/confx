@@ -15,7 +15,7 @@ import (
 	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/syncx"
 
-	"github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/helper"
 )
 
 func NewExecutor(ctx context.Context, executorName, remoteAddr, listenAddr string, appliers ...ExecutorOptionApplier) (Executor, error) {
@@ -125,7 +125,7 @@ func (e *executor) Register(name string, h JobHandler) error {
 
 func (e *executor) Do(r *TriggerRequest) (err error) {
 	var (
-		span    = types.Span()
+		span    = helper.Span()
 		ctx     = context.Background()
 		cancel  context.CancelFunc
 		timeout = time.Duration(r.ExecutorTimeout) * time.Second

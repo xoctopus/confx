@@ -52,7 +52,7 @@ func TestClose(t *testing.T) {
 		{&ClosableByContextWithError{}, errCloseByContextWithError},                  // 3
 		{reflect.ValueOf(&ClosableByContextWithError{}), errCloseByContextWithError}, // 4
 		{&struct{}{}, nil},                                                           // 5
-		{reflect.ValueOf((*Initializer)(nil)), types.ErrInvalidClosableValue},        // 6
+		{reflect.ValueOf((*Initializer)(nil)), types.ErrSkipClosing},                 // 6
 		{reflect.ValueOf(&struct{ Closable }{}), nil},                                // 7
 		{reflect.ValueOf(&struct{ v Closable }{}), nil},                              // 8
 		{reflect.ValueOf(&ClosableV{}), nil},                                         // 9

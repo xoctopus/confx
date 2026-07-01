@@ -1,8 +1,32 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.6-rc9...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.7-rc1...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.4.7-rc1"></a>
+## [v0.4.7-rc1](https://github.com/xoctopus/confx/compare/v0.4.6...v0.4.7-rc1)
+
+> 2026-06-29
+
+### Feat
+
+* **confrdb:** option.MySQL default interpolate enabled
+
+
+<a name="v0.4.6"></a>
+## [v0.4.6](https://github.com/xoctopus/confx/compare/v0.4.6-rc9...v0.4.6)
+
+> 2026-06-28
+
+### Chore
+
+* upgrade dependencies
+
+### Fix
+
+* **envx:** bug for decoding array/slice
 
 
 <a name="v0.4.6-rc9"></a>

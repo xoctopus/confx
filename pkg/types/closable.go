@@ -9,10 +9,25 @@ import (
 )
 
 type (
-	_Closable                   interface{ Close() }
-	_ClosableWithError          interface{ Close() error }
-	_ClosableByContext          interface{ Close(context.Context) }
-	_ClosableByContextWithError interface{ Close(context.Context) error }
+	Closable interface {
+		Close()
+	}
+
+	ClosableWithError interface {
+		Close() error
+	}
+
+	ClosableByContext interface {
+		Close(context.Context)
+	}
+
+	ClosableByContextWithError interface {
+		Close(context.Context) error
+	}
+
+	Shutdownable interface {
+		Shutdown(ctx context.Context) error
+	}
 )
 
 func IsClosable(closable any) bool {
@@ -35,7 +50,7 @@ func IsClosable(closable any) bool {
 			}
 		}
 		return false
-	case _Closable, _ClosableWithError, _ClosableByContext, _ClosableByContextWithError:
+	case Closable, ClosableWithError, ClosableByContext, ClosableByContextWithError, Shutdownable:
 		return true
 	default:
 		return false
@@ -46,14 +61,14 @@ func Close(closable any) error {
 	return CloseByContext(context.Background(), closable)
 }
 
-var ErrInvalidClosableValue = errors.New("invalid closable")
+var ErrSkipClosing = errors.New("skip closing")
 
 func CloseByContext(ctx context.Context, closable any) error {
 	switch x := closable.(type) {
 	case reflect.Value:
 		x = reflectx.IndirectNew(closable)
 		if x == reflectx.InvalidValue {
-			return ErrInvalidClosableValue
+			return ErrSkipClosing
 		}
 		if x.CanInterface() {
 			if IsClosable(x.Interface()) {
@@ -68,16 +83,18 @@ func CloseByContext(ctx context.Context, closable any) error {
 			}
 		}
 		return nil
-	case _Closable:
+	case Closable:
 		x.Close()
 		return nil
-	case _ClosableWithError:
+	case ClosableWithError:
 		return x.Close()
-	case _ClosableByContext:
+	case ClosableByContext:
 		x.Close(ctx)
 		return nil
-	case _ClosableByContextWithError:
+	case ClosableByContextWithError:
 		return x.Close(ctx)
+	case Shutdownable:
+		return x.Shutdown(ctx)
 	default:
 		return nil
 	}
