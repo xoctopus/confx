@@ -138,9 +138,21 @@ func (w *Writer) WriteJSON() error {
 func (w *Writer) WriteText() error {
 	prefix := color.CyanString("%s:", w.record.SpanID().String())
 
+	level := strings.ToUpper(w.severity())
+	switch level {
+	case "DEB":
+		level = color.BlueString("DEB")
+	case "INF":
+		level = color.GreenString("INF")
+	case "WRN":
+		level = color.YellowString("WRN")
+	case "ERR":
+		level = color.RedString("ERR")
+	}
+
 	_, _ = fmt.Fprint(w.output, prefix)
 	_, _ = fmt.Fprint(w.output, " ")
-	_, _ = fmt.Fprint(w.output, strings.ToUpper(w.severity()))
+	_, _ = fmt.Fprint(w.output, level)
 	_, _ = fmt.Fprint(w.output, " ")
 	_, _ = fmt.Fprint(w.output, color.WhiteString(w.record.Timestamp().Format(consts.TIME_FORMAT)))
 	_, _ = fmt.Fprint(w.output, " ")
