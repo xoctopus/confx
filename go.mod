@@ -4,7 +4,7 @@ go 1.26.4
 
 require (
 	github.com/xoctopus/httpx v0.0.1
-	github.com/xoctopus/logx v0.3.4
+	github.com/xoctopus/logx v0.3.5
 	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
 	github.com/xoctopus/sqlx v0.3.1-rc6
