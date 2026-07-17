@@ -1,8 +1,39 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.7-rc1...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.7-rc4...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.4.7-rc4"></a>
+## [v0.4.7-rc4](https://github.com/xoctopus/confx/compare/v0.4.7-rc3...v0.4.7-rc4)
+
+> 2026-07-13
+
+### Chore
+
+* upgrade dependencies
+
+
+<a name="v0.4.7-rc3"></a>
+## [v0.4.7-rc3](https://github.com/xoctopus/confx/compare/v0.4.7-rc2...v0.4.7-rc3)
+
+> 2026-07-02
+
+### Chore
+
+* prettify text logger output
+* bump dependencies
+
+
+<a name="v0.4.7-rc2"></a>
+## [v0.4.7-rc2](https://github.com/xoctopus/confx/compare/v0.4.7-rc1...v0.4.7-rc2)
+
+> 2026-07-02
+
+### Feat
+
+* **confotel:** adaptor for otel
 
 
 <a name="v0.4.7-rc1"></a>
