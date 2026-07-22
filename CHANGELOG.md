@@ -1,12 +1,22 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.7-rc4...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.7...HEAD)
 
-> 2026-07-18
+> 0001-01-01
+
+
+<a name="v0.4.7"></a>
+## [v0.4.7](https://github.com/xoctopus/confx/compare/v0.4.7-rc4...v0.4.7)
+
+> 2026-07-23
 
 ### Chore
 
 * **deps:** bump lint actions
+
+### Feat
+
+* **confrabbit:** adaptor for rabbitmq
 
 
 <a name="v0.4.7-rc4"></a>
