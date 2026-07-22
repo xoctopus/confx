@@ -2,16 +2,37 @@
 package models
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/xoctopus/sqlx/example/enums"
 	"github.com/xoctopus/sqlx/pkg/builder"
 	"github.com/xoctopus/sqlx/pkg/builder/modeled"
+	"github.com/xoctopus/sqlx/pkg/errors"
+	"github.com/xoctopus/sqlx/pkg/frag"
+	"github.com/xoctopus/sqlx/pkg/helper"
+	"github.com/xoctopus/sqlx/pkg/session"
 	"github.com/xoctopus/sqlx/pkg/types"
 	"github.com/xoctopus/sqlx/pkg/types/sqltime"
+	"github.com/xoctopus/x/codex"
 )
 
 var TOrder *tOrder
+var TagsOrder = map[string]string{
+	"f_id":         "f_id",
+	"user_id":      "user_id",
+	"order_id":     "order_id",
+	"order_no":     "order_no",
+	"amount":       "amount",
+	"currency":     "currency",
+	"paid_at":      "paid_at",
+	"canceled_at":  "canceled_at",
+	"status":       "status",
+	"f_created_at": "f_created_at",
+	"createdAt":    "f_created_at",
+	"f_updated_at": "f_updated_at",
+	"updatedAt":    "f_updated_at",
+}
 
 func init() {
 	m := modeled.M[Order]()
@@ -51,29 +72,27 @@ type iOrder struct {
 // tOrder includes modeled table, indexes and column list.
 type tOrder struct {
 	modeled.Table[Order]
-	I       iOrder
-	session string
+	I      iOrder
+	schema string
 
-	ID modeled.TCol[Order, uint64]
-	// @rel User.UserID
-	UserID modeled.TCol[Order, UserID]
-	// @rel Order.OrderID
+	ID      modeled.TCol[Order, uint64]
+	UserID  modeled.TCol[Order, UserID]
 	OrderID modeled.TCol[Order, OrderID]
-	// OrderNo 订单编号
+	// 订单编号
 	OrderNo modeled.TCol[Order, string]
-	// Amount 订单金额
+	// 订单金额
 	Amount modeled.TCol[Order, types.Decimal]
-	// Currency 结算币种
+	// 结算币种
 	Currency modeled.TCol[Order, enums.Currency]
-	// PaidAt 订单支付时间
+	// 订单支付时间
 	PaidAt modeled.TCol[Order, sqltime.Timestamp]
-	// CanceledAt 订单取消时间
+	// 订单取消时间
 	CanceledAt modeled.TCol[Order, sqltime.Timestamp]
-	// Status 订单状态
+	// 订单状态
 	Status modeled.TCol[Order, enums.OrderStatus]
-	// CreatedAt 创建时间 秒时间戳
+	// 创建时间 秒时间戳
 	CreatedAt modeled.TCol[Order, sqltime.Timestamp]
-	// UpdatedAt 更新时间 秒时间戳
+	// 更新时间 秒时间戳
 	UpdatedAt modeled.TCol[Order, sqltime.Timestamp]
 }
 
@@ -82,32 +101,39 @@ func (t *tOrder) New() builder.Model {
 	return &Order{}
 }
 
+// TagFor returns column tag mapping by name
+func (t *tOrder) TagFor(name string) (string, bool) {
+	v, ok := TagsOrder[name]
+	return v, ok
+}
+
 // AssignmentFor returns assignment by m with expects columns
 func (t *tOrder) AssignmentFor(m *Order, expects ...builder.Col) builder.Assignment {
-	cols := t.Pick()
+	cs := t.Pick()
 	if len(expects) > 0 {
-		cols = builder.ColsOf(expects...)
+		cs = builder.ColsOf(expects...)
 	}
-	vals := make([]any, 0, cols.Len())
+	vals := make([]any, 0, cs.Len())
+	cols := make([]builder.Col, 0, cs.Len())
 	rv := reflect.ValueOf(m).Elem()
-	for c := range cols.Cols() {
+	for c := range cs.Cols() {
 		if !builder.GetColDef(c).AutoInc {
+			cols = append(cols, c)
 			vals = append(vals, rv.FieldByName(c.FieldName()).Interface())
 		}
 	}
-	return builder.ColumnsAndValues(cols, vals...)
+	return builder.ColumnsAndValues(builder.ColsOf(cols...), vals...)
 }
 
-// WithSession with session for tOrder
-func (t *tOrder) WithSession(s string) *tOrder {
-	t2 := *t
-	t2.session = s
-	return &t2
+// WithSchema with schema for tOrder
+func (t *tOrder) WithSchema(s string) builder.Table {
+	t.schema = s
+	return t
 }
 
-// Session returns session of tOrder
-func (t tOrder) Session() string {
-	return t.session
+// Schema returns schema of tOrder
+func (t tOrder) Schema() string {
+	return t.schema
 }
 
 // TableName returns database table name of Order
@@ -118,7 +144,7 @@ func (m Order) TableName() string {
 // TableDesc returns descriptions of Order
 func (m Order) TableDesc() []string {
 	return []string{
-		"Order 订单",
+		"订单",
 	}
 }
 
@@ -151,4 +177,241 @@ func (m Order) UniqueIndexes() map[string][]string {
 			"OrderID",
 		},
 	}
+}
+
+// ColumnRel presents soft foreign key of columns
+func (m Order) ColumnRel() map[string][]string {
+	return map[string][]string{
+		"UserID": {
+			"User.UserID",
+		},
+		"OrderID": {
+			"Order.OrderID",
+		},
+	}
+}
+
+// Create inserts Order to database
+func (m *Order) Create(ctx context.Context) error {
+	m.MarkCreatedAt()
+	cols, values := helper.CVsForInsertion(m)
+	_, err := session.MustFor(ctx, TOrder).Adaptor().Exec(
+		ctx,
+		builder.Insert().Into(
+			TOrder,
+			builder.Comment("Order.Create"),
+		).Values(cols, values...),
+	)
+	return err
+}
+
+// List fetch Order datalist with condition and additions
+func (m *Order) List(ctx context.Context, cond builder.SqlCondition, adds builder.Additions, expects ...builder.Col) ([]Order, error) {
+	cols := frag.Fragment(nil)
+	if len(expects) > 0 {
+		cols = builder.ColsOf(expects...)
+	}
+	conds := []frag.Fragment{cond}
+	adds = append(
+		adds,
+		builder.Where(builder.And(conds...)),
+		builder.Comment("Order.List"),
+	)
+	rows, err := session.MustFor(ctx, TOrder).Adaptor().Query(
+		ctx,
+		builder.Select(cols).From(TOrder, adds...),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	res := new([]Order)
+	if err = helper.Scan(ctx, rows, res); err != nil {
+		return nil, err
+	}
+	return *res, nil
+}
+
+// Count record count of Order match condition
+func (m *Order) Count(ctx context.Context, cond builder.SqlCondition) (int64, error) {
+	conds := []frag.Fragment{cond}
+	adds := builder.Additions{
+		builder.Where(builder.And(conds...)),
+		builder.Comment("Order.Count"),
+	}
+	rows, err := session.MustFor(ctx, TOrder).Adaptor().Query(
+		ctx,
+		builder.Select(builder.Count()).From(TOrder, adds...),
+	)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	count := int64(0)
+	if err = helper.Scan(ctx, rows, &count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// FetchByID fetch Order by Order.ID
+func (m *Order) FetchByID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TOrder.ID.AsCond(builder.Eq(m.ID)),
+	}
+	rows, err := session.MustFor(ctx, TOrder).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TOrder,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("Order.FetchByID"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// FetchByOrderID fetch Order by Order.OrderID
+func (m *Order) FetchByOrderID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TOrder.OrderID.AsCond(builder.Eq(m.OrderID)),
+	}
+	rows, err := session.MustFor(ctx, TOrder).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TOrder,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("Order.FetchByOrderID"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// UpdateByID update Order by Order.ID
+func (m *Order) UpdateByID(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TOrder.ID.AsCond(builder.Eq(m.ID)),
+	}
+	res, err := session.MustFor(ctx, TOrder).Adaptor().Exec(
+		ctx,
+		builder.Update(TOrder).
+			Set(TOrder.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Order.UpdateByID"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByID update Order by Order.ID and retrieve record
+func (m *Order) UpdateAndFetchByID(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TOrder).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByID(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByID(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// UpdateByOrderID update Order by Order.OrderID
+func (m *Order) UpdateByOrderID(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TOrder.OrderID.AsCond(builder.Eq(m.OrderID)),
+	}
+	res, err := session.MustFor(ctx, TOrder).Adaptor().Exec(
+		ctx,
+		builder.Update(TOrder).
+			Set(TOrder.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Order.UpdateByOrderID"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByOrderID update Order by Order.OrderID and retrieve record
+func (m *Order) UpdateAndFetchByOrderID(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TOrder).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByOrderID(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByOrderID(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// DeleteByID delete Order recode by Order.ID
+func (m *Order) DeleteByID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TOrder.ID.AsCond(builder.Eq(m.ID)),
+	}
+	_, err := session.MustFor(ctx, TOrder).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TOrder,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("Order.DeleteByID"),
+		),
+	)
+	return err
+}
+
+// DeleteByOrderID delete Order recode by Order.OrderID
+func (m *Order) DeleteByOrderID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TOrder.OrderID.AsCond(builder.Eq(m.OrderID)),
+	}
+	_, err := session.MustFor(ctx, TOrder).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TOrder,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("Order.DeleteByOrderID"),
+		),
+	)
+	return err
 }

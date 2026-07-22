@@ -2,15 +2,34 @@
 package models
 
 import (
+	"context"
 	"reflect"
 
 	"github.com/xoctopus/sqlx/example/enums"
 	"github.com/xoctopus/sqlx/pkg/builder"
 	"github.com/xoctopus/sqlx/pkg/builder/modeled"
+	"github.com/xoctopus/sqlx/pkg/errors"
+	"github.com/xoctopus/sqlx/pkg/frag"
+	"github.com/xoctopus/sqlx/pkg/helper"
+	"github.com/xoctopus/sqlx/pkg/session"
 	"github.com/xoctopus/sqlx/pkg/types/sqltime"
+	"github.com/xoctopus/x/codex"
 )
 
 var TShipment *tShipment
+var TagsShipment = map[string]string{
+	"f_id":         "f_id",
+	"order_id":     "order_id",
+	"carrier":      "carrier",
+	"tracking_no":  "tracking_no",
+	"status":       "status",
+	"shipped_at":   "shipped_at",
+	"delivered_at": "delivered_at",
+	"f_created_at": "f_created_at",
+	"createdAt":    "f_created_at",
+	"f_updated_at": "f_updated_at",
+	"updatedAt":    "f_updated_at",
+}
 
 func init() {
 	m := modeled.M[Shipment]()
@@ -52,25 +71,24 @@ type iShipment struct {
 // tShipment includes modeled table, indexes and column list.
 type tShipment struct {
 	modeled.Table[Shipment]
-	I       iShipment
-	session string
+	I      iShipment
+	schema string
 
-	ID modeled.TCol[Shipment, uint64]
-	// @rel Order.OrderID
+	ID      modeled.TCol[Shipment, uint64]
 	OrderID modeled.TCol[Shipment, OrderID]
-	// Carrier 物流运营商
+	// 物流运营商
 	Carrier modeled.TCol[Shipment, string]
-	// TrackingNo 物流单号
+	// 物流单号
 	TrackingNo modeled.TCol[Shipment, string]
-	// Status 物流状态
+	// 物流状态
 	Status modeled.TCol[Shipment, enums.ShipmentStatus]
-	// ShippedAt 开始运输时间
+	// 开始运输时间
 	ShippedAt modeled.TCol[Shipment, sqltime.Timestamp]
-	// DeliveredAt 抵达时间
+	// 抵达时间
 	DeliveredAt modeled.TCol[Shipment, sqltime.Timestamp]
-	// CreatedAt 创建时间 秒时间戳
+	// 创建时间 秒时间戳
 	CreatedAt modeled.TCol[Shipment, sqltime.Timestamp]
-	// UpdatedAt 更新时间 秒时间戳
+	// 更新时间 秒时间戳
 	UpdatedAt modeled.TCol[Shipment, sqltime.Timestamp]
 }
 
@@ -79,32 +97,39 @@ func (t *tShipment) New() builder.Model {
 	return &Shipment{}
 }
 
+// TagFor returns column tag mapping by name
+func (t *tShipment) TagFor(name string) (string, bool) {
+	v, ok := TagsShipment[name]
+	return v, ok
+}
+
 // AssignmentFor returns assignment by m with expects columns
 func (t *tShipment) AssignmentFor(m *Shipment, expects ...builder.Col) builder.Assignment {
-	cols := t.Pick()
+	cs := t.Pick()
 	if len(expects) > 0 {
-		cols = builder.ColsOf(expects...)
+		cs = builder.ColsOf(expects...)
 	}
-	vals := make([]any, 0, cols.Len())
+	vals := make([]any, 0, cs.Len())
+	cols := make([]builder.Col, 0, cs.Len())
 	rv := reflect.ValueOf(m).Elem()
-	for c := range cols.Cols() {
+	for c := range cs.Cols() {
 		if !builder.GetColDef(c).AutoInc {
+			cols = append(cols, c)
 			vals = append(vals, rv.FieldByName(c.FieldName()).Interface())
 		}
 	}
-	return builder.ColumnsAndValues(cols, vals...)
+	return builder.ColumnsAndValues(builder.ColsOf(cols...), vals...)
 }
 
-// WithSession with session for tShipment
-func (t *tShipment) WithSession(s string) *tShipment {
-	t2 := *t
-	t2.session = s
-	return &t2
+// WithSchema with schema for tShipment
+func (t *tShipment) WithSchema(s string) builder.Table {
+	t.schema = s
+	return t
 }
 
-// Session returns session of tShipment
-func (t tShipment) Session() string {
-	return t.session
+// Schema returns schema of tShipment
+func (t tShipment) Schema() string {
+	return t.schema
 }
 
 // TableName returns database table name of Shipment
@@ -115,7 +140,7 @@ func (m Shipment) TableName() string {
 // TableDesc returns descriptions of Shipment
 func (m Shipment) TableDesc() []string {
 	return []string{
-		"Shipment 物流",
+		"物流",
 	}
 }
 
@@ -154,4 +179,319 @@ func (m Shipment) UniqueIndexes() map[string][]string {
 			"TrackingNo",
 		},
 	}
+}
+
+// ColumnRel presents soft foreign key of columns
+func (m Shipment) ColumnRel() map[string][]string {
+	return map[string][]string{
+		"OrderID": {
+			"Order.OrderID",
+		},
+	}
+}
+
+// Create inserts Shipment to database
+func (m *Shipment) Create(ctx context.Context) error {
+	m.MarkCreatedAt()
+	cols, values := helper.CVsForInsertion(m)
+	_, err := session.MustFor(ctx, TShipment).Adaptor().Exec(
+		ctx,
+		builder.Insert().Into(
+			TShipment,
+			builder.Comment("Shipment.Create"),
+		).Values(cols, values...),
+	)
+	return err
+}
+
+// List fetch Shipment datalist with condition and additions
+func (m *Shipment) List(ctx context.Context, cond builder.SqlCondition, adds builder.Additions, expects ...builder.Col) ([]Shipment, error) {
+	cols := frag.Fragment(nil)
+	if len(expects) > 0 {
+		cols = builder.ColsOf(expects...)
+	}
+	conds := []frag.Fragment{cond}
+	adds = append(
+		adds,
+		builder.Where(builder.And(conds...)),
+		builder.Comment("Shipment.List"),
+	)
+	rows, err := session.MustFor(ctx, TShipment).Adaptor().Query(
+		ctx,
+		builder.Select(cols).From(TShipment, adds...),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	res := new([]Shipment)
+	if err = helper.Scan(ctx, rows, res); err != nil {
+		return nil, err
+	}
+	return *res, nil
+}
+
+// Count record count of Shipment match condition
+func (m *Shipment) Count(ctx context.Context, cond builder.SqlCondition) (int64, error) {
+	conds := []frag.Fragment{cond}
+	adds := builder.Additions{
+		builder.Where(builder.And(conds...)),
+		builder.Comment("Shipment.Count"),
+	}
+	rows, err := session.MustFor(ctx, TShipment).Adaptor().Query(
+		ctx,
+		builder.Select(builder.Count()).From(TShipment, adds...),
+	)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	count := int64(0)
+	if err = helper.Scan(ctx, rows, &count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// FetchByID fetch Shipment by Shipment.ID
+func (m *Shipment) FetchByID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TShipment.ID.AsCond(builder.Eq(m.ID)),
+	}
+	rows, err := session.MustFor(ctx, TShipment).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TShipment,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("Shipment.FetchByID"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// FetchByOrderID fetch Shipment by Shipment.OrderID
+func (m *Shipment) FetchByOrderID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TShipment.OrderID.AsCond(builder.Eq(m.OrderID)),
+	}
+	rows, err := session.MustFor(ctx, TShipment).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TShipment,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("Shipment.FetchByOrderID"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// FetchByTrackingNo fetch Shipment by Shipment.TrackingNo
+func (m *Shipment) FetchByTrackingNo(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TShipment.TrackingNo.AsCond(builder.Eq(m.TrackingNo)),
+	}
+	rows, err := session.MustFor(ctx, TShipment).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TShipment,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("Shipment.FetchByTrackingNo"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// UpdateByID update Shipment by Shipment.ID
+func (m *Shipment) UpdateByID(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TShipment.ID.AsCond(builder.Eq(m.ID)),
+	}
+	res, err := session.MustFor(ctx, TShipment).Adaptor().Exec(
+		ctx,
+		builder.Update(TShipment).
+			Set(TShipment.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Shipment.UpdateByID"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByID update Shipment by Shipment.ID and retrieve record
+func (m *Shipment) UpdateAndFetchByID(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TShipment).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByID(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByID(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// UpdateByOrderID update Shipment by Shipment.OrderID
+func (m *Shipment) UpdateByOrderID(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TShipment.OrderID.AsCond(builder.Eq(m.OrderID)),
+	}
+	res, err := session.MustFor(ctx, TShipment).Adaptor().Exec(
+		ctx,
+		builder.Update(TShipment).
+			Set(TShipment.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Shipment.UpdateByOrderID"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByOrderID update Shipment by Shipment.OrderID and retrieve record
+func (m *Shipment) UpdateAndFetchByOrderID(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TShipment).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByOrderID(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByOrderID(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// UpdateByTrackingNo update Shipment by Shipment.TrackingNo
+func (m *Shipment) UpdateByTrackingNo(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TShipment.TrackingNo.AsCond(builder.Eq(m.TrackingNo)),
+	}
+	res, err := session.MustFor(ctx, TShipment).Adaptor().Exec(
+		ctx,
+		builder.Update(TShipment).
+			Set(TShipment.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Shipment.UpdateByTrackingNo"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByTrackingNo update Shipment by Shipment.TrackingNo and retrieve record
+func (m *Shipment) UpdateAndFetchByTrackingNo(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TShipment).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByTrackingNo(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByTrackingNo(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// DeleteByID delete Shipment recode by Shipment.ID
+func (m *Shipment) DeleteByID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TShipment.ID.AsCond(builder.Eq(m.ID)),
+	}
+	_, err := session.MustFor(ctx, TShipment).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TShipment,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("Shipment.DeleteByID"),
+		),
+	)
+	return err
+}
+
+// DeleteByOrderID delete Shipment recode by Shipment.OrderID
+func (m *Shipment) DeleteByOrderID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TShipment.OrderID.AsCond(builder.Eq(m.OrderID)),
+	}
+	_, err := session.MustFor(ctx, TShipment).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TShipment,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("Shipment.DeleteByOrderID"),
+		),
+	)
+	return err
+}
+
+// DeleteByTrackingNo delete Shipment recode by Shipment.TrackingNo
+func (m *Shipment) DeleteByTrackingNo(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TShipment.TrackingNo.AsCond(builder.Eq(m.TrackingNo)),
+	}
+	_, err := session.MustFor(ctx, TShipment).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TShipment,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("Shipment.DeleteByTrackingNo"),
+		),
+	)
+	return err
 }

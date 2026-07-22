@@ -1,14 +1,14 @@
 module github.com/xoctopus/confx
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/xoctopus/httpx v0.0.1
 	github.com/xoctopus/logx v0.3.5
 	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
-	github.com/xoctopus/sqlx v0.3.1-rc6
-	github.com/xoctopus/x v0.4.9
+	github.com/xoctopus/sqlx v0.3.4
+	github.com/xoctopus/x v0.5.4
 )
 
 // message queue
@@ -16,14 +16,14 @@ require (
 	github.com/apache/pulsar-client-go v0.20.0
 	github.com/rabbitmq/amqp091-go v1.12.0
 	github.com/segmentio/kafka-go v0.4.51
-	github.com/wagslane/go-rabbitmq v0.15.0
+	github.com/wagslane/go-rabbitmq v0.16.1
 )
 
 // ralational database storage
 require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/jackc/pgx/v5 v5.10.0
-	modernc.org/sqlite v1.53.0
+	modernc.org/sqlite v1.54.0
 )
 
 // key-value storage
@@ -57,7 +57,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	golang.org/x/exp v0.0.0-20260611194520-c48552f49976
-	golang.org/x/sync v0.21.0
+	golang.org/x/sync v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -113,7 +113,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xoctopus/typx v0.4.3 // indirect
+	github.com/xoctopus/typx v0.4.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
@@ -121,12 +121,12 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.28.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
-	golang.org/x/mod v0.37.0 // indirect
-	golang.org/x/net v0.56.0 // indirect
+	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
-	golang.org/x/sys v0.46.0 // indirect
-	golang.org/x/text v0.38.0 // indirect
-	golang.org/x/tools v0.46.0 // indirect
+	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
+	golang.org/x/tools v0.48.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260630182238-925bb5da69e7 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260630182238-925bb5da69e7 // indirect
 	google.golang.org/grpc v1.82.0 // indirect
@@ -137,7 +137,7 @@ require (
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260317180543-43fb72c5454a // indirect
 	k8s.io/utils v0.0.0-20260210185600-b8788abfbbc2 // indirect
-	modernc.org/libc v1.73.5 // indirect
+	modernc.org/libc v1.74.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect

@@ -147,6 +147,18 @@ services:
       - ./scripts/doris.sh:/doris.sh
     entrypoint: [ "/bin/bash", "/doris.sh" ]
 
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: rabbitmq_confx
+    platform: linux/amd64
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "15672:15672" # Web UI
+      - "5672:5672"   # AMQP protocol
+
 networks:
   doris_net:
     driver: bridge

@@ -2,16 +2,39 @@
 package models
 
 import (
+	"context"
+	"database/sql/driver"
 	"reflect"
 
 	"github.com/xoctopus/sqlx/example/enums"
 	"github.com/xoctopus/sqlx/pkg/builder"
 	"github.com/xoctopus/sqlx/pkg/builder/modeled"
+	"github.com/xoctopus/sqlx/pkg/errors"
+	"github.com/xoctopus/sqlx/pkg/frag"
+	"github.com/xoctopus/sqlx/pkg/helper"
+	"github.com/xoctopus/sqlx/pkg/session"
 	"github.com/xoctopus/sqlx/pkg/types"
 	"github.com/xoctopus/sqlx/pkg/types/sqltime"
+	"github.com/xoctopus/x/codex"
 )
 
 var TProduct *tProduct
+var TagsProduct = map[string]string{
+	"f_id":         "f_id",
+	"product_id":   "product_id",
+	"sku":          "sku",
+	"name":         "name",
+	"description":  "description",
+	"price":        "price",
+	"currency":     "currency",
+	"status":       "status",
+	"f_created_at": "f_created_at",
+	"createdAt":    "f_created_at",
+	"f_updated_at": "f_updated_at",
+	"updatedAt":    "f_updated_at",
+	"f_deleted_at": "f_deleted_at",
+	"deletedAt":    "f_deleted_at",
+}
 
 func init() {
 	m := modeled.M[Product]()
@@ -51,29 +74,28 @@ type iProduct struct {
 // tProduct includes modeled table, indexes and column list.
 type tProduct struct {
 	modeled.Table[Product]
-	I       iProduct
-	session string
+	I      iProduct
+	schema string
 
-	ID modeled.TCol[Product, uint64]
-	// @rel Product.ProductID
+	ID        modeled.TCol[Product, uint64]
 	ProductID modeled.TCol[Product, ProductID]
-	// SKU 库存标签
+	// 库存标签
 	SKU modeled.TCol[Product, string]
-	// Name 产品名称
+	// 产品名称
 	Name modeled.TCol[Product, string]
-	// Description 产品描述
+	// 产品描述
 	Description modeled.TCol[Product, string]
-	// Price 单价
+	// 单价
 	Price modeled.TCol[Product, types.Decimal]
-	// Currency 货币
+	// 货币
 	Currency modeled.TCol[Product, enums.Currency]
-	// Status 产品销售状态
+	// 产品销售状态
 	Status modeled.TCol[Product, enums.ProductStatus]
-	// CreatedAt 创建时间 秒时间戳
+	// 创建时间 秒时间戳
 	CreatedAt modeled.TCol[Product, sqltime.Timestamp]
-	// UpdatedAt 更新时间 秒时间戳
+	// 更新时间 秒时间戳
 	UpdatedAt modeled.TCol[Product, sqltime.Timestamp]
-	// DeletedAt 删除时间 秒时间戳
+	// 删除时间 秒时间戳
 	DeletedAt modeled.TCol[Product, sqltime.Timestamp]
 }
 
@@ -82,32 +104,39 @@ func (t *tProduct) New() builder.Model {
 	return &Product{}
 }
 
+// TagFor returns column tag mapping by name
+func (t *tProduct) TagFor(name string) (string, bool) {
+	v, ok := TagsProduct[name]
+	return v, ok
+}
+
 // AssignmentFor returns assignment by m with expects columns
 func (t *tProduct) AssignmentFor(m *Product, expects ...builder.Col) builder.Assignment {
-	cols := t.Pick()
+	cs := t.Pick()
 	if len(expects) > 0 {
-		cols = builder.ColsOf(expects...)
+		cs = builder.ColsOf(expects...)
 	}
-	vals := make([]any, 0, cols.Len())
+	vals := make([]any, 0, cs.Len())
+	cols := make([]builder.Col, 0, cs.Len())
 	rv := reflect.ValueOf(m).Elem()
-	for c := range cols.Cols() {
+	for c := range cs.Cols() {
 		if !builder.GetColDef(c).AutoInc {
+			cols = append(cols, c)
 			vals = append(vals, rv.FieldByName(c.FieldName()).Interface())
 		}
 	}
-	return builder.ColumnsAndValues(cols, vals...)
+	return builder.ColumnsAndValues(builder.ColsOf(cols...), vals...)
 }
 
-// WithSession with session for tProduct
-func (t *tProduct) WithSession(s string) *tProduct {
-	t2 := *t
-	t2.session = s
-	return &t2
+// WithSchema with schema for tProduct
+func (t *tProduct) WithSchema(s string) builder.Table {
+	t.schema = s
+	return t
 }
 
-// Session returns session of tProduct
-func (t tProduct) Session() string {
-	return t.session
+// Schema returns schema of tProduct
+func (t tProduct) Schema() string {
+	return t.schema
 }
 
 // TableName returns database table name of Product
@@ -118,7 +147,7 @@ func (m Product) TableName() string {
 // TableDesc returns descriptions of Product
 func (m Product) TableDesc() []string {
 	return []string{
-		"Product 商品",
+		"商品",
 	}
 }
 
@@ -151,4 +180,306 @@ func (m Product) UniqueIndexes() map[string][]string {
 			"ProductID",
 		},
 	}
+}
+
+// ColumnRel presents soft foreign key of columns
+func (m Product) ColumnRel() map[string][]string {
+	return map[string][]string{
+		"ProductID": {
+			"Product.ProductID",
+		},
+	}
+}
+
+// Create inserts Product to database
+func (m *Product) Create(ctx context.Context) error {
+	m.MarkCreatedAt()
+	cols, values := helper.CVsForInsertion(m)
+	_, err := session.MustFor(ctx, TProduct).Adaptor().Exec(
+		ctx,
+		builder.Insert().Into(
+			TProduct,
+			builder.Comment("Product.Create"),
+		).Values(cols, values...),
+	)
+	return err
+}
+
+// List fetch Product datalist with condition and additions
+func (m *Product) List(ctx context.Context, cond builder.SqlCondition, adds builder.Additions, expects ...builder.Col) ([]Product, error) {
+	cols := frag.Fragment(nil)
+	if len(expects) > 0 {
+		cols = builder.ColsOf(expects...)
+	}
+	conds := []frag.Fragment{cond}
+	deletion, _, v := m.SoftDeletion()
+	conds = append(
+		conds,
+		builder.CC[driver.Value](TProduct.C(deletion)).AsCond(builder.Eq(v)),
+	)
+	adds = append(
+		adds,
+		builder.Where(builder.And(conds...)),
+		builder.Comment("Product.List"),
+	)
+	rows, err := session.MustFor(ctx, TProduct).Adaptor().Query(
+		ctx,
+		builder.Select(cols).From(TProduct, adds...),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	res := new([]Product)
+	if err = helper.Scan(ctx, rows, res); err != nil {
+		return nil, err
+	}
+	return *res, nil
+}
+
+// Count record count of Product match condition
+func (m *Product) Count(ctx context.Context, cond builder.SqlCondition) (int64, error) {
+	conds := []frag.Fragment{cond}
+	deletion, _, v := m.SoftDeletion()
+	conds = append(
+		conds,
+		builder.CC[driver.Value](TProduct.C(deletion)).AsCond(builder.Eq(v)),
+	)
+	adds := builder.Additions{
+		builder.Where(builder.And(conds...)),
+		builder.Comment("Product.Count"),
+	}
+	rows, err := session.MustFor(ctx, TProduct).Adaptor().Query(
+		ctx,
+		builder.Select(builder.Count()).From(TProduct, adds...),
+	)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	count := int64(0)
+	if err = helper.Scan(ctx, rows, &count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// FetchByID fetch Product by Product.ID
+func (m *Product) FetchByID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TProduct.ID.AsCond(builder.Eq(m.ID)),
+	}
+	deletion, _, v := m.SoftDeletion()
+	conds = append(
+		conds,
+		builder.CC[driver.Value](TProduct.C(deletion)).AsCond(builder.Eq(v)),
+	)
+	rows, err := session.MustFor(ctx, TProduct).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TProduct,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("Product.FetchByID"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// FetchByProductID fetch Product by Product.ProductID
+func (m *Product) FetchByProductID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TProduct.ProductID.AsCond(builder.Eq(m.ProductID)),
+	}
+	deletion, _, v := m.SoftDeletion()
+	conds = append(
+		conds,
+		builder.CC[driver.Value](TProduct.C(deletion)).AsCond(builder.Eq(v)),
+	)
+	rows, err := session.MustFor(ctx, TProduct).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TProduct,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("Product.FetchByProductID"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// UpdateByID update Product by Product.ID
+func (m *Product) UpdateByID(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TProduct.ID.AsCond(builder.Eq(m.ID)),
+	}
+	res, err := session.MustFor(ctx, TProduct).Adaptor().Exec(
+		ctx,
+		builder.Update(TProduct).
+			Set(TProduct.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Product.UpdateByID"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByID update Product by Product.ID and retrieve record
+func (m *Product) UpdateAndFetchByID(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TProduct).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByID(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByID(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// UpdateByProductID update Product by Product.ProductID
+func (m *Product) UpdateByProductID(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TProduct.ProductID.AsCond(builder.Eq(m.ProductID)),
+	}
+	res, err := session.MustFor(ctx, TProduct).Adaptor().Exec(
+		ctx,
+		builder.Update(TProduct).
+			Set(TProduct.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Product.UpdateByProductID"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByProductID update Product by Product.ProductID and retrieve record
+func (m *Product) UpdateAndFetchByProductID(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TProduct).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByProductID(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByProductID(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// DeleteByID delete Product recode by Product.ID
+func (m *Product) DeleteByID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TProduct.ID.AsCond(builder.Eq(m.ID)),
+	}
+	_, err := session.MustFor(ctx, TProduct).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TProduct,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("Product.DeleteByID"),
+		),
+	)
+	return err
+}
+
+// DeleteByProductID delete Product recode by Product.ProductID
+func (m *Product) DeleteByProductID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TProduct.ProductID.AsCond(builder.Eq(m.ProductID)),
+	}
+	_, err := session.MustFor(ctx, TProduct).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TProduct,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("Product.DeleteByProductID"),
+		),
+	)
+	return err
+}
+
+// MarkDeletionByID marks Product as deleted
+func (m *Product) MarkDeletionByID(ctx context.Context) error {
+	m.MarkDeletedAt()
+	deletion, modifications, v := m.SoftDeletion()
+	cols := []builder.Col{TProduct.C(deletion)}
+	for _, f := range modifications {
+		cols = append(cols, TProduct.C(f))
+	}
+	conds := []frag.Fragment{
+		TProduct.ID.AsCond(builder.Eq(m.ID)),
+		builder.CC[driver.Value](TProduct.C(deletion)).AsCond(builder.Neq(v)),
+	}
+	_, err := session.MustFor(ctx, TProduct).Adaptor().Exec(
+		ctx,
+		builder.Update(TProduct).
+			Set(TProduct.AssignmentFor(m, cols...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Product.MarkDeletionByID"),
+			),
+	)
+	return err
+}
+
+// MarkDeletionByProductID marks Product as deleted
+func (m *Product) MarkDeletionByProductID(ctx context.Context) error {
+	m.MarkDeletedAt()
+	deletion, modifications, v := m.SoftDeletion()
+	cols := []builder.Col{TProduct.C(deletion)}
+	for _, f := range modifications {
+		cols = append(cols, TProduct.C(f))
+	}
+	conds := []frag.Fragment{
+		TProduct.ProductID.AsCond(builder.Eq(m.ProductID)),
+		builder.CC[driver.Value](TProduct.C(deletion)).AsCond(builder.Neq(v)),
+	}
+	_, err := session.MustFor(ctx, TProduct).Adaptor().Exec(
+		ctx,
+		builder.Update(TProduct).
+			Set(TProduct.AssignmentFor(m, cols...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("Product.MarkDeletionByProductID"),
+			),
+	)
+	return err
 }

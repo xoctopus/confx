@@ -8,10 +8,6 @@ import (
 func (v *Order) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "AutoIncID":
-			return []string{}, true
-		case "CreationModificationTime":
-			return []string{}, true
 		}
 		if doc, ok := docx.Of(&v.AutoIncID, "", names...); ok {
 			return doc, true
@@ -34,7 +30,7 @@ func (v *Order) DocOf(names ...string) ([]string, bool) {
 		}
 		return []string{}, false
 	}
-	return []string{"订单", "@attr TableName=t_order", "@attr Register=Catalog", "@def pk ID", "@def u_idx ui_order_id  OrderID", "@def idx   i_status     Status", "@def idx   i_created_at CreatedAt", "@def idx   i_updated_at UpdatedAt"}, true
+	return []string{"订单"}, true
 }
 
 func (v *OrderID) DocOf(names ...string) ([]string, bool) {
@@ -48,7 +44,7 @@ func (v *RelOrder) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "OrderID":
-			return []string{"@rel Order.OrderID"}, true
+			return []string{}, true
 		}
 		return []string{}, false
 	}
@@ -79,10 +75,6 @@ func (v *OrderData) DocOf(names ...string) ([]string, bool) {
 func (v *OrderSnapshot) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "AutoIncID":
-			return []string{}, true
-		case "CreationTime":
-			return []string{}, true
 		}
 		if doc, ok := docx.Of(&v.AutoIncID, "", names...); ok {
 			return doc, true
@@ -105,7 +97,7 @@ func (v *OrderSnapshot) DocOf(names ...string) ([]string, bool) {
 		}
 		return []string{}, false
 	}
-	return []string{"订单快照", "@attr TableName=t_order_snapshot", "@attr Register=Catalog", "@def pk ID", "@def u_idx ui_order_id    OrderID", "@def idx   i_product_name ProductName", "@def idx   i_created_at   CreatedAt"}, true
+	return []string{"订单快照"}, true
 }
 
 func (v *OrderSnapshotData) DocOf(names ...string) ([]string, bool) {
@@ -130,10 +122,6 @@ func (v *OrderSnapshotData) DocOf(names ...string) ([]string, bool) {
 func (v *Product) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "AutoIncID":
-			return []string{}, true
-		case "CreationModificationDeletionTime":
-			return []string{}, true
 		}
 		if doc, ok := docx.Of(&v.AutoIncID, "", names...); ok {
 			return doc, true
@@ -152,7 +140,7 @@ func (v *Product) DocOf(names ...string) ([]string, bool) {
 		}
 		return []string{}, false
 	}
-	return []string{"商品", "@attr TableName=t_product", "@attr Register=Catalog", "@def pk ID", "@def u_idx ui_product_id  ProductID,DeletedAt", "@def idx   i_product_name Name", "@def idx   i_status       Status", "@def idx   i_updated_at   UpdatedAt"}, true
+	return []string{"商品"}, true
 }
 
 func (v *ProductID) DocOf(names ...string) ([]string, bool) {
@@ -166,7 +154,7 @@ func (v *RelProduct) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "ProductID":
-			return []string{"@rel Product.ProductID"}, true
+			return []string{}, true
 		}
 		return []string{}, false
 	}
@@ -197,10 +185,6 @@ func (v *ProductData) DocOf(names ...string) ([]string, bool) {
 func (v *Shipment) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "AutoIncID":
-			return []string{}, true
-		case "CreationModificationTime":
-			return []string{}, true
 		}
 		if doc, ok := docx.Of(&v.AutoIncID, "", names...); ok {
 			return doc, true
@@ -219,7 +203,7 @@ func (v *Shipment) DocOf(names ...string) ([]string, bool) {
 		}
 		return []string{}, false
 	}
-	return []string{"物流", "@attr TableName=t_shipment", "@attr Register=Catalog", "@def pk ID", "@def u_idx ui_order_id    OrderID", "@def u_idx ui_tracking_no TrackingNo", "@def idx   i_carrier      Carrier", "@def idx   i_status       Status", "@def idx   i_shipped_at   ShippedAt", "@def idx   i_delivered_at DeliveredAt"}, true
+	return []string{"物流"}, true
 }
 
 func (v *ShipmentData) DocOf(names ...string) ([]string, bool) {
@@ -244,10 +228,6 @@ func (v *ShipmentData) DocOf(names ...string) ([]string, bool) {
 func (v *User) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
-		case "AutoIncID":
-			return []string{}, true
-		case "OperationDatetime":
-			return []string{}, true
 		}
 		if doc, ok := docx.Of(&v.AutoIncID, "", names...); ok {
 			return doc, true
@@ -266,7 +246,7 @@ func (v *User) DocOf(names ...string) ([]string, bool) {
 		}
 		return []string{}, false
 	}
-	return []string{"用户", "@attr TableName=t_user", "@attr Register=Catalog", "@def pk ID", "@def u_idx ui_user_id   UserID", "@def idx   ui_username  Username", "@def idx   i_status     Status", "@def idx   i_created_at CreatedAt"}, true
+	return []string{"用户"}, true
 }
 
 func (v *UserID) DocOf(names ...string) ([]string, bool) {
@@ -280,7 +260,7 @@ func (v *RelUser) DocOf(names ...string) ([]string, bool) {
 	if len(names) > 0 {
 		switch names[0] {
 		case "UserID":
-			return []string{"@rel User.UserID"}, true
+			return []string{}, true
 		}
 		return []string{}, false
 	}

@@ -2,15 +2,36 @@
 package models
 
 import (
+	"context"
+	"database/sql/driver"
 	"reflect"
 
 	"github.com/xoctopus/sqlx/example/enums"
 	"github.com/xoctopus/sqlx/pkg/builder"
 	"github.com/xoctopus/sqlx/pkg/builder/modeled"
+	"github.com/xoctopus/sqlx/pkg/errors"
+	"github.com/xoctopus/sqlx/pkg/frag"
+	"github.com/xoctopus/sqlx/pkg/helper"
+	"github.com/xoctopus/sqlx/pkg/session"
 	"github.com/xoctopus/sqlx/pkg/types/sqltime"
+	"github.com/xoctopus/x/codex"
 )
 
 var TUser *tUser
+var TagsUser = map[string]string{
+	"f_id":         "f_id",
+	"user_id":      "user_id",
+	"username":     "username",
+	"email":        "email",
+	"phone":        "phone",
+	"status":       "status",
+	"f_created_at": "f_created_at",
+	"createdAt":    "f_created_at",
+	"f_updated_at": "f_updated_at",
+	"updatedAt":    "f_updated_at",
+	"f_deleted_at": "f_deleted_at",
+	"deletedAt":    "f_deleted_at",
+}
 
 func init() {
 	m := modeled.M[User]()
@@ -48,25 +69,24 @@ type iUser struct {
 // tUser includes modeled table, indexes and column list.
 type tUser struct {
 	modeled.Table[User]
-	I       iUser
-	session string
+	I      iUser
+	schema string
 
-	ID modeled.TCol[User, uint64]
-	// @rel User.UserID
+	ID     modeled.TCol[User, uint64]
 	UserID modeled.TCol[User, UserID]
-	// Username 用户名
+	// 用户名
 	Username modeled.TCol[User, string]
-	// Email 邮箱
+	// 邮箱
 	Email modeled.TCol[User, string]
-	// Phone 电话
+	// 电话
 	Phone modeled.TCol[User, string]
-	// Status 用户状态
+	// 用户状态
 	Status modeled.TCol[User, enums.UserStatus]
-	// CreatedAt 创建日期时间(秒)
+	// 创建日期时间(秒)
 	CreatedAt modeled.TCol[User, sqltime.Datetime]
-	// UpdatedAt 更新日期时间(秒)
+	// 更新日期时间(秒)
 	UpdatedAt modeled.TCol[User, sqltime.Datetime]
-	// DeletedAt 删除日期时间(秒)
+	// 删除日期时间(秒)
 	DeletedAt modeled.TCol[User, sqltime.Datetime]
 }
 
@@ -75,32 +95,39 @@ func (t *tUser) New() builder.Model {
 	return &User{}
 }
 
+// TagFor returns column tag mapping by name
+func (t *tUser) TagFor(name string) (string, bool) {
+	v, ok := TagsUser[name]
+	return v, ok
+}
+
 // AssignmentFor returns assignment by m with expects columns
 func (t *tUser) AssignmentFor(m *User, expects ...builder.Col) builder.Assignment {
-	cols := t.Pick()
+	cs := t.Pick()
 	if len(expects) > 0 {
-		cols = builder.ColsOf(expects...)
+		cs = builder.ColsOf(expects...)
 	}
-	vals := make([]any, 0, cols.Len())
+	vals := make([]any, 0, cs.Len())
+	cols := make([]builder.Col, 0, cs.Len())
 	rv := reflect.ValueOf(m).Elem()
-	for c := range cols.Cols() {
+	for c := range cs.Cols() {
 		if !builder.GetColDef(c).AutoInc {
+			cols = append(cols, c)
 			vals = append(vals, rv.FieldByName(c.FieldName()).Interface())
 		}
 	}
-	return builder.ColumnsAndValues(cols, vals...)
+	return builder.ColumnsAndValues(builder.ColsOf(cols...), vals...)
 }
 
-// WithSession with session for tUser
-func (t *tUser) WithSession(s string) *tUser {
-	t2 := *t
-	t2.session = s
-	return &t2
+// WithSchema with schema for tUser
+func (t *tUser) WithSchema(s string) builder.Table {
+	t.schema = s
+	return t
 }
 
-// Session returns session of tUser
-func (t tUser) Session() string {
-	return t.session
+// Schema returns schema of tUser
+func (t tUser) Schema() string {
+	return t.schema
 }
 
 // TableName returns database table name of User
@@ -111,7 +138,7 @@ func (m User) TableName() string {
 // TableDesc returns descriptions of User
 func (m User) TableDesc() []string {
 	return []string{
-		"User 用户",
+		"用户",
 	}
 }
 
@@ -144,4 +171,306 @@ func (m User) UniqueIndexes() map[string][]string {
 			"UserID",
 		},
 	}
+}
+
+// ColumnRel presents soft foreign key of columns
+func (m User) ColumnRel() map[string][]string {
+	return map[string][]string{
+		"UserID": {
+			"User.UserID",
+		},
+	}
+}
+
+// Create inserts User to database
+func (m *User) Create(ctx context.Context) error {
+	m.MarkCreatedAt()
+	cols, values := helper.CVsForInsertion(m)
+	_, err := session.MustFor(ctx, TUser).Adaptor().Exec(
+		ctx,
+		builder.Insert().Into(
+			TUser,
+			builder.Comment("User.Create"),
+		).Values(cols, values...),
+	)
+	return err
+}
+
+// List fetch User datalist with condition and additions
+func (m *User) List(ctx context.Context, cond builder.SqlCondition, adds builder.Additions, expects ...builder.Col) ([]User, error) {
+	cols := frag.Fragment(nil)
+	if len(expects) > 0 {
+		cols = builder.ColsOf(expects...)
+	}
+	conds := []frag.Fragment{cond}
+	deletion, _, v := m.SoftDeletion()
+	conds = append(
+		conds,
+		builder.CC[driver.Value](TUser.C(deletion)).AsCond(builder.Eq(v)),
+	)
+	adds = append(
+		adds,
+		builder.Where(builder.And(conds...)),
+		builder.Comment("User.List"),
+	)
+	rows, err := session.MustFor(ctx, TUser).Adaptor().Query(
+		ctx,
+		builder.Select(cols).From(TUser, adds...),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	res := new([]User)
+	if err = helper.Scan(ctx, rows, res); err != nil {
+		return nil, err
+	}
+	return *res, nil
+}
+
+// Count record count of User match condition
+func (m *User) Count(ctx context.Context, cond builder.SqlCondition) (int64, error) {
+	conds := []frag.Fragment{cond}
+	deletion, _, v := m.SoftDeletion()
+	conds = append(
+		conds,
+		builder.CC[driver.Value](TUser.C(deletion)).AsCond(builder.Eq(v)),
+	)
+	adds := builder.Additions{
+		builder.Where(builder.And(conds...)),
+		builder.Comment("User.Count"),
+	}
+	rows, err := session.MustFor(ctx, TUser).Adaptor().Query(
+		ctx,
+		builder.Select(builder.Count()).From(TUser, adds...),
+	)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	count := int64(0)
+	if err = helper.Scan(ctx, rows, &count); err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// FetchByID fetch User by User.ID
+func (m *User) FetchByID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TUser.ID.AsCond(builder.Eq(m.ID)),
+	}
+	deletion, _, v := m.SoftDeletion()
+	conds = append(
+		conds,
+		builder.CC[driver.Value](TUser.C(deletion)).AsCond(builder.Eq(v)),
+	)
+	rows, err := session.MustFor(ctx, TUser).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TUser,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("User.FetchByID"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// FetchByUserID fetch User by User.UserID
+func (m *User) FetchByUserID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TUser.UserID.AsCond(builder.Eq(m.UserID)),
+	}
+	deletion, _, v := m.SoftDeletion()
+	conds = append(
+		conds,
+		builder.CC[driver.Value](TUser.C(deletion)).AsCond(builder.Eq(v)),
+	)
+	rows, err := session.MustFor(ctx, TUser).Adaptor().Query(
+		ctx,
+		builder.Select(nil).From(
+			TUser,
+			builder.Where(builder.And(conds...)),
+			builder.Limit(1),
+			builder.Comment("User.FetchByUserID"),
+		),
+	)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	return helper.Scan(ctx, rows, m)
+}
+
+// UpdateByID update User by User.ID
+func (m *User) UpdateByID(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TUser.ID.AsCond(builder.Eq(m.ID)),
+	}
+	res, err := session.MustFor(ctx, TUser).Adaptor().Exec(
+		ctx,
+		builder.Update(TUser).
+			Set(TUser.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("User.UpdateByID"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByID update User by User.ID and retrieve record
+func (m *User) UpdateAndFetchByID(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TUser).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByID(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByID(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// UpdateByUserID update User by User.UserID
+func (m *User) UpdateByUserID(ctx context.Context, expects ...builder.Col) error {
+	m.MarkModifiedAt()
+	conds := []frag.Fragment{
+		TUser.UserID.AsCond(builder.Eq(m.UserID)),
+	}
+	res, err := session.MustFor(ctx, TUser).Adaptor().Exec(
+		ctx,
+		builder.Update(TUser).
+			Set(TUser.AssignmentFor(m, expects...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("User.UpdateByUserID"),
+			),
+	)
+	if err != nil {
+		return err
+	}
+	effected, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if effected == 0 {
+		return codex.New(errors.NOTFOUND)
+	}
+	return nil
+}
+
+// UpdateAndFetchByUserID update User by User.UserID and retrieve record
+func (m *User) UpdateAndFetchByUserID(ctx context.Context, targets ...builder.Col) error {
+	return session.MustFor(ctx, TUser).Adaptor().Tx(
+		ctx,
+		func(ctx context.Context) error {
+			if err := m.UpdateByUserID(ctx, targets...); err != nil {
+				return err
+			}
+			if err := m.FetchByUserID(ctx); err != nil {
+				return err
+			}
+			return nil
+		},
+	)
+}
+
+// DeleteByID delete User recode by User.ID
+func (m *User) DeleteByID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TUser.ID.AsCond(builder.Eq(m.ID)),
+	}
+	_, err := session.MustFor(ctx, TUser).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TUser,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("User.DeleteByID"),
+		),
+	)
+	return err
+}
+
+// DeleteByUserID delete User recode by User.UserID
+func (m *User) DeleteByUserID(ctx context.Context) error {
+	conds := []frag.Fragment{
+		TUser.UserID.AsCond(builder.Eq(m.UserID)),
+	}
+	_, err := session.MustFor(ctx, TUser).Adaptor().Exec(
+		ctx,
+		builder.Delete().From(
+			TUser,
+			builder.Where(builder.And(conds...)),
+			builder.Comment("User.DeleteByUserID"),
+		),
+	)
+	return err
+}
+
+// MarkDeletionByID marks User as deleted
+func (m *User) MarkDeletionByID(ctx context.Context) error {
+	m.MarkDeletedAt()
+	deletion, modifications, v := m.SoftDeletion()
+	cols := []builder.Col{TUser.C(deletion)}
+	for _, f := range modifications {
+		cols = append(cols, TUser.C(f))
+	}
+	conds := []frag.Fragment{
+		TUser.ID.AsCond(builder.Eq(m.ID)),
+		builder.CC[driver.Value](TUser.C(deletion)).AsCond(builder.Neq(v)),
+	}
+	_, err := session.MustFor(ctx, TUser).Adaptor().Exec(
+		ctx,
+		builder.Update(TUser).
+			Set(TUser.AssignmentFor(m, cols...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("User.MarkDeletionByID"),
+			),
+	)
+	return err
+}
+
+// MarkDeletionByUserID marks User as deleted
+func (m *User) MarkDeletionByUserID(ctx context.Context) error {
+	m.MarkDeletedAt()
+	deletion, modifications, v := m.SoftDeletion()
+	cols := []builder.Col{TUser.C(deletion)}
+	for _, f := range modifications {
+		cols = append(cols, TUser.C(f))
+	}
+	conds := []frag.Fragment{
+		TUser.UserID.AsCond(builder.Eq(m.UserID)),
+		builder.CC[driver.Value](TUser.C(deletion)).AsCond(builder.Neq(v)),
+	}
+	_, err := session.MustFor(ctx, TUser).Adaptor().Exec(
+		ctx,
+		builder.Update(TUser).
+			Set(TUser.AssignmentFor(m, cols...)).
+			Where(
+				builder.And(conds...),
+				builder.Comment("User.MarkDeletionByUserID"),
+			),
+	)
+	return err
 }

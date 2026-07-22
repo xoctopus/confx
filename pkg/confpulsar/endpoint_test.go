@@ -62,7 +62,7 @@ func TestEndpoint(t *testing.T) {
 		t.When("InitWithTLS", func(t bdd.T) {
 			ep.SetDefault()
 			err := ep.Init(hack.Context(t))
-			t.Then("FailedToInitCausedByTimeout", bdd.ErrorContains("", err))
+			t.Then("FailedToInitCausedByTimeout", bdd.ErrorContains(err, ""))
 		})
 	})
 
@@ -72,7 +72,7 @@ func TestEndpoint(t *testing.T) {
 			ctx := hack.WithPulsarLost(hack.Context(t), t, dsn)
 			t.When("CheckLiveness", func(t bdd.T) {
 				err := Must(ctx).(*Endpoint).LivenessCheck(ctx).FailureReason()
-				t.Then("Failed", bdd.ErrorContains("connection error", err))
+				t.Then("Failed", bdd.ErrorContains(err, "connection error"))
 			})
 		})
 	})
@@ -86,7 +86,7 @@ func TestEndpoint(t *testing.T) {
 			err := ep.Init(hack.Context(t))
 			t.Then(
 				"FailedToInitCausedByInvalidPulsarConfig",
-				bdd.IsCodeError(ERROR__CLI_INIT_ERROR, err),
+				bdd.IsCodeError(err, ERROR__CLI_INIT_ERROR),
 			)
 			_ = ep.Close()
 		})
