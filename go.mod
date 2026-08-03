@@ -7,8 +7,8 @@ require (
 	github.com/xoctopus/logx v0.3.5
 	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
-	github.com/xoctopus/sqlx v0.3.5
-	github.com/xoctopus/x v0.5.4
+	github.com/xoctopus/sqlx v0.3.6
+	github.com/xoctopus/x v0.5.5
 )
 
 // message queue
@@ -23,7 +23,7 @@ require (
 require (
 	github.com/go-sql-driver/mysql v1.10.0
 	github.com/jackc/pgx/v5 v5.10.0
-	modernc.org/sqlite v1.54.0
+	modernc.org/sqlite v1.55.0
 )
 
 // key-value storage
@@ -111,7 +111,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
-	github.com/xoctopus/typx v0.4.4 // indirect
+	github.com/xoctopus/typx v0.4.5 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.10.0 // indirect
