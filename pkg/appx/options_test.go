@@ -25,10 +25,8 @@ func TestMeta(t *testing.T) {
 }
 
 func TestAppOption(t *testing.T) {
-	opt := appx.AppOption{
-		Meta: appx.DefaultMeta,
-	}
+	opt := appx.AppOption{Meta: new(appx.DefaultMeta)}
 	opt.AppendPreRunners(func() {})
-	opt.AppendBatchRunners(func() {})
+	opt.AppendServes(func() {})
 	opt.PreRun()
 }

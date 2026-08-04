@@ -5,4 +5,6 @@ EXAMPLE__Endpoint_Auth_Username: ""
 EXAMPLE__Endpoint_Cert_CA: ""
 EXAMPLE__Endpoint_Cert_Crt: ""
 EXAMPLE__Endpoint_Cert_Key: ""
+EXAMPLE__LogFormat: JSON
+EXAMPLE__LogLevel: deb
 EXAMPLE__WorkerID: "100"

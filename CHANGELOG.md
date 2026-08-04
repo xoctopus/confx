@@ -2,7 +2,7 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.8...HEAD)
 
-> 2026-08-04
+> 2026-08-05
 
 ### Build
 
@@ -17,6 +17,10 @@
 ### Doc
 
 * update CHANGELOG and README
+
+### Feat
+
+* app meta context
 
 
 <a name="v0.4.8"></a>

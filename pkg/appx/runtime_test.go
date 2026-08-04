@@ -21,13 +21,13 @@ func TestGetRuntime(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		if err := os.Setenv(appx.RuntimeKey, c.runtime.String()); err != nil {
+		if err := os.Setenv(appx.RuntimeEnvKey, c.runtime.String()); err != nil {
 			t.Fatal(err)
 		}
 
 		Expect(t, appx.GetRuntime(), Equal(c.result))
 
-		if err := os.Unsetenv(appx.RuntimeKey); err != nil {
+		if err := os.Unsetenv(appx.RuntimeEnvKey); err != nil {
 			t.Fatal(err)
 		}
 	}

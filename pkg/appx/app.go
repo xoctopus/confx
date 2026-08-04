@@ -2,6 +2,7 @@ package appx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -19,63 +20,82 @@ import (
 	"github.com/xoctopus/confx/pkg/types"
 )
 
+// Option configures an [AppCtx] at construction time.
 type Option func(*AppCtx)
 
+// WithMainRoot sets the application root used to resolve config/local.yml,
+// config/default.yml, and config/.env. When empty, [NewAppContext] keeps the
+// process working directory.
 func WithMainRoot(root string) Option {
-	// _, filename, _, _ := runtime.Caller(1)
 	return func(app *AppCtx) {
 		app.root = root
 	}
 }
 
+// WithBuildMeta sets the application build [Meta], replacing [DefaultMeta].
 func WithBuildMeta(meta Meta) Option {
 	return func(app *AppCtx) {
-		app.option.Meta = DefaultMeta
-		app.option.Meta.Overwrite(meta)
+		app.option.Meta = new(meta)
 	}
 }
 
-func WithMainExecutor(main func() error) Option {
-	return func(app *AppCtx) {
-		app.Command.AddCommand(&cobra.Command{
-			Use:   "run",
-			Short: "run app's main entry",
-			RunE: func(cmd *cobra.Command, args []string) error {
-				fmt.Printf("%s\n\n", color.HiCyanString(app.Version()))
-				app.log()
-				app.option.PreRun()
-				return main()
-			},
-		})
-	}
-}
-
+// WithPreRunner appends ordered callbacks run before Serves on `run`.
+//
+// Use for sequential startup initialization such as loading global config or
+// injecting a global context, before long-lived services start.
 func WithPreRunner(runners ...func()) Option {
 	return func(app *AppCtx) {
 		app.option.PreRunners = append(app.option.PreRunners, runners...)
 	}
 }
 
-func WithBatchRunner(runners ...func()) Option {
+// WithServes appends parallel callbacks run after PreRunners on `run`.
+//
+// Use for long-lived services such as HTTP servers or scheduled jobs.
+func WithServes(serves ...func()) Option {
 	return func(app *AppCtx) {
-		app.option.BatchRunners = append(app.option.BatchRunners, runners...)
+		app.option.Serves = append(app.option.Serves, serves...)
 	}
 }
 
-func NewAppContext(options ...Option) *AppCtx {
-	app := &AppCtx{
-		Command: &cobra.Command{},
-		option:  AppOption{Meta: DefaultMeta},
+// WithCloseFns registers extra close callbacks invoked by [AppCtx.Close].
+//
+// Closable components loaded via [AppCtx.Conf] do not need registration; they
+// are closed automatically when [AppCtx.Close] runs.
+func WithCloseFns(closes ...func() error) Option {
+	return func(app *AppCtx) {
+		app.option.CloseFns = append(app.option.CloseFns, closes...)
 	}
+}
+
+// NewAppContext builds an [AppCtx] with main as the `run` entry, a hidden root
+// cobra command, and a `version` subcommand. Apply options before [AppCtx.Conf].
+func NewAppContext(main func() error, options ...Option) *AppCtx {
+	app := &AppCtx{
+		cmd:    &cobra.Command{},
+		root:   must.NoErrorV(os.Getwd()),
+		option: AppOption{Meta: new(DefaultMeta)},
+	}
+
+	app.AddCommand(
+		"run",
+		"run app's main entry",
+		func( /*cmd *cobra.Command,*/ args []string) error {
+			fmt.Printf("%s\n\n", color.HiCyanString(app.Version()))
+			app.log()
+			app.option.PreRun()
+			return main()
+		},
+	)
 
 	for _, opt := range options {
 		opt(app)
 	}
 
-	app.Command.Use = app.Name()
-	app.Command.Hidden = true
-	app.Command.CompletionOptions.DisableDefaultCmd = true
-	app.Command.AddCommand(&cobra.Command{
+	app.cmd.Use = app.Name()
+	app.cmd.Hidden = true
+	app.cmd.CompletionOptions.DisableDefaultCmd = true
+	app.cmd.AddCommand(&cobra.Command{
 		Use:   "version",
 		Short: "display app version",
 		Run: func(cmd *cobra.Command, args []string) {
@@ -86,32 +106,46 @@ func NewAppContext(options ...Option) *AppCtx {
 	return app
 }
 
+// AppCtx is the application handle: cobra CLI, build meta, and env config groups.
 type AppCtx struct {
-	*cobra.Command
-	root   string        // root main.go path
-	dfts   []*envx.Group // dfts app default config var groups
-	vars   []*envx.Group // vars app config var groups
-	option AppOption     // option application options
+	cmd *cobra.Command
+
+	root       string
+	dfts       []*envx.Group
+	vars       []*envx.Group
+	components []reflect.Value
+
+	option AppOption
 }
 
+// Name returns the application name from build [Meta].
 func (app *AppCtx) Name() string {
 	return app.option.Meta.Name
 }
 
+// Version returns the formatted build identity string from [Meta.String].
 func (app *AppCtx) Version() string {
 	return app.option.Meta.String()
 }
 
+// MainRoot returns the path set by [WithMainRoot], or the working directory
+// used when constructing the app.
 func (app *AppCtx) MainRoot() string {
 	return app.root
 }
 
+// Conf loads one or more config pointers from the environment, writes default
+// config files under MainRoot/config, and initializes fields that support
+// types.InitByContext. Meta is injected into ctx via [WithAppMeta] before init.
+//
+// Each named config type becomes an envx group (e.g. APP__OTEL). Anonymous
+// structs are allowed only when a single configuration is passed.
 func (app *AppCtx) Conf(ctx context.Context, configurations ...any) {
 	app.injectLocalConfig()
 
 	app.dfts = make([]*envx.Group, 0, len(configurations))
 	app.vars = make([]*envx.Group, 0, len(configurations))
-	vars := make([]reflect.Value, 0, len(configurations))
+	app.components = make([]reflect.Value, 0, len(configurations))
 	names := map[string]struct{}{}
 
 	for _, c := range configurations {
@@ -129,14 +163,63 @@ func (app *AppCtx) Conf(ctx context.Context, configurations ...any) {
 
 		app.dfts = append(app.dfts, app.marshalDefaults(group, rv))
 		app.vars = append(app.vars, app.scanEnvironment(group, rv))
-		vars = append(vars, rv)
+		app.components = append(app.components, rv)
 	}
 
 	app.mustWriteDefault()
-	app.initial(WithAppMeta(ctx, app.option.Meta), vars)
+	app.initial(WithAppMeta(ctx, *app.option.Meta))
 }
 
-// injectLocalConfig try parse vars in local.yaml, and inject vars to environment
+// Close shuts down the application.
+//
+// It first closes components registered through [AppCtx.Conf] via
+// types.CloseByContext (no [WithCloseFns] needed for those), then runs any
+// callbacks registered with [WithCloseFns]. Errors are joined and returned.
+func (app *AppCtx) Close(ctx context.Context) error {
+	errs := make([]error, 0, len(app.components))
+	for i := range app.components {
+		if err := types.CloseByContext(ctx, app.components[i]); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	for i := range app.option.CloseFns {
+		if f := app.option.CloseFns[i]; f != nil {
+			if err := f(); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+	if len(errs) > 0 {
+		return errors.Join(errs...)
+	}
+	return nil
+}
+
+// Execute runs the root cobra command (typically from main).
+//
+// Dispatches to registered subcommands such as `run` / `version`, or any
+// command added via [AppCtx.AddCommand].
+func (app *AppCtx) Execute() error {
+	return app.cmd.Execute()
+}
+
+// AddCommand registers a cobra subcommand under the app root.
+//
+// name is the command Use string, short is the Short help text, and runE is
+// invoked with the remaining CLI args when the command is selected.
+// [NewAppContext] uses this to register `run`.
+func (app *AppCtx) AddCommand(name, short string, runE func(args []string) error) {
+	app.cmd.AddCommand(
+		&cobra.Command{
+			Use:   name,
+			Short: short,
+			RunE: func(_ *cobra.Command, args []string) error {
+				return runE(args)
+			},
+		},
+	)
+}
+
 func (app *AppCtx) injectLocalConfig() {
 	local, err := os.ReadFile(filepath.Join(app.root, "./config/local.yml"))
 	if err == nil {
@@ -151,7 +234,6 @@ func (app *AppCtx) injectLocalConfig() {
 	}
 }
 
-// marshalDefaults encode default vars
 func (app *AppCtx) marshalDefaults(group string, v any) *envx.Group {
 	dft := envx.NewGroup(group)
 	must.NoErrorF(envx.NewDecoder(dft).Decode(v), "failed to decode default")
@@ -159,7 +241,6 @@ func (app *AppCtx) marshalDefaults(group string, v any) *envx.Group {
 	return dft
 }
 
-// scanEnvironment scan vars from environment
 func (app *AppCtx) scanEnvironment(group string, v any) *envx.Group {
 	vars := envx.ParseGroupFromEnv(group)
 	must.NoErrorF(envx.NewDecoder(vars).Decode(v), "failed to decode env")
@@ -185,9 +266,9 @@ func initialize(ctx context.Context, v reflect.Value, g *envx.Group, field strin
 	}
 }
 
-func (app *AppCtx) initial(ctx context.Context, vars []reflect.Value) {
-	for i := range vars {
-		initialize(ctx, vars[i], app.vars[i], "")
+func (app *AppCtx) initial(ctx context.Context) {
+	for i := range app.components {
+		initialize(ctx, app.components[i], app.vars[i], "")
 	}
 }
 

@@ -1,4 +1,4 @@
-package appx_test
+package appx
 
 import (
 	"bytes"
@@ -15,14 +15,20 @@ import (
 	"github.com/xoctopus/x/misc/must"
 	. "github.com/xoctopus/x/testx"
 
-	. "github.com/xoctopus/confx/pkg/appx"
 	"github.com/xoctopus/confx/pkg/envx"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
+func _main() error {
+	time.Sleep(time.Second * 3)
+	fmt.Println("main entry")
+	return nil
+}
+
 func ExampleNewAppContext() {
 	root := "./testdata1"
 	app := NewAppContext(
+		_main,
 		WithMainRoot(root),
 		WithBuildMeta(Meta{
 			Name:     "app",
@@ -32,7 +38,7 @@ func ExampleNewAppContext() {
 			Date:     "200601021504",
 			Runtime:  RUNTIME_DEV,
 		}),
-		WithBatchRunner(
+		WithServes(
 			func() {
 				time.Sleep(time.Second * 1)
 				fmt.Println("batch runner 1")
@@ -52,13 +58,6 @@ func ExampleNewAppContext() {
 				fmt.Println("pre runner 2")
 			},
 		),
-		WithMainExecutor(
-			func() error {
-				time.Sleep(time.Second * 3)
-				fmt.Println("main entry")
-				return nil
-			},
-		),
 	)
 
 	must.NoError(os.MkdirAll(filepath.Join(app.MainRoot(), "config"), os.ModePerm))
@@ -75,7 +74,7 @@ APP__CONFIG2__ServerPort: "8080"
 	config2 := &Config2{}
 	app.Conf(context.Background(), config1, config2)
 
-	cmd := app.Command
+	cmd := app.cmd
 	buf := bytes.NewBuffer(nil)
 
 	cmd.SetOut(buf)
@@ -170,6 +169,7 @@ func Example_init_failed() {
 
 	root := "./testdata2"
 	app := NewAppContext(
+		_main,
 		WithBuildMeta(Meta{Name: "app"}),
 		WithMainRoot(root),
 	)
@@ -204,14 +204,14 @@ func TestAppCtx_Conf(t *testing.T) {
 			t.Setenv("TEST__IntSlice_2", "12")
 			t.Setenv("TEST__IntSlice_4", "14")
 			t.Run("DefaultEmpty", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntSlice []int }{}
 				app.Conf(context.Background(), v)
 				Expect(t, v.IntSlice, Equal([]int{10, 0, 12, 0, 14}))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntSlice []int }{IntSlice: []int{1, 2, 3}}
 				app.Conf(context.Background(), v)
@@ -220,14 +220,14 @@ func TestAppCtx_Conf(t *testing.T) {
 		})
 		t.Run("NoEnvVars", func(t *testing.T) {
 			t.Run("DefaultEmpty", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntSlice []int }{}
 				app.Conf(context.Background(), v)
 				Expect(t, v.IntSlice, BeNil[[]int]())
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntSlice []int }{IntSlice: []int{1, 2, 3}}
 				app.Conf(context.Background(), v)
@@ -241,14 +241,14 @@ func TestAppCtx_Conf(t *testing.T) {
 			t.Setenv("TEST__IntArray_2", "12")
 			t.Setenv("TEST__IntArray_4", "14")
 			t.Run("DefaultEmpty", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntArray [3]int }{}
 				app.Conf(context.Background(), v)
 				Expect(t, v.IntArray, Equal([3]int{10, 0, 12}))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntArray [3]int }{IntArray: [3]int{1, 2, 3}}
 				app.Conf(context.Background(), v)
@@ -257,14 +257,14 @@ func TestAppCtx_Conf(t *testing.T) {
 		})
 		t.Run("NoEnvVars", func(t *testing.T) {
 			t.Run("DefaultEmpty", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntArray [3]int }{}
 				app.Conf(context.Background(), v)
 				Expect(t, v.IntArray, Equal([3]int{}))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct{ IntArray [3]int }{IntArray: [3]int{1, 2, 3}}
 				app.Conf(context.Background(), v)
@@ -279,7 +279,7 @@ func TestAppCtx_Conf(t *testing.T) {
 			t.Setenv("TEST__SimpleMap2_a", "10")
 			t.Setenv("TEST__SimpleMap2_b", "20")
 			t.Run("DefaultEmpty", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct {
 					SimpleMap1 map[int]string
@@ -290,7 +290,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				Expect(t, v.SimpleMap2, Equal(map[string]int{"a": 10, "b": 20}))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct {
 					SimpleMap1 map[int]string
@@ -306,7 +306,7 @@ func TestAppCtx_Conf(t *testing.T) {
 		})
 		t.Run("NoEnvVars", func(t *testing.T) {
 			t.Run("DefaultEmpty", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct {
 					SimpleMap1 map[int]string
@@ -319,7 +319,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				Expect(t, v.SimpleMap2, HaveLen[map[string]int](0))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &struct {
 					SimpleMap1 map[int]string
@@ -341,7 +341,7 @@ func TestAppCtx_Conf(t *testing.T) {
 			t.Setenv("TEST__CONFIG__Map_2_Number", "200")
 			t.Setenv("TEST__CONFIG__Map_2_String", "200")
 			t.Run("DefaultEmpty", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &config{}
 				app.Conf(context.Background(), v)
@@ -351,7 +351,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				Expect(t, v.Map["2"].String, Equal("200"))
 			})
 			t.Run("HasDefaultValue", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &config{
 					Map: map[string]*MapConfig{
@@ -371,7 +371,7 @@ func TestAppCtx_Conf(t *testing.T) {
 		})
 		t.Run("NoEnvVars", func(t *testing.T) {
 			t.Run("HasDefaultValue", func(t *testing.T) {
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				v := &config{
 					Map: map[string]*MapConfig{
@@ -396,7 +396,7 @@ func TestAppCtx_Conf(t *testing.T) {
 					Map map[*string]MapConfig
 				}
 				v := &invalid{}
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				ExpectPanic[error](
 					t, func() { app.Conf(context.Background(), v) },
@@ -407,7 +407,7 @@ func TestAppCtx_Conf(t *testing.T) {
 				v := &config{
 					Map: map[string]*MapConfig{"_key__": nil},
 				}
-				app := NewAppContext(WithBuildMeta(Meta{Name: "TEST"}))
+				app := NewAppContext(_main, WithBuildMeta(Meta{Name: "TEST"}))
 				defer os.RemoveAll(filepath.Join(app.MainRoot(), "config"))
 				ExpectPanic[error](
 					t, func() { app.Conf(context.Background(), v) },

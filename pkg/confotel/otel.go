@@ -3,15 +3,12 @@ package confotel
 import (
 	"context"
 	"errors"
-	"strings"
 	"time"
 
 	promclient "github.com/prometheus/client_golang/prometheus"
 	promcollectors "github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/contextx"
-	"github.com/xoctopus/x/slicex"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -59,13 +56,9 @@ func (o *Otel) SetDefault() {
 }
 
 func (o *Otel) Init(ctx context.Context) error {
-	app, version := "", ""
+	app := "unknown"
 	if meta, ok := appx.AppMetaFrom(ctx); ok {
-		app = meta.Name
-		version = strings.Join(slicex.Filter(
-			[]string{meta.Version, meta.CommitID},
-			func(s string) bool { return len(s) > 0 },
-		), "-")
+		app = meta.VersionString()
 	}
 
 	o.registry = &registry{}
@@ -100,14 +93,7 @@ func (o *Otel) Init(ctx context.Context) error {
 		metric.ViewsOption(),
 	}
 
-	resAttrs := make([]attribute.KeyValue, 0, 2)
-	if len(app) > 0 {
-		resAttrs = append(resAttrs, semconv.ServiceName(app))
-	}
-	if len(version) > 0 {
-		resAttrs = append(resAttrs, semconv.ServiceVersion(app))
-	}
-	res := otelsdkresource.NewSchemaless(resAttrs...)
+	res := otelsdkresource.NewSchemaless(semconv.ServiceName(app))
 
 	tpopts = append(tpopts, otelsdktracer.WithResource(res))
 	lpopts = append(lpopts, otelsdklogger.WithResource(res))
