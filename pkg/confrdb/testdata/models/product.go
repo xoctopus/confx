@@ -7,18 +7,19 @@ import (
 
 // Product 商品
 // +genx:model
-// @attr TableName=t_product
-// @attr Register=Catalog
-// @def pk ID
-// @def u_idx ui_product_id  ProductID,DeletedAt
-// @def idx   i_product_name Name
-// @def idx   i_status       Status
-// @def idx   i_updated_at   UpdatedAt
+// @model TableName=t_product
+// @model Register=Catalog
+// @model pk=ID
+// @model uidx=ui_product_id;ProductID;DeletedAt
+// @model idx=i_product_name;Name
+// @model idx=i_status;Status
+// @model idx=i_updated_at;UpdatedAt
 type Product struct {
-	types.AutoIncID
+	types.Serial
 
 	RelProduct
-	ProductData
+	ProductMeta
+	ProductState
 
 	types.CreationModificationDeletionTime
 }
@@ -26,17 +27,20 @@ type Product struct {
 type ProductID int64
 
 type RelProduct struct {
-	// @rel Product.ProductID
+	// @model rel=Product.ProductID
 	ProductID ProductID `db:"product_id"`
 }
 
-type ProductData struct {
+type ProductMeta struct {
 	// SKU 库存标签
 	SKU string `db:"sku"`
 	// Name 产品名称
 	Name string `db:"name,width=256"`
 	// Description 产品描述
 	Description string `db:"description"`
+}
+
+type ProductState struct {
 	// Price 单价
 	Price types.Decimal `db:"price,width=22,precision=4"`
 	// Currency 货币

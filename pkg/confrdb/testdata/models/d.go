@@ -1,4 +1,4 @@
-// Package models for testing
+// Package models defines model types for example testing
 // +genx:doc
 package models
 

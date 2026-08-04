@@ -2,7 +2,17 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.8...HEAD)
 
-> 0001-01-01
+> 2026-07-23
+
+### Build
+
+* **deps:** bump github.com/apache/pulsar-client-go ([#39](https://github.com/xoctopus/confx/issues/39))
+* **deps:** bump github.com/prometheus/client_golang ([#38](https://github.com/xoctopus/confx/issues/38))
+* **deps:** bump github.com/rabbitmq/amqp091-go from 1.12.0 to 1.13.0 ([#37](https://github.com/xoctopus/confx/issues/37))
+
+### Doc
+
+* update CHANGELOG and README
 
 
 <a name="v0.4.8"></a>

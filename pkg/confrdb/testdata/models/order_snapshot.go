@@ -4,14 +4,14 @@ import "github.com/xoctopus/sqlx/pkg/types"
 
 // OrderSnapshot 订单快照
 // +genx:model
-// @attr TableName=t_order_snapshot
-// @attr Register=Catalog
-// @def pk ID
-// @def u_idx ui_order_id    OrderID
-// @def idx   i_product_name ProductName
-// @def idx   i_created_at   CreatedAt
+// @model TableName=t_order_snapshot
+// @model Register=Catalog
+// @model pk=ID
+// @model uidx=ui_order_id;OrderID
+// @model idx=i_product_name;ProductName
+// @model idx=i_created_at;CreatedAt
 type OrderSnapshot struct {
-	types.AutoIncID
+	types.Serial
 
 	RelOrder
 	RelProduct

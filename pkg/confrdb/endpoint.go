@@ -13,8 +13,6 @@ import (
 	"github.com/xoctopus/sqlx/pkg/helper"
 	"github.com/xoctopus/sqlx/pkg/migrator"
 	"github.com/xoctopus/sqlx/pkg/session"
-	"github.com/xoctopus/sqlx/pkg/sql/adaptor"
-	_ "github.com/xoctopus/sqlx/pkg/sql/adaptor/mysql"
 	"github.com/xoctopus/x/contextx"
 	"github.com/xoctopus/x/flagx"
 
@@ -42,8 +40,8 @@ type endpoint[A any] struct {
 	name string
 
 	catalog builder.Catalog
-	db      adaptor.Adaptor
-	ro      adaptor.Adaptor
+	db      session.Adaptor
+	ro      session.Adaptor
 }
 
 type (
@@ -91,7 +89,7 @@ func (d *endpoint[A]) Init(ctx context.Context) error {
 
 	main := d.Endpoint
 	d.database = d.Endpoint.Key()
-	db, err := adaptor.Open(ctx, main.String())
+	db, err := session.Open(ctx, main.String())
 	if err != nil {
 		return err
 	}
@@ -112,7 +110,7 @@ func (d *endpoint[A]) Init(ctx context.Context) error {
 			ro.Auth = main.Auth
 		}
 		ro.AddOption("_ro", "true")
-		db, err = adaptor.Open(ctx, ro.String())
+		db, err = session.Open(ctx, ro.String())
 		if err != nil {
 			return err
 		}
@@ -181,6 +179,9 @@ func (d *endpoint[A]) Run(ctx context.Context) error {
 		}
 		if o.CreateTableOnly {
 			f.With(migrator.DIFF_MODE_CREATE_TABLE)
+		}
+		if o.EnableModelMeta {
+			ctx = migrator.CtxMeta.With(ctx, true)
 		}
 		ctx = migrator.CtxMode.With(ctx, f)
 		q, err := migrator.Migrate(ctx, d.db, d.catalog)

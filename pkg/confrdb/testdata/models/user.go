@@ -7,18 +7,19 @@ import (
 
 // User 用户
 // +genx:model
-// @attr TableName=t_user
-// @attr Register=Catalog
-// @def pk ID
-// @def u_idx ui_user_id   UserID
-// @def idx   ui_username  Username
-// @def idx   i_status     Status
-// @def idx   i_created_at CreatedAt
+// @model TableName=t_user
+// @model Register=Catalog
+// @model pk=ID
+// @model uidx=ui_user_id;UserID
+// @model idx=ui_username,BTREE;Username
+// @model idx=i_status;Status,NULLS,FIRST
+// @model idx=i_created_at;CreatedAt
 type User struct {
-	types.AutoIncID
+	types.Serial
 
 	RelUser
-	UserData
+	UserMeta
+	UserState
 
 	types.OperationDatetime
 }
@@ -26,17 +27,20 @@ type User struct {
 type UserID uint64
 
 type RelUser struct {
-	// @rel User.UserID
+	// @model rel=User.UserID
 	UserID UserID `db:"user_id"`
 }
 
-type UserData struct {
+type UserMeta struct {
 	// Username 用户名
 	Username string `db:"username,width=127"`
 	// Email 邮箱
 	Email string `db:"email,width=127"`
 	// Phone 电话
 	Phone string `db:"phone,width=32"`
+}
+
+type UserState struct {
 	// Status 用户状态
 	Status enums.UserStatus `db:"status"`
 }

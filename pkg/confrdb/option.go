@@ -18,6 +18,8 @@ type Option[A any] struct {
 	DryRun bool `url:"-"`
 	// CreateTableOnly just do table creations without column diff and modifications
 	CreateTableOnly bool `url:"-"`
+	// EnableModelMeta if enable building model meta
+	EnableModelMeta bool `url:"-,default=true"`
 
 	// MaxOpenConns the upper limit on open connections. this should be tuned
 	// based on both application concurrency and database server capacity.
