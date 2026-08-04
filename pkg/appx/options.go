@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/fatih/color"
+	"github.com/xoctopus/x/contextx"
 )
 
 type Meta struct {
@@ -99,3 +100,12 @@ func BatchRunSync(runners ...func()) {
 		runners[i]()
 	}
 }
+
+type tCtxMeta struct{}
+
+var (
+	AppMetaFrom    = contextx.From[tCtxMeta, Meta]
+	MustAppMeta    = contextx.Must[tCtxMeta, Meta]
+	WithAppMeta    = contextx.With[tCtxMeta, Meta]
+	CarrierAppMeta = contextx.Carry[tCtxMeta, Meta]
+)

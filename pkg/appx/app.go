@@ -133,7 +133,7 @@ func (app *AppCtx) Conf(ctx context.Context, configurations ...any) {
 	}
 
 	app.mustWriteDefault()
-	app.initial(ctx, vars)
+	app.initial(WithAppMeta(ctx, app.option.Meta), vars)
 }
 
 // injectLocalConfig try parse vars in local.yaml, and inject vars to environment

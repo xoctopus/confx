@@ -9,6 +9,7 @@ import (
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/testx"
 
+	"github.com/xoctopus/confx/pkg/appx"
 	"github.com/xoctopus/confx/pkg/confotel"
 	"github.com/xoctopus/confx/pkg/types"
 )
@@ -16,7 +17,11 @@ import (
 func Setup(t testing.TB, c any) context.Context {
 	t.Helper()
 
-	ctx := context.Background()
+	ctx := appx.WithAppMeta(context.Background(), appx.Meta{
+		Name:     "test",
+		Version:  "1.1.1",
+		CommitID: "abcdefg",
+	})
 	err := types.InitByContext(ctx, c)
 
 	testx.Expect(t, err, testx.Be[error](nil))
@@ -34,7 +39,7 @@ func Setup(t testing.TB, c any) context.Context {
 func TestLog(t *testing.T) {
 	ctx := Setup(t, &confotel.Otel{
 		LogLevel:  logx.LogLevelDebug,
-		LogFormat: logx.LogFormatTEXT,
+		LogFormat: logx.LogFormatJSON,
 	})
 
 	doLog(ctx)

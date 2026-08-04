@@ -3,12 +3,15 @@ package confotel
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
 	promclient "github.com/prometheus/client_golang/prometheus"
 	promcollectors "github.com/prometheus/client_golang/prometheus/collectors"
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/contextx"
+	"github.com/xoctopus/x/slicex"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -23,6 +26,7 @@ import (
 	"github.com/xoctopus/confx/internal/otel/exporter"
 	"github.com/xoctopus/confx/internal/otel/logger"
 	"github.com/xoctopus/confx/internal/otel/providers"
+	"github.com/xoctopus/confx/pkg/appx"
 	"github.com/xoctopus/confx/pkg/confotel/metric"
 	"github.com/xoctopus/confx/pkg/types"
 )
@@ -44,7 +48,6 @@ type Otel struct {
 
 	// registry log processor registry
 	registry otelsdklogger.Processor
-	// info *appinfo.Info `inject:",opt"`
 }
 
 func (o *Otel) SetDefault() {
@@ -56,11 +59,14 @@ func (o *Otel) SetDefault() {
 }
 
 func (o *Otel) Init(ctx context.Context) error {
-	// TODO
-	// if value, ok := appinfo.InfoFromContext(ctx); ok {
-	// 	v.info = value
-	// }
-	appname, appversion := "todo", "version"
+	app, version := "", ""
+	if meta, ok := appx.AppMetaFrom(ctx); ok {
+		app = meta.Name
+		version = strings.Join(slicex.Filter(
+			[]string{meta.Version, meta.CommitID},
+			func(s string) bool { return len(s) > 0 },
+		), "-")
+	}
 
 	o.registry = &registry{}
 
@@ -94,10 +100,15 @@ func (o *Otel) Init(ctx context.Context) error {
 		metric.ViewsOption(),
 	}
 
-	res := otelsdkresource.NewSchemaless(
-		semconv.ServiceName(appname),
-		semconv.ServiceVersion(appversion),
-	)
+	resAttrs := make([]attribute.KeyValue, 0, 2)
+	if len(app) > 0 {
+		resAttrs = append(resAttrs, semconv.ServiceName(app))
+	}
+	if len(version) > 0 {
+		resAttrs = append(resAttrs, semconv.ServiceVersion(app))
+	}
+	res := otelsdkresource.NewSchemaless(resAttrs...)
+
 	tpopts = append(tpopts, otelsdktracer.WithResource(res))
 	lpopts = append(lpopts, otelsdklogger.WithResource(res))
 	mpopts = append(mpopts, otelsdkmetric.WithResource(res))
