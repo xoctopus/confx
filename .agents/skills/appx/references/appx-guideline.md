@@ -1,11 +1,20 @@
 # APPx指南
 
-本文档说明 `appx` 的运行和组合方式
+本文档说明 `appx` 的职责契约, 运行步骤和组合方式
 
 以下均以 `exmaple/appx/cmd/example/main.go` 为例
 
-## APPx 组成
+## APPx 职能
 
+`appx` 是可执行应用的运行时骨架, 把构建身份、配置组件、命令行和生命周期收口到一个 `AppCtx` 上:
+
+- 构建身份: 持有 `Meta` (Name / Feature / Version / CommitID / Date / Runtime), 提供 `version` 输出
+- 配置加载: 合并 `config/local.yml` 与环境变量到配置结构, 并写出 `config/default.yml` 与 `config/.env`
+- 组件编排: `Conf` 按契约对配置树做 `Init`, 并把 `Injectable` 叠进返回的 `ctx`
+- 命令行: cobra 根命令, 默认 `run` / `version`, 可用 `AddCommand` 扩展
+- 运行与关闭: `PreRunner` 同步顺序启动, `Serves` 并行长驻, `Close` 关闭 Conf 组件和 `CloseFns`
+
+## APPx 组成
 
 - 构建信息 
   + `example/appx/cmd/example.Name` 服务或应用的名称
@@ -50,6 +59,21 @@
 - 执行 `Serves`: 执行 `PreRunners` 之后, 并行异步执行(不会阻塞)
 - 运行 `app` 实例. 即 `MainEntry`
 - `app.Close(ctx)`: 顺序执行 **组件关闭** 和 `CloseFns`. 必须在 `MainEntry` 调用
+
+## APPx Conf契约
+
+`AppCtx.Conf(ctx, configurations...) context.Context` 在写完默认配置之后, 对配置树做前序遍历.
+
+- `AppCtx.Conf` 做两件事情
+  + 组件初始化
+  + 全局上下文注入
+
+- `AppCtx.Conf` 如何编排初始化和注入流程
+  + 注入 `WithAppMeta`
+  + 顺序即编排: 按照参数 `configurations` 顺序; 结构体则按照定义字段顺序 (会忽略未导出字段/类型).
+    * 如果能 `Init` 则 `Init(ctx)`. `ErrSkipInitializing`, 无具体值(nil) 视为跳过, 后续步骤不再执行; 其他错误直接 panic.
+    * 如果实现了 `Injectable` 则注入上下文. 多类型单例会被后者覆盖 (如 多个 `confredis.Endpoint`)
+  + 最终所有组件就绪, 并返回 `全局上下文`.
 
 ## 其他补充说明
 

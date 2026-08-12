@@ -1,6 +1,12 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.8...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.9...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.4.9"></a>
+## [v0.4.9](https://github.com/xoctopus/confx/compare/v0.4.8...v0.4.9)
 
 > 2026-08-05
 
@@ -16,6 +22,7 @@
 
 ### Doc
 
+* add skills for appx and more documents
 * update CHANGELOG and README
 
 ### Feat

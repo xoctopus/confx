@@ -5,11 +5,9 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/xoctopus/x/contextx"
 	. "github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/pkg/confredis"
-	"github.com/xoctopus/confx/pkg/types/kv"
 )
 
 func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -23,10 +21,7 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 
 	t.Cleanup(func() { _ = ep.Close() })
 
-	return contextx.Compose(
-		confredis.Carry(ep),
-		kv.Carry(ep),
-	)(ctx)
+	return ep.WithContext(ctx)
 }
 
 func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
@@ -43,8 +38,5 @@ func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
 
 	t.Cleanup(func() { _ = ep.Close() })
 
-	return contextx.Compose(
-		confredis.Carry(ep),
-		kv.Carry(ep),
-	)(ctx)
+	return ep.WithContext(ctx)
 }

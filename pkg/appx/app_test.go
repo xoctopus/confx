@@ -417,3 +417,127 @@ func TestAppCtx_Conf(t *testing.T) {
 		})
 	})
 }
+
+type (
+	orchKeyA struct{}
+	orchKeyB struct{}
+	orchKeyI struct{}
+	orchLog  []string
+)
+
+func (l *orchLog) add(s string) { *l = append(*l, s) }
+
+type orchA struct{ log *orchLog }
+
+func (n *orchA) Init(ctx context.Context) {
+	n.log.add("A.init")
+	if _, ok := AppMetaFrom(ctx); ok {
+		n.log.add("A.meta")
+	}
+}
+
+func (n *orchA) WithContext(ctx context.Context) context.Context {
+	n.log.add("A.inject")
+	return context.WithValue(ctx, orchKeyA{}, true)
+}
+
+type orchB struct{ log *orchLog }
+
+func (n *orchB) Init(ctx context.Context) {
+	n.log.add("B.init")
+	if v, _ := ctx.Value(orchKeyA{}).(bool); v {
+		n.log.add("B.sawA")
+	}
+	if v, _ := ctx.Value(orchKeyI{}).(bool); v {
+		n.log.add("B.sawI")
+	}
+}
+
+func (n *orchB) WithContext(ctx context.Context) context.Context {
+	n.log.add("B.inject")
+	return context.WithValue(ctx, orchKeyB{}, true)
+}
+
+type orchHidden struct{ log *orchLog }
+
+func (n *orchHidden) Init() { n.log.add("H.init") }
+
+func (n *orchHidden) WithContext(ctx context.Context) context.Context {
+	n.log.add("H.inject")
+	return ctx
+}
+
+type orchInjectOnly struct{ log *orchLog }
+
+func (n *orchInjectOnly) WithContext(ctx context.Context) context.Context {
+	n.log.add("I.inject")
+	return context.WithValue(ctx, orchKeyI{}, true)
+}
+
+func newOrchApp(t *testing.T) *AppCtx {
+	t.Helper()
+	return NewAppContext(_main, WithBuildMeta(Meta{Name: "ORCH"}), WithMainRoot(t.TempDir()))
+}
+
+func TestAppCtx_ConfOrchestration(t *testing.T) {
+	t.Run("FieldOrder", func(t *testing.T) {
+		log := orchLog{}
+		cfg := &struct {
+			A orchA
+			B orchB
+		}{A: orchA{log: &log}, B: orchB{log: &log}}
+
+		ctx := newOrchApp(t).Conf(context.Background(), cfg)
+		Expect(t, []string(log), Equal([]string{
+			"A.init", "A.meta", "A.inject",
+			"B.init", "B.sawA", "B.inject",
+		}))
+		a, _ := ctx.Value(orchKeyA{}).(bool)
+		b, _ := ctx.Value(orchKeyB{}).(bool)
+		Expect(t, a, Equal(true))
+		Expect(t, b, Equal(true))
+	})
+
+	t.Run("MultiConfig", func(t *testing.T) {
+		log := orchLog{}
+		a, b := &orchA{log: &log}, &orchB{log: &log}
+		ctx := newOrchApp(t).Conf(context.Background(), a, b)
+		Expect(t, []string(log), Equal([]string{
+			"A.init", "A.meta", "A.inject",
+			"B.init", "B.sawA", "B.inject",
+		}))
+		sawA, _ := ctx.Value(orchKeyA{}).(bool)
+		sawB, _ := ctx.Value(orchKeyB{}).(bool)
+		Expect(t, sawA, Equal(true))
+		Expect(t, sawB, Equal(true))
+	})
+
+	t.Run("SkipUnexportedAndNilInterface", func(t *testing.T) {
+		log := orchLog{}
+		cfg := &struct {
+			Hook   http.Handler
+			hidden orchHidden
+			A      orchA
+		}{A: orchA{log: &log}, hidden: orchHidden{log: &log}}
+
+		ctx := newOrchApp(t).Conf(context.Background(), cfg)
+		Expect(t, []string(log), Equal([]string{"A.init", "A.meta", "A.inject"}))
+		a, _ := ctx.Value(orchKeyA{}).(bool)
+		Expect(t, a, Equal(true))
+	})
+
+	t.Run("InjectOnly", func(t *testing.T) {
+		log := orchLog{}
+		cfg := &struct {
+			I orchInjectOnly
+			B orchB
+		}{I: orchInjectOnly{log: &log}, B: orchB{log: &log}}
+
+		ctx := newOrchApp(t).Conf(context.Background(), cfg)
+		Expect(t, []string(log), Equal([]string{"I.inject", "B.init", "B.sawI", "B.inject"}))
+		i, _ := ctx.Value(orchKeyI{}).(bool)
+		b, _ := ctx.Value(orchKeyB{}).(bool)
+		Expect(t, i, Equal(true))
+		Expect(t, b, Equal(true))
+	})
+}

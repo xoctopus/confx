@@ -13,7 +13,6 @@ import (
 	"github.com/xoctopus/sqlx/pkg/helper"
 	"github.com/xoctopus/sqlx/pkg/migrator"
 	"github.com/xoctopus/sqlx/pkg/session"
-	"github.com/xoctopus/x/contextx"
 	"github.com/xoctopus/x/flagx"
 
 	"github.com/xoctopus/confx/pkg/confrdb/option"
@@ -143,7 +142,7 @@ func (d *endpoint[A]) Session() session.Session {
 	return session.New(d.db, d.name)
 }
 
-func (d *endpoint[A]) WithSession(ctx context.Context) context.Context {
+func (d *endpoint[A]) WithContext(ctx context.Context) context.Context {
 	s := d.Session()
 	ctx = session.With(ctx, s)
 
@@ -155,10 +154,6 @@ func (d *endpoint[A]) WithSession(ctx context.Context) context.Context {
 		}
 	}
 	return ctx
-}
-
-func (d *endpoint[A]) CarrySession() contextx.Carrier {
-	return d.WithSession
 }
 
 func (d *endpoint[A]) Catalog() builder.Catalog {

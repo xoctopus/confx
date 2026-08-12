@@ -1,12 +1,12 @@
 package confjwt
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/xoctopus/x/contextx"
 
 	"github.com/xoctopus/confx/pkg/types"
 )
@@ -80,6 +80,10 @@ func (c *JWT) Parse(v string) (*Claims, error) {
 	return claim, nil
 }
 
+func (c *JWT) WithContext(ctx context.Context) context.Context {
+	return WithJWT(ctx, c)
+}
+
 type Claims struct {
 	Payload any              `json:"v"`
 	Expired *jwt.NumericDate `json:"e,omitempty"`
@@ -92,12 +96,3 @@ func (c *Claims) GetNotBefore() (*jwt.NumericDate, error)      { return nil, nil
 func (c *Claims) GetIssuer() (string, error)                   { return "", nil }
 func (c *Claims) GetSubject() (string, error)                  { return "", nil }
 func (c *Claims) GetAudience() (jwt.ClaimStrings, error)       { return nil, nil }
-
-type tCtxJWT struct{}
-
-var (
-	JWTFrom  = contextx.From[tCtxJWT, *JWT]
-	MustJWT  = contextx.Must[tCtxJWT, *JWT]
-	WithJWT  = contextx.With[tCtxJWT, *JWT]
-	CarryJWT = contextx.Carry[tCtxJWT, *JWT]
-)

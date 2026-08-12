@@ -258,9 +258,6 @@ func (e *Endpoint) Close() error {
 	return nil
 }
 
-var (
-	With  = mq.With[ProducerMessage, ConsumerMessage]
-	From  = mq.From[ProducerMessage, ConsumerMessage]
-	Must  = mq.Must[ProducerMessage, ConsumerMessage]
-	Carry = mq.Carry[ProducerMessage, ConsumerMessage]
-)
+func (e *Endpoint) WithContext(ctx context.Context) context.Context {
+	return With(ctx, e)
+}

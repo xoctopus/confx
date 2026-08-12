@@ -140,7 +140,7 @@ func (app *AppCtx) MainRoot() string {
 //
 // Each named config type becomes an envx group (e.g. APP__OTEL). Anonymous
 // structs are allowed only when a single configuration is passed.
-func (app *AppCtx) Conf(ctx context.Context, configurations ...any) {
+func (app *AppCtx) Conf(ctx context.Context, configurations ...any) context.Context {
 	app.injectLocalConfig()
 
 	app.dfts = make([]*envx.Group, 0, len(configurations))
@@ -167,7 +167,8 @@ func (app *AppCtx) Conf(ctx context.Context, configurations ...any) {
 	}
 
 	app.mustWriteDefault()
-	app.initial(WithAppMeta(ctx, *app.option.Meta))
+
+	return app.initial(WithAppMeta(ctx, *app.option.Meta))
 }
 
 // Close shuts down the application.
@@ -248,28 +249,31 @@ func (app *AppCtx) scanEnvironment(group string, v any) *envx.Group {
 	return vars
 }
 
-func initialize(ctx context.Context, v reflect.Value, g *envx.Group, field string) {
-	if types.CanBeInitialized(v) {
-		must.NoErrorF(
-			types.InitByContext(ctx, v),
-			"failed to init [group:%s] [field:%s]", g.Name(), field,
-		)
-		return
+func initialize(ctx context.Context, v reflect.Value, g *envx.Group, field string) context.Context {
+	err := types.InitByContext(ctx, v)
+	if errors.Is(err, types.ErrSkipInitializing) {
+		return ctx
 	}
+	must.NoErrorF(err, "failed to init [group:%s] [field:%s]", g.Name(), field)
+
+	ctx = types.Inject(ctx, v)
+
 	v = reflectx.Indirect(v)
 	if v.Kind() == reflect.Struct {
 		for i := 0; i < v.NumField(); i++ {
 			if v.Type().Field(i).IsExported() {
-				initialize(ctx, v.Field(i), g, v.Type().Field(i).Name)
+				ctx = initialize(ctx, v.Field(i), g, v.Type().Field(i).Name)
 			}
 		}
 	}
+	return ctx
 }
 
-func (app *AppCtx) initial(ctx context.Context) {
+func (app *AppCtx) initial(ctx context.Context) context.Context {
 	for i := range app.components {
-		initialize(ctx, app.components[i], app.vars[i], "")
+		ctx = initialize(ctx, app.components[i], app.vars[i], "")
 	}
+	return ctx
 }
 
 func (app *AppCtx) log() {

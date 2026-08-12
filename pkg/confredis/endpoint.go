@@ -9,6 +9,7 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/xoctopus/confx/pkg/types"
+	"github.com/xoctopus/confx/pkg/types/kv"
 	"github.com/xoctopus/confx/pkg/types/liveness"
 )
 
@@ -61,10 +62,6 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (d liveness.Result) {
 	return
 }
 
-func (e *Endpoint) Client() redis.UniversalClient {
-	return e.cli
-}
-
 func (e *Endpoint) Close() error {
 	if e.cli != nil {
 		return e.cli.Close()
@@ -79,4 +76,16 @@ func (e *Endpoint) Key(k string) string {
 func (e *Endpoint) Exec(ctx context.Context, cmd string, args ...any) (any, error) {
 	c := e.cli.Do(ctx, append([]any{cmd}, args...)...)
 	return c.Result()
+}
+
+func (e *Endpoint) WithContext(ctx context.Context) context.Context {
+	x := struct {
+		redis.UniversalClient
+		kv.Executor
+	}{
+		UniversalClient: e.cli,
+		Executor:        e,
+	}
+
+	return WithClient(ctx, x)
 }

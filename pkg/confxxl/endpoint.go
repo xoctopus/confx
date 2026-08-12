@@ -224,3 +224,7 @@ func (e *Endpoint) handle(w http.ResponseWriter, r *http.Request) {
 		err = codex.Errorf(ERROR__XXL_INVALID_ACTION, "got action: %s", action)
 	}
 }
+
+func (e *Endpoint) WithContext(ctx context.Context) context.Context {
+	return With(ctx, e)
+}
