@@ -1,8 +1,28 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.0...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.2...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.5.2"></a>
+## [v0.5.2](https://github.com/xoctopus/confx/compare/v0.5.1...v0.5.2)
+
+> 2026-08-13
+
+### Feat
+
+* **appx:** add PreInit and clarify lifecycle hooks
+
+
+<a name="v0.5.1"></a>
+## [v0.5.1](https://github.com/xoctopus/confx/compare/v0.5.0...v0.5.1)
 
 > 2026-08-12
+
+### Doc
+
+* update CHANGELOG
 
 ### Feat
 
