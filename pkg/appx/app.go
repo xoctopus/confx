@@ -23,46 +23,56 @@ import (
 // Option configures an [AppCtx] at construction time.
 type Option func(*AppCtx)
 
-// WithMainRoot sets the application root used to resolve config/local.yml,
+// WithRoot sets the application root used to resolve config/local.yml,
 // config/default.yml, and config/.env. When empty, [NewAppContext] keeps the
 // process working directory.
-func WithMainRoot(root string) Option {
+func WithRoot(root string) Option {
 	return func(app *AppCtx) {
 		app.root = root
 	}
 }
 
-// WithBuildMeta sets the application build [Meta], replacing [DefaultMeta].
-func WithBuildMeta(meta Meta) Option {
+// WithMeta sets the application [Meta], replacing [DefaultMeta].
+func WithMeta(meta Meta) Option {
 	return func(app *AppCtx) {
 		app.option.Meta = new(meta)
 	}
 }
 
-// WithPreRunner appends ordered callbacks run before Serves on `run`.
+// WithPreInit appends ordered callbacks run before component Init in [AppCtx.Conf].
 //
-// Use for sequential startup initialization such as loading global config or
-// injecting a global context, before long-lived services start.
-func WithPreRunner(runners ...func()) Option {
+// Use to prepare the process so components can Init—for example registering
+// metadata or hooks—without opening business traffic.
+func WithPreInit(fns ...func()) Option {
+	return func(app *AppCtx) {
+		app.option.PreInits = append(app.option.PreInits, fns...)
+	}
+}
+
+// WithPreRun appends ordered callbacks run before [WithServe] on `run`.
+//
+// Use for sequential process-level prep with a complete ctx—such as loading
+// global config or injecting a global context—before long-lived services start.
+func WithPreRun(runners ...func()) Option {
 	return func(app *AppCtx) {
 		app.option.PreRunners = append(app.option.PreRunners, runners...)
 	}
 }
 
-// WithServes appends parallel callbacks run after PreRunners on `run`.
+// WithServe appends parallel callbacks run after PreRun on `run`.
 //
 // Use for long-lived services such as HTTP servers or scheduled jobs.
-func WithServes(serves ...func()) Option {
+func WithServe(serves ...func()) Option {
 	return func(app *AppCtx) {
 		app.option.Serves = append(app.option.Serves, serves...)
 	}
 }
 
-// WithCloseFns registers extra close callbacks invoked by [AppCtx.Close].
+// WithClose registers extra close callbacks invoked by [AppCtx.Close].
 //
 // Closable components loaded via [AppCtx.Conf] do not need registration; they
 // are closed automatically when [AppCtx.Close] runs.
-func WithCloseFns(closes ...func() error) Option {
+func WithClose(closes ...func() error) Option {
 	return func(app *AppCtx) {
 		app.option.CloseFns = append(app.option.CloseFns, closes...)
 	}
@@ -70,6 +80,9 @@ func WithCloseFns(closes ...func() error) Option {
 
 // NewAppContext builds an [AppCtx] with main as the `run` entry, a hidden root
 // cobra command, and a `version` subcommand. Apply options before [AppCtx.Conf].
+//
+// On `run`, the framework runs PreRun → Serve → main. main decides process
+// lifetime (wait for signal / Serves, or oneshot exit) and should call Close.
 func NewAppContext(main func() error, options ...Option) *AppCtx {
 	app := &AppCtx{
 		cmd:    &cobra.Command{},
@@ -84,6 +97,7 @@ func NewAppContext(main func() error, options ...Option) *AppCtx {
 			fmt.Printf("%s\n\n", color.HiCyanString(app.Version()))
 			app.log()
 			app.option.PreRun()
+			app.option.Serve()
 			return main()
 		},
 	)
@@ -128,15 +142,16 @@ func (app *AppCtx) Version() string {
 	return app.option.Meta.String()
 }
 
-// MainRoot returns the path set by [WithMainRoot], or the working directory
+// Root returns the path set by [WithRoot], or the working directory
 // used when constructing the app.
-func (app *AppCtx) MainRoot() string {
+func (app *AppCtx) Root() string {
 	return app.root
 }
 
 // Conf loads one or more config pointers from the environment, writes default
-// config files under MainRoot/config, and initializes fields that support
-// types.InitByContext. Meta is injected into ctx via [WithAppMeta] before init.
+// config files under [AppCtx.Root]/config, runs [WithPreInit], then initializes
+// fields that support types.InitByContext. Meta is injected into ctx via
+// [WithAppMeta] before init.
 //
 // Each named config type becomes an envx group (e.g. APP__OTEL). Anonymous
 // structs are allowed only when a single configuration is passed.
@@ -168,14 +183,15 @@ func (app *AppCtx) Conf(ctx context.Context, configurations ...any) context.Cont
 
 	app.mustWriteDefault()
 
+	app.option.PreInit()
 	return app.initial(WithAppMeta(ctx, *app.option.Meta))
 }
 
 // Close shuts down the application.
 //
 // It first closes components registered through [AppCtx.Conf] via
-// types.CloseByContext (no [WithCloseFns] needed for those), then runs any
-// callbacks registered with [WithCloseFns]. Errors are joined and returned.
+// types.CloseByContext (no [WithClose] needed for those), then runs any
+// callbacks registered with [WithClose]. Errors are joined and returned.
 func (app *AppCtx) Close(ctx context.Context) error {
 	errs := make([]error, 0, len(app.components))
 	for i := range app.components {

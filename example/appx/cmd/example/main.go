@@ -63,10 +63,10 @@ func init() {
 func init() {
 	app = appx.NewAppContext(
 		Main,
-		appx.WithBuildMeta(meta),
-		appx.WithMainRoot("."),
-		appx.WithCloseFns(),
-		appx.WithPreRunner(
+		appx.WithMeta(meta),
+		appx.WithRoot("."),
+		appx.WithClose(),
+		appx.WithPreRun(
 			// initialize global configurations.
 			func() {
 				fmt.Println("global configurations are initialized")
@@ -76,7 +76,7 @@ func init() {
 				fmt.Println("global contexts are injected")
 			},
 		),
-		appx.WithServes(
+		appx.WithServe(
 			// start http server
 			func() {
 				fmt.Println("http server listening on :80")

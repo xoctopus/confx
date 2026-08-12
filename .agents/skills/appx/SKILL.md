@@ -2,7 +2,7 @@
 name: appx
 description: 
   - 如何用 `github.com/xoctopus/confx/pkg/appx` 组装可执行应用
-  - Meta, Conf, PreRunner/Serves, Close
+  - Meta, Conf, PreInit/PreRun/Serve, Close
   - 接入 conf* 基础设施(confotel、confrdb、confredis、confpulsar、confrabbit、confjwt、conftls)
   - 当需要搭建 confx 应用, 编写 NewAppContext/Conf/Execute, 或把基础设施组件接入宿主项目时使用
 ---
@@ -33,4 +33,9 @@ description:
 
 参见 `example/appx/cmd/example/main.go`
 
-最小步骤: NewAppContext → Conf → Execute → Close
+最小步骤:
+
+- NewAppContext
+- Conf (PreInit → Init → WithContext)
+- Execute (PreRun → Serve → Main; Main 自决 wait/oneshot 并 Close)
+- 其它 oneshot 优先 AddCommand

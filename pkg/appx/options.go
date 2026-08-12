@@ -21,7 +21,7 @@ type Meta struct {
 	Runtime  Runtime `json:"runtime"`
 }
 
-// DefaultMeta is the baseline [Meta] used when [WithBuildMeta] is omitted.
+// DefaultMeta is the baseline [Meta] used when [WithMeta] is omitted.
 // Runtime is taken from [GetRuntime] at package init.
 var DefaultMeta = Meta{
 	Name:     "name",
@@ -81,30 +81,36 @@ func (m *Meta) Overwrite(meta Meta) {
 // AppOption holds build [Meta] and startup hooks for an [AppCtx].
 type AppOption struct {
 	*Meta
-	// PreRunners run sequentially before Serves: ordered startup init such as
-	// global config or context injection.
+	// PreInits run sequentially before component Init in [AppCtx.Conf]: prepare
+	// metadata or hooks so Init can succeed, without opening business traffic.
+	PreInits []func()
+	// PreRunners run sequentially before Serve: ordered process-level prep
+	// with a complete ctx, such as global config or context injection.
+	// Registered via [WithPreRun].
 	PreRunners []func()
-	// Serves run in parallel after PreRunners: long-lived services such as
-	// HTTP servers or scheduled jobs.
+	// Serves run in parallel after PreRun: long-lived services such as
+	// HTTP servers or scheduled jobs. Registered via [WithServe].
 	Serves []func()
-	// CloseFns are extra close callbacks for [AppCtx.Close]. Components from
-	// Conf are closed automatically and need not be listed here.
+	// CloseFns are extra close callbacks for [AppCtx.Close], registered via
+	// [WithClose]. Components from Conf are closed automatically and need not
+	// be listed here.
 	CloseFns []func() error
 }
 
-// AppendPreRunners appends ordered startup callbacks.
-func (o *AppOption) AppendPreRunners(runners ...func()) {
-	o.PreRunners = append(o.PreRunners, runners...)
+// PreInit runs [WithPreInit] callbacks sequentially before component Init.
+func (o *AppOption) PreInit() {
+	BatchRunSync(o.PreInits...)
 }
 
-// AppendServes appends long-lived service callbacks.
-func (o *AppOption) AppendServes(runners ...func()) {
-	o.Serves = append(o.Serves, runners...)
-}
-
-// PreRun runs PreRunners then Serves. Invoked by the `run` command.
+// PreRun runs [WithPreRun] callbacks sequentially. Invoked by `run`
+// before [AppOption.Serve].
 func (o *AppOption) PreRun() {
 	BatchRunSync(o.PreRunners...)
+}
+
+// Serve starts [WithServe] callbacks in parallel (non-blocking). Invoked by
+// `run` after [AppOption.PreRun].
+func (o *AppOption) Serve() {
 	go BatchRun(o.Serves...)
 }
 
