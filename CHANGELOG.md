@@ -1,8 +1,22 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.4.9...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.0...HEAD)
 
-> 0001-01-01
+> 2026-08-12
+
+### Feat
+
+* **conflogx:** log config entry
+
+
+<a name="v0.5.0"></a>
+## [v0.5.0](https://github.com/xoctopus/confx/compare/v0.4.9...v0.5.0)
+
+> 2026-08-12
+
+### Feat
+
+* **appx:** components initializing and context injecting and make confxxx Injectable
 
 
 <a name="v0.4.9"></a>
