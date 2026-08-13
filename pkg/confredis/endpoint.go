@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 
@@ -69,6 +70,12 @@ func (e *Endpoint) Close() error {
 	return nil
 }
 
+var (
+	_ kv.Executor      = (*Endpoint)(nil)
+	_ kv.Store         = (*Endpoint)(nil)
+	_ types.Injectable = (*Endpoint)(nil)
+)
+
 func (e *Endpoint) Key(k string) string {
 	return e.Option.Prefix + ":" + k
 }
@@ -76,6 +83,54 @@ func (e *Endpoint) Key(k string) string {
 func (e *Endpoint) Exec(ctx context.Context, cmd string, args ...any) (any, error) {
 	c := e.cli.Do(ctx, append([]any{cmd}, args...)...)
 	return c.Result()
+}
+
+func (e *Endpoint) Get(ctx context.Context, key string) (string, bool, error) {
+	val, err := e.cli.Get(ctx, key).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return "", false, nil
+		}
+		return "", false, err
+	}
+	return val, true, nil
+}
+
+func (e *Endpoint) Set(ctx context.Context, key, val string, ttl time.Duration) error {
+	if ttl < 0 {
+		ttl = 0
+	}
+	return e.cli.Set(ctx, key, val, ttl).Err()
+}
+
+func (e *Endpoint) SetNX(ctx context.Context, key, val string, ttl time.Duration) (bool, error) {
+	if ttl < 0 {
+		ttl = 0
+	}
+	return e.cli.SetNX(ctx, key, val, ttl).Result()
+}
+
+func (e *Endpoint) Del(ctx context.Context, key string) (bool, error) {
+	n, err := e.cli.Del(ctx, key).Result()
+	if err != nil {
+		return false, err
+	}
+	return n > 0, nil
+}
+
+func (e *Endpoint) TTL(ctx context.Context, key string) (time.Duration, bool, error) {
+	d, err := e.cli.PTTL(ctx, key).Result()
+	if err != nil {
+		return 0, false, err
+	}
+	switch d {
+	case -2: // key does not exist
+		return 0, false, nil
+	case -1: // key exists but has no expiration
+		return 0, true, nil
+	default:
+		return d, true, nil
+	}
 }
 
 func (e *Endpoint) WithContext(ctx context.Context) context.Context {
