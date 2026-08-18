@@ -1,12 +1,26 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.2...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.3...HEAD)
 
-> 2026-08-13
+> 2026-08-18
+
+### Feat
+
+* **kg:** add structured key generator with prefix and audience conventions
+
+
+<a name="v0.5.3"></a>
+## [v0.5.3](https://github.com/xoctopus/confx/compare/v0.5.2...v0.5.3)
+
+> 2026-08-14
 
 ### Doc
 
 * update CHANGELOG
+
+### Feat
+
+* **kv:** add Store interface and implement it on confredis.Endpoint
 
 
 <a name="v0.5.2"></a>
