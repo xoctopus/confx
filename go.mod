@@ -17,6 +17,7 @@ require (
 )
 
 require (
+	github.com/oklog/ulid/v2 v2.1.2
 	github.com/xoctopus/httpx v0.0.1
 	github.com/xoctopus/logx v0.3.5
 	github.com/xoctopus/schex v0.1.0
