@@ -1,8 +1,54 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.4...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.4-rc4...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.5.4-rc4"></a>
+## [v0.5.4-rc4](https://github.com/xoctopus/confx/compare/v0.5.4-rc3...v0.5.4-rc4)
+
+> 2026-08-19
+
+### Feat
+
+* **conflogx:** make buffered log flush interval configurable
+
+
+<a name="v0.5.4-rc3"></a>
+## [v0.5.4-rc3](https://github.com/xoctopus/confx/compare/v0.5.4-rc2...v0.5.4-rc3)
+
+> 2026-08-19
+
+### Feat
+
+* **conflogx:** log stash
+
+
+<a name="v0.5.4-rc2"></a>
+## [v0.5.4-rc2](https://github.com/xoctopus/confx/compare/v0.5.4-rc1...v0.5.4-rc2)
+
+> 2026-08-19
+
+### Feat
+
+* **conflogx:** log stash
+
+
+<a name="v0.5.4-rc1"></a>
+## [v0.5.4-rc1](https://github.com/xoctopus/confx/compare/v0.5.4-rc0...v0.5.4-rc1)
+
+> 2026-08-19
+
+### Chore
+
+* **confredis:** use default tls config
+
+
+<a name="v0.5.4-rc0"></a>
+## [v0.5.4-rc0](https://github.com/xoctopus/confx/compare/v0.5.4...v0.5.4-rc0)
+
+> 2026-08-19
 
 
 <a name="v0.5.4"></a>

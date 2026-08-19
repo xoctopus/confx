@@ -13,7 +13,7 @@ func TestEndpoint(t *testing.T) {
 	t.Run("Init", func(t *testing.T) {
 		ctx := hack.WithRedis(
 			hack.Context(t), t,
-			"redis://:123456@localhost:16379?prefix=hack_test",
+			"redis://:123456@localhost:16380?prefix=hack_test",
 		)
 		cli := confredis.MustClient(ctx)
 		Expect(t, cli, NotBeNil[confredis.Client]())

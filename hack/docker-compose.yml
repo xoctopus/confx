@@ -4,9 +4,27 @@ services:
     container_name: redis_confx
     platform: linux/amd64
     restart: always
-    command: redis-server --requirepass "123456"
+    volumes:
+      - ../pkg/conftls/testdata:/tls:ro
+    command:
+      - redis-server
+      - --requirepass
+      - "123456"
+      - --port
+      - "6379"
+      - --tls-port
+      - "6380"
+      - --tls-cert-file
+      - /tls/server.crt
+      - --tls-key-file
+      - /tls/server.key
+      - --tls-ca-cert-file
+      - /tls/ca.crt
+      - --tls-auth-clients
+      - "no"
     ports:
-      - "16379:6379"
+      - "16379:6379" # plaintext
+      - "16380:6380" # tls
 
   pulsar:
     image: apachepulsar/pulsar:4.1.0
@@ -28,10 +46,12 @@ services:
       MYSQL_PASSWORD: ""
       TZ: "Asia/Shanghai"
     ports:
-      - "13306:3306"
+      - "13306:3306" # plaintext and optional tls on the same port
     volumes:
       - ./scripts/mysql.sql:/docker-entrypoint-initdb.d/init.sql
       - ./scripts/xxl.sql:/docker-entrypoint-initdb.d/init_xxl.sql
+      - ../pkg/conftls/testdata:/tls:ro
+      - ./scripts/mysql.cnf:/etc/mysql/conf.d/ssl.cnf:ro
     restart: always
 
   postgres:
@@ -41,10 +61,21 @@ services:
       POSTGRES_PASSWORD:
       POSTGRES_HOST_AUTH_METHOD: trust
       TZ: "Asia/Shanghai"
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/tls/server.crt
+      - -c
+      - ssl_key_file=/tls/server.key
+      - -c
+      - ssl_ca_file=/tls/ca.crt
     ports:
-      - "15432:5432"
+      - "15432:5432" # plaintext and optional tls on the same port
     volumes:
       - ./scripts/postgres.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../pkg/conftls/testdata:/tls:ro
     restart: always
 
   pulsar-manager:
@@ -155,9 +186,13 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - ../pkg/conftls/testdata:/tls:ro
+      - ./scripts/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
     ports:
       - "15672:15672" # Web UI
-      - "5672:5672"   # AMQP protocol
+      - "5672:5672"   # AMQP plaintext
+      - "25672:5671"  # AMQP tls
 
 networks:
   doris_net:
