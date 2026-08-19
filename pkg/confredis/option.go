@@ -7,6 +7,7 @@ import (
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/textx"
 
+	"github.com/xoctopus/confx/pkg/conftls"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
@@ -70,5 +71,6 @@ func (o Option) ClientOption() *redis.UniversalOptions {
 		SentinelUsername: o.SentinelAuth.Username,
 		SentinelPassword: o.SentinelAuth.Password.String(),
 		IsClusterMode:    o.ClusterMode,
+		TLSConfig:        conftls.DefaultTLSConfig,
 	}
 }
