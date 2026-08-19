@@ -56,7 +56,7 @@ func ExampleEndpoint() {
 
 	// Output:
 	// TEST__Address=redis://localhost:6379/1
-	// TEST__Auth_DecryptKeyEnv=
+	// TEST__Auth_DecryptKey=
 	// TEST__Auth_Password=LelzsnHN2xnJd/MB+JGIXWqd8pJPhPYfuRfDbrCsZE8=
 	// TEST__Auth_Username=username
 	// TEST__Cert_CA=ca_path
@@ -66,7 +66,7 @@ func ExampleEndpoint() {
 	// TEST__Option_Timeout=0s
 	//
 	// TEST__Address=redis://localhost:6379/1
-	// TEST__Auth_DecryptKeyEnv=
+	// TEST__Auth_DecryptKey=
 	// TEST__Auth_Password=--------
 	// TEST__Auth_Username=username
 	// TEST__Cert_CA=ca_path
@@ -96,12 +96,12 @@ func TestEndpoint(t *testing.T) {
 		Expect(t, ep.Init(), Failed())
 	})
 	t.Run("InvalidAuth", func(t *testing.T) {
-		t.Setenv("PASSWORD_DEC_KEY", "def")
 		ep := &Endpoint{
 			Address: "redis://localhost:6379/1",
 			Auth: types.Userinfo{
-				Username: "username",
-				Password: types.Password(base64.StdEncoding.EncodeToString([]byte("abc"))),
+				Username:   "username",
+				Password:   types.Password(base64.StdEncoding.EncodeToString([]byte("abc"))),
+				DecryptKey: "def",
 			},
 		}
 		ep.SetDefault()
@@ -112,7 +112,7 @@ func TestEndpoint(t *testing.T) {
 			password := ep.Auth.Password
 			ep = &Endpoint{
 				Address: fmt.Sprintf("redis://%s:%s@localhost:6379/1", username, password),
-				Auth:    types.Userinfo{},
+				Auth:    types.Userinfo{DecryptKey: "def"},
 			}
 			ep.SetDefault()
 			Expect(t, ep.Init(), Failed())

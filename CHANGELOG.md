@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.3...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.4...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.5.4"></a>
+## [v0.5.4](https://github.com/xoctopus/confx/compare/v0.5.3...v0.5.4)
 
 > 2026-08-18
+
+### Doc
+
+* **kg:** add skill and guideline for key generation usage
 
 ### Feat
 

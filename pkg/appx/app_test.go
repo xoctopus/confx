@@ -110,7 +110,7 @@ APP__CONFIG2__ServerPort: "8080"
 	// runtime:  DEV
 	//
 	// APP__CONFIG1__Endpoint_Address=postgres://hostname:5432/base
-	// APP__CONFIG1__Endpoint_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// APP__CONFIG1__Endpoint_Auth_DecryptKey=
 	// APP__CONFIG1__Endpoint_Auth_Password=--------
 	// APP__CONFIG1__Endpoint_Auth_Username=
 	// APP__CONFIG1__Endpoint_Cert_CA=
@@ -118,7 +118,7 @@ APP__CONFIG2__ServerPort: "8080"
 	// APP__CONFIG1__Endpoint_Cert_Key=
 	// APP__CONFIG1__WorkerID=100
 	// APP__CONFIG2__ClientEndpoint_Address=http://localhost:80/demo
-	// APP__CONFIG2__ClientEndpoint_Auth_DecryptKeyEnv=PASSWORD_DEC_KEY
+	// APP__CONFIG2__ClientEndpoint_Auth_DecryptKey=
 	// APP__CONFIG2__ClientEndpoint_Auth_Password=--------
 	// APP__CONFIG2__ClientEndpoint_Auth_Username=
 	// APP__CONFIG2__ClientEndpoint_Cert_CA=

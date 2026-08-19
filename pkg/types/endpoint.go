@@ -43,7 +43,6 @@ func (e *Endpoint[Option]) SetDefault() {
 	if x, ok := any(&e.Option).(Defaulter); ok {
 		x.SetDefault()
 	}
-	e.Auth.SetDefault()
 }
 
 func (e *Endpoint[Option]) Init() (err error) {

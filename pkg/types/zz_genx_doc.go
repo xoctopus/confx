@@ -43,10 +43,10 @@ func (v *Userinfo) DocOf(names ...string) ([]string, bool) {
 			return []string{}, true
 		case "Password":
 			return []string{}, true
-		case "DecryptKeyEnv":
-			return []string{"if not empty read key from env and decrypt password by AEC", "with ECB mode and PKCS7 padding. default env key is PASSWORD_DEC_KEY"}, true
+		case "DecryptKey":
+			return []string{"if not empty decrypt password by AES with ECB mode and PKCS7", "padding. the value is the raw decrypt key, not an environment variable name."}, true
 		}
 		return []string{}, false
 	}
-	return []string{"likes url.Userinfo but embed aes decryptor if DecryptKeyEnv is set.", "and implemented SecurityString to hide password"}, true
+	return []string{"likes url.Userinfo but embed aes decryptor if DecryptKey is set.", "and implemented SecurityString to hide password"}, true
 }

@@ -1,5 +1,5 @@
 EXAMPLE__Endpoint_Address: ""
-EXAMPLE__Endpoint_Auth_DecryptKeyEnv: PASSWORD_DEC_KEY
+EXAMPLE__Endpoint_Auth_DecryptKey: ""
 EXAMPLE__Endpoint_Auth_Password: ""
 EXAMPLE__Endpoint_Auth_Username: ""
 EXAMPLE__Endpoint_Cert_CA: ""

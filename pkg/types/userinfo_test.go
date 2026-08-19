@@ -11,16 +11,13 @@ import (
 )
 
 func TestUserinfo(t *testing.T) {
-	t.Setenv("PASSWORD_DEC_KEY", "9f67229a84e2229ee9a834c151d068f5")
-
 	u := &types.Userinfo{
-		Username: "username",
-		Password: "LelzsnHN2xnJd/MB+JGIXWqd8pJPhPYfuRfDbrCsZE8=",
+		Username:   "username",
+		Password:   "LelzsnHN2xnJd/MB+JGIXWqd8pJPhPYfuRfDbrCsZE8=",
+		DecryptKey: "9f67229a84e2229ee9a834c151d068f5",
 	}
-	u.SetDefault()
 
 	Expect(t, u.IsZero(), BeFalse())
-	Expect(t, u.DecryptKeyEnv, Equal("PASSWORD_DEC_KEY"))
 	Expect(t, u.Init(), Succeed())
 	Expect(t, u.Password.String(), Equal("rhdsicyjzbwbtdwnxcei"))
 	Expect(t, u.String(), Equal("username:rhdsicyjzbwbtdwnxcei"))
@@ -36,23 +33,23 @@ func TestUserinfo(t *testing.T) {
 	Expect(t, (types.Userinfo{Username: "User", Password: "pass"}).Userinfo(), Equal(url.UserPassword("User", "pass")))
 
 	t.Run("InvalidBase64Password", func(t *testing.T) {
-		t.Setenv("PASSWORD_DEC_KEY", "9f67229a84e2229ee9a834c151d068f5")
-		u = &types.Userinfo{Username: "user", Password: "abc$%^"}
-		u.SetDefault()
+		u = &types.Userinfo{
+			Username:   "user",
+			Password:   "abc$%^",
+			DecryptKey: "9f67229a84e2229ee9a834c151d068f5",
+		}
 		Expect(t, u.Init(), Failed())
 	})
 
 	t.Run("FailedAesDecode", func(t *testing.T) {
-		t.Setenv("PASSWORD_DEC_KEY_INVALID", "0123456789abcde")
 		u = &types.Userinfo{
-			Username:      "username",
-			Password:      "LelzsnHN2xnJd/MB+JGIXWqd8pJPhPYfuRfDbrCsZE8=",
-			DecryptKeyEnv: "PASSWORD_DEC_KEY_INVALID",
+			Username:   "username",
+			Password:   "LelzsnHN2xnJd/MB+JGIXWqd8pJPhPYfuRfDbrCsZE8=",
+			DecryptKey: "0123456789abcde",
 		}
 		Expect(t, u.Init(), Failed())
 
-		t.Setenv("PASSWORD_DEC_KEY_INVALID_2", "def")
-		u.DecryptKeyEnv = "PASSWORD_DEC_KEY_INVALID_2"
+		u.DecryptKey = "def"
 		u.Password = types.Password(base64.StdEncoding.EncodeToString([]byte("abc")))
 		Expect(t, u.Init(), ErrorContains("aes decrypt panicked"))
 	})
