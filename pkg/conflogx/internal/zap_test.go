@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/xoctopus/logx"
 	. "github.com/xoctopus/x/testx"
@@ -48,10 +49,6 @@ func TestNewZapInstance(t *testing.T) {
 
 	t.Run("RollingFileName", func(t *testing.T) {
 		dir := t.TempDir()
-		name := "20260819-15-0.log"
-
-		Expect(t, os.WriteFile(filepath.Join(dir, name), nil, 0o644), Succeed())
-
 		logger, stop := internal.NewZapInstance(
 			internal.WithOutputDir(dir),
 			internal.WithRolling(true),
@@ -62,7 +59,12 @@ func TestNewZapInstance(t *testing.T) {
 		logger.Info("rolling file")
 		Expect(t, stop(), Succeed())
 
-		data, err := os.ReadFile(filepath.Join(dir, name))
+		entries, err := os.ReadDir(dir)
+		Expect(t, err, Succeed())
+		Expect(t, len(entries), Equal(1))
+		Expect(t, entries[0].Name(), MatchRegexp(`^\d{8}-\d{2}-\d+\.log$`))
+
+		data, err := os.ReadFile(filepath.Join(dir, entries[0].Name()))
 		Expect(t, err, Succeed())
 		Expect(t, string(data), ContainsSubString("rolling file"))
 	})
@@ -72,5 +74,22 @@ func TestNewZapInstance(t *testing.T) {
 		Expect(t, stop, BeNil[func() error]())
 		Expect(t, logger, NotBeNil[logx.Logger]())
 		logger.Info("fallback stderr")
+	})
+
+	t.Run("FlushInterval", func(t *testing.T) {
+		dir := t.TempDir()
+		logger, stop := internal.NewZapInstance(
+			internal.WithOutputDir(dir),
+			internal.WithLevel(logx.LogLevelInfo),
+			internal.WithFlushInterval(50*time.Millisecond),
+		)
+		defer func() { Expect(t, stop(), Succeed()) }()
+
+		logger.Info("periodic flush")
+		time.Sleep(100 * time.Millisecond)
+
+		data, err := os.ReadFile(filepath.Join(dir, internal.DefaultFileName))
+		Expect(t, err, Succeed())
+		Expect(t, string(data), ContainsSubString("periodic flush"))
 	})
 }

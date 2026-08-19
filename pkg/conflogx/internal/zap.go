@@ -17,10 +17,11 @@ const (
 )
 
 type config struct {
-	dir      string
-	fileName string
-	rolling  bool
-	level    logx.LogLevel
+	dir           string
+	fileName      string
+	rolling       bool
+	level         logx.LogLevel
+	flushInterval time.Duration
 }
 
 type Option func(*config)
@@ -49,6 +50,12 @@ func WithLevel(level logx.LogLevel) Option {
 	}
 }
 
+func WithFlushInterval(d time.Duration) Option {
+	return func(c *config) {
+		c.flushInterval = d
+	}
+}
+
 func NewZapInstance(opts ...Option) (logx.Logger, func() error) {
 	cfg := config{
 		fileName: DefaultFileName,
@@ -64,10 +71,15 @@ func NewZapInstance(opts ...Option) (logx.Logger, func() error) {
 		return logx.NewZap(), nil
 	}
 
+	flushInterval := cfg.flushInterval
+	if flushInterval <= 0 {
+		flushInterval = defaultBufferFlushWait
+	}
+
 	bws := &zapcore.BufferedWriteSyncer{
 		WS:            zapcore.AddSync(w),
 		Size:          defaultBufferSize,
-		FlushInterval: defaultBufferFlushWait,
+		FlushInterval: flushInterval,
 	}
 	return logx.NewWithInstance(logx.ZapLogger(bws, 2, cfg.level)), bws.Stop
 }

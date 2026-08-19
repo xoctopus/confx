@@ -3,10 +3,12 @@ package conflogx
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/xoctopus/logx"
 
 	"github.com/xoctopus/confx/pkg/conflogx/internal"
+	"github.com/xoctopus/confx/pkg/types"
 )
 
 const (
@@ -15,12 +17,14 @@ const (
 )
 
 type LoggerConfig struct {
-	Level     logx.LogLevel  `url:",default=debug"`
-	Format    logx.LogFormat `url:",default=json"`
-	Mode      string         `url:",default=std"`
-	OutputDIR string         `url:""`
-	FileName  string         `url:""`
-	Rolling   bool           `url:""`
+	Level  logx.LogLevel  `url:",default=debug"`
+	Format logx.LogFormat `url:",default=json"`
+	Mode   string         `url:",default=std"`
+
+	OutputDIR     string         `url:""`
+	FileName      string         `url:""`
+	Rolling       bool           `url:""`
+	FlushInterval types.Duration `url:",default=30s"`
 
 	stop func() error
 }
@@ -55,6 +59,7 @@ func (c *LoggerConfig) WithContext(ctx context.Context) context.Context {
 		opts := []internal.Option{
 			internal.WithOutputDir(c.OutputDIR),
 			internal.WithLevel(c.Level),
+			internal.WithFlushInterval(time.Duration(c.FlushInterval)),
 		}
 		if c.Rolling {
 			opts = append(opts, internal.WithRolling(true))
