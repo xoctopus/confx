@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.4-rc4...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.4-rc5...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.5.4-rc5"></a>
+## [v0.5.4-rc5](https://github.com/xoctopus/confx/compare/v0.5.4-rc4...v0.5.4-rc5)
+
+> 2026-08-19
+
+### Chore
+
+* **hack:** enable TLS for all docker-compose services
 
 
 <a name="v0.5.4-rc4"></a>

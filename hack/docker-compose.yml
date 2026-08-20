@@ -61,20 +61,12 @@ services:
       POSTGRES_PASSWORD:
       POSTGRES_HOST_AUTH_METHOD: trust
       TZ: "Asia/Shanghai"
-    command:
-      - postgres
-      - -c
-      - ssl=on
-      - -c
-      - ssl_cert_file=/tls/server.crt
-      - -c
-      - ssl_key_file=/tls/server.key
-      - -c
-      - ssl_ca_file=/tls/ca.crt
+    entrypoint: ["/bin/bash", "/scripts/postgres-entrypoint.sh"]
     ports:
       - "15432:5432" # plaintext and optional tls on the same port
     volumes:
       - ./scripts/postgres.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./scripts/postgres-entrypoint.sh:/scripts/postgres-entrypoint.sh:ro
       - ../pkg/conftls/testdata:/tls:ro
     restart: always
 
