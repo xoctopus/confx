@@ -42,7 +42,7 @@ require (
 )
 
 // key-value storage
-require github.com/redis/go-redis/v9 v9.21.0
+require github.com/redis/go-redis/v9 v9.22.0
 
 // otel
 require (
