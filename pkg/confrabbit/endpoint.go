@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 	"github.com/wagslane/go-rabbitmq"
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
@@ -83,7 +83,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v liveness.Result) {
 		err  error
 		p    mq.Producer[ProducerMessage]
 		c    mq.Consumer[ConsumerMessage]
-		body = []byte(uuid.NewString())
+		body = []byte(ulid.Make().String())
 	)
 	defer func() {
 		v.End(err)
@@ -92,7 +92,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v liveness.Result) {
 	// Readiness check via a temporary exclusive queue & exchange
 	exchange := "liveness_exchange"
 	topic := "liveness"
-	queue := uuid.NewString()
+	queue := ulid.Make().String()
 
 	// Create temporary publisher
 	p, err = e.NewProducer(ctx,

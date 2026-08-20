@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
 
@@ -89,7 +89,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v liveness.Result) {
 		err  error
 		r    pulsar.Reader
 		p    mq.Producer[ProducerMessage]
-		body = []byte(uuid.NewString())
+		body = []byte(ulid.Make().String())
 	)
 	defer func() {
 		v.End(err)

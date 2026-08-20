@@ -13,6 +13,14 @@
 
 * update Makefile
 
+### Fix
+
+* **otel:** migrate log attributes to otel/attribute
+
+### Refactor
+
+* **confredis:** build client opts via ParseURL and Option overlay
+
 
 <a name="v0.5.5"></a>
 ## [v0.5.5](https://github.com/xoctopus/confx/compare/v0.5.4-rc5...v0.5.5)

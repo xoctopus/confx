@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
 	. "github.com/xoctopus/x/testx"
 	"github.com/xoctopus/x/testx/bdd"
 
@@ -103,7 +103,7 @@ func TestEndpoint(t *testing.T) {
 
 	t.Run("ValidateConsumerMessage", func(t *testing.T) {
 		var (
-			mp      = NewProducerMessage(TopicFor(t), []byte(uuid.NewString()))
+			mp      = NewProducerMessage(TopicFor(t), []byte(ulid.Make().String()))
 			termsig = make(chan struct{}, 1)
 		)
 		mp.SetDelay(time.Second)
@@ -269,7 +269,7 @@ func TestEndpoint(t *testing.T) {
 		t.Run("HandlerPanicked", func(t *testing.T) {
 			var (
 				topic   = TopicFor(t)
-				msg     = NewProducerMessage(topic, []byte(uuid.NewString()))
+				msg     = NewProducerMessage(topic, []byte(ulid.Make().String()))
 				termsig = make(chan struct{}, 1)
 				handler = func(_ context.Context, m ConsumerMessage) error {
 					if bytes.Equal(m.Payload(), msg.Payload()) {
@@ -303,7 +303,7 @@ func TestEndpoint(t *testing.T) {
 		t.Run("HandlerFailed", func(t *testing.T) {
 			var (
 				topic   = TopicFor(t)
-				msg     = NewProducerMessage(topic, []byte(uuid.NewString()))
+				msg     = NewProducerMessage(topic, []byte(ulid.Make().String()))
 				termsig = make(chan struct{}, 1)
 				handler = func(_ context.Context, m ConsumerMessage) error {
 					if bytes.Equal(m.Payload(), msg.Payload()) {
