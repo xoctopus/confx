@@ -3,12 +3,12 @@ package confredis
 import (
 	"context"
 	"errors"
-	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/xoctopus/x/misc/must"
 
+	"github.com/xoctopus/confx/pkg/conftls"
 	"github.com/xoctopus/confx/pkg/types"
 	"github.com/xoctopus/confx/pkg/types/kv"
 	"github.com/xoctopus/confx/pkg/types/liveness"
@@ -21,6 +21,8 @@ type Endpoint struct {
 }
 
 func (e *Endpoint) Init(ctx context.Context) error {
+	must.BeTrueF(len(e.Address) > 0, "empty main address")
+
 	if err := e.Endpoint.Init(); err != nil {
 		return err
 	}
@@ -29,20 +31,22 @@ func (e *Endpoint) Init(ctx context.Context) error {
 		return nil
 	}
 
-	opt := e.Option.ClientOption()
-	for _, addr := range append(opt.Addrs, e.Endpoint.Address) {
-		u, err := url.Parse(addr)
-		if err != nil {
-			return fmt.Errorf("invalid address: %s [cause: %w]", addr, err)
-		}
-		opt.Addrs = append(opt.Addrs, u.Host)
+	if err := e.Option.SentinelAuth.Init(); err != nil {
+		return err
 	}
-	// opt.Addrs = slicex.Unique(append(opt.Addrs, e.Endpoint.Endpoint()))
-	opt.Username = e.Auth.Username
-	opt.Password = e.Auth.Password.String()
 
-	if !e.Cert.IsZero() {
-		opt.TLSConfig = e.Cert.Config()
+	opt := e.Option.ClientOption(e.Address, e.ExtraAddress...)
+
+	if !e.Auth.IsZero() {
+		opt.Username = e.Auth.Username
+		opt.Password = e.Auth.Password.String()
+	}
+	if e.Option.EnableTLS || e.Scheme() == "rediss" {
+		if !e.Cert.IsZero() {
+			opt.TLSConfig = e.Cert.Config()
+		} else {
+			opt.TLSConfig = conftls.DefaultTLSConfig.Clone()
+		}
 	}
 
 	e.cli = redis.NewUniversalClient(opt)
@@ -64,8 +68,9 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (d liveness.Result) {
 }
 
 func (e *Endpoint) Close() error {
-	if e.cli != nil {
-		return e.cli.Close()
+	if cli := e.cli; cli != nil {
+		e.cli = nil
+		return cli.Close()
 	}
 	return nil
 }

@@ -13,7 +13,8 @@ func TestEndpoint(t *testing.T) {
 	t.Run("Init", func(t *testing.T) {
 		ctx := hack.WithRedis(
 			hack.Context(t), t,
-			"redis://:123456@localhost:16380?prefix=hack_test",
+			"redis://:123456@localhost:16379",
+			func(ep *confredis.Endpoint) { ep.Option.Prefix = "hack_test" },
 		)
 		cli := confredis.MustClient(ctx)
 		Expect(t, cli, NotBeNil[confredis.Client]())
@@ -30,6 +31,19 @@ func TestEndpoint(t *testing.T) {
 		Expect(t, r.(string), Equal("v"))
 
 		_, err = cli.Exec(ctx, "del", "k")
+		Expect(t, err, Succeed())
+	})
+
+	t.Run("InitTLS", func(t *testing.T) {
+		ctx := hack.WithRedis(
+			hack.Context(t), t,
+			"rediss://:123456@localhost:16380",
+			func(ep *confredis.Endpoint) { ep.Option.Prefix = "hack_test_tls" },
+		)
+		cli := confredis.MustClient(ctx)
+		Expect(t, cli, NotBeNil[confredis.Client]())
+
+		_, err := cli.Exec(ctx, "ping")
 		Expect(t, err, Succeed())
 	})
 }

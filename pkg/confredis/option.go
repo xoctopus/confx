@@ -5,19 +5,20 @@ import (
 
 	"github.com/redis/go-redis/v9"
 	"github.com/xoctopus/x/misc/must"
+	"github.com/xoctopus/x/slicex"
 	"github.com/xoctopus/x/textx"
 
-	"github.com/xoctopus/confx/pkg/conftls"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
 type Option struct {
 	// Prefix
 	Prefix string
-	// Addresses cluster address
-	Addresses []string `url:"-"`
 	// DB single-node database to be selected once connected
 	DB int `url:""`
+	// EnableTLS forces TLS even when Address scheme is redis://.
+	// rediss:// always enables TLS regardless of this flag.
+	EnableTLS bool `url:""`
 	// ConnectionTimeout connection timeout
 	ConnectionTimeout types.Duration `url:",default=100ms"`
 	// OperationTimeout read/write timeout
@@ -46,31 +47,63 @@ func (o *Option) SetDefault() {
 	must.NoErrorV(textx.SetDefault(o))
 }
 
-func (o Option) ClientOption() *redis.UniversalOptions {
+// ClientOption builds redis.UniversalOptions from main URL and optional seed addresses.
+func (o Option) ClientOption(main string, others ...string) *redis.UniversalOptions {
+	must.BeTrueF(len(main) > 0, "empty main address")
+
+	// main is parsed by redis.ParseURL.
+	// IMPORTANT: go-redis rejects any URL query key they dont know
+	// TODO: raise this with go-redis (ignore unknown query vs hard fail).
+	base := must.NoErrorV(redis.ParseURL(main))
+
+	seeds := []string{base.Addr}
+	for _, s := range others {
+		seeds = append(seeds, must.NoErrorV(HostPort(s)))
+	}
+
+	db := base.DB
+	if o.DB != 0 {
+		db = o.DB
+	}
+	if o.ClusterMode {
+		db = 0
+	}
+
 	return &redis.UniversalOptions{
-		DB:         o.DB,
+		Addrs:      slicex.Unique(seeds),
+		DB:         db,
 		ClientName: o.Prefix,
+		Username:   base.Username,
+		Password:   base.Password,
+		Protocol:   base.Protocol,
+
+		MaxRetries:      base.MaxRetries,
+		MinRetryBackoff: base.MinRetryBackoff,
+		MaxRetryBackoff: base.MaxRetryBackoff,
 
 		DialTimeout:           time.Duration(o.ConnectionTimeout),
 		ReadTimeout:           time.Duration(o.OperationTimeout),
 		WriteTimeout:          time.Duration(o.OperationTimeout),
 		ContextTimeoutEnabled: true,
+		PoolTimeout:           time.Duration(o.ConnectionTimeout),
 
 		ReadBufferSize:  o.BufferSizeKB * 1024,
 		WriteBufferSize: o.BufferSizeKB * 1024,
 
-		PoolSize:        o.PoolSize,
-		PoolTimeout:     time.Duration(o.ConnectionTimeout),
-		MinIdleConns:    max(3, o.MaxIdleConnection/2),
-		MaxIdleConns:    o.MaxIdleConnection,
-		MaxActiveConns:  4 * o.PoolSize,
-		ConnMaxIdleTime: time.Duration(o.MaxIdleTime),
+		PoolFIFO:              base.PoolFIFO,
+		PoolSize:              o.PoolSize,
+		MinIdleConns:          max(3, o.MaxIdleConnection/2),
+		MaxIdleConns:          o.MaxIdleConnection,
+		MaxActiveConns:        4 * o.PoolSize,
+		ConnMaxIdleTime:       time.Duration(o.MaxIdleTime),
+		ConnMaxLifetime:       base.ConnMaxLifetime,
+		ConnMaxLifetimeJitter: base.ConnMaxLifetimeJitter,
 
 		IdentitySuffix: o.Prefix + "_v9",
 
+		MasterName:       o.MasterName,
 		SentinelUsername: o.SentinelAuth.Username,
 		SentinelPassword: o.SentinelAuth.Password.String(),
 		IsClusterMode:    o.ClusterMode,
-		TLSConfig:        conftls.DefaultTLSConfig,
 	}
 }

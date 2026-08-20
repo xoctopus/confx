@@ -24,7 +24,7 @@ func WithRedisLost(ctx context.Context, t testing.TB, dsn string) context.Contex
 	return ep.WithContext(ctx)
 }
 
-func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
+func WithRedis(ctx context.Context, t testing.TB, dsn string, setup ...func(*confredis.Endpoint)) context.Context {
 	Check(t)
 
 	_, err := url.Parse(dsn)
@@ -32,6 +32,9 @@ func WithRedis(ctx context.Context, t testing.TB, dsn string) context.Context {
 
 	ep := &confredis.Endpoint{}
 	ep.Address = dsn
+	for _, fn := range setup {
+		fn(ep)
+	}
 
 	err = retrier.Do(func() error { return ep.Init(ctx) })
 	Expect(t, err, Succeed())
