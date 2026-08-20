@@ -1,8 +1,35 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.4-rc5...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.5...HEAD)
 
-> 0001-01-01
+> 2026-08-20
+
+### Chore
+
+* update ci.yml template
+* update ci.yml template
+
+### Ci
+
+* update Makefile
+
+
+<a name="v0.5.5"></a>
+## [v0.5.5](https://github.com/xoctopus/confx/compare/v0.5.4-rc5...v0.5.5)
+
+> 2026-08-20
+
+### Build
+
+* **deps:** bump github.com/prometheus/client_golang ([#40](https://github.com/xoctopus/confx/issues/40))
+* **deps:** bump go.opentelemetry.io/otel/sdk/log from 0.20.0 to 0.21.0 ([#46](https://github.com/xoctopus/confx/issues/46))
+* **deps:** bump github.com/go-think/openssl from 1.21.0 to 1.22.0 ([#44](https://github.com/xoctopus/confx/issues/44))
+* **deps:** bump go.opentelemetry.io/otel/sdk/metric ([#45](https://github.com/xoctopus/confx/issues/45))
+* **deps:** bump github.com/redis/go-redis/v9 from 9.21.0 to 9.22.0 ([#47](https://github.com/xoctopus/confx/issues/47))
+
+### Feat
+
+* **confws:** add configurable WebSocket server
 
 
 <a name="v0.5.4-rc5"></a>

@@ -104,17 +104,18 @@ func (w *Writer) WriteJSON() error {
 
 	seen := map[string]struct{}{}
 	for attr := range w.record.WalkAttributes {
-		if _, ok := seen[attr.Key]; ok {
+		key := string(attr.Key)
+		if _, ok := seen[key]; ok {
 			continue
 		}
-		if strings.HasPrefix(attr.Key, "@") {
-			heads = append(heads, jsontext.String(attr.Key))
+		if strings.HasPrefix(key, "@") {
+			heads = append(heads, jsontext.String(key))
 			heads = append(heads, TokenFor(LogValue(attr.Value))...)
 		} else {
-			tails = append(tails, jsontext.String(attr.Key))
+			tails = append(tails, jsontext.String(key))
 			tails = append(tails, TokenFor(LogValue(attr.Value))...)
 		}
-		seen[attr.Key] = struct{}{}
+		seen[key] = struct{}{}
 	}
 
 	tokens = append(tokens, append(heads, tails...)...)
@@ -165,11 +166,12 @@ func (w *Writer) WriteText() error {
 
 	seen := map[string]struct{}{}
 	for attr := range w.record.WalkAttributes {
-		if _, ok := seen[attr.Key]; ok {
+		key := string(attr.Key)
+		if _, ok := seen[key]; ok {
 			continue
 		}
-		seen[attr.Key] = struct{}{}
-		attrs[attr.Key] = LogValue(attr.Value)
+		seen[key] = struct{}{}
+		attrs[key] = LogValue(attr.Value)
 	}
 
 	keys := slices.Collect(maps.Keys(attrs))

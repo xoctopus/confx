@@ -17,41 +17,33 @@ import (
 	"github.com/xoctopus/confx/internal/otel/exporter"
 )
 
-func normalize(kvs []any) []otelapilogger.KeyValue {
-	keyValues := make([]otelapilogger.KeyValue, 0, len(kvs))
+func normalize(kvs []any) []attribute.KeyValue {
+	keyValues := make([]attribute.KeyValue, 0, len(kvs))
 
 	for i := 0; i < len(kvs); i++ {
 		switch x := kvs[i].(type) {
 		case []slog.Attr:
-			keyValues = append(keyValues, slicex.Mapping(x, func(e slog.Attr) otelapilogger.KeyValue {
-				return otelapilogger.KeyValue{
-					Key:   e.Key,
+			keyValues = append(keyValues, slicex.Mapping(x, func(e slog.Attr) attribute.KeyValue {
+				return attribute.KeyValue{
+					Key:   attribute.Key(e.Key),
 					Value: exporter.LogAnyValue(e.Value.Any()),
 				}
 			})...)
 		case slog.Attr:
-			keyValues = append(keyValues, otelapilogger.KeyValue{
-				Key:   x.Key,
+			keyValues = append(keyValues, attribute.KeyValue{
+				Key:   attribute.Key(x.Key),
 				Value: exporter.LogAnyValue(x.Value.Any()),
 			})
 		case []attribute.KeyValue:
-			keyValues = append(keyValues, slicex.M(x, func(e attribute.KeyValue) otelapilogger.KeyValue {
-				return otelapilogger.KeyValue{
-					Key:   string(e.Key),
-					Value: exporter.LogAnyValue(e.Value.AsInterface()),
-				}
-			})...)
+			keyValues = append(keyValues, x...)
 		case attribute.KeyValue:
-			keyValues = append(keyValues, otelapilogger.KeyValue{
-				Key:   string(x.Key),
-				Value: exporter.LogAnyValue(x.Value.AsInterface()),
-			})
+			keyValues = append(keyValues, x)
 		case string:
 			// "key", value
 			if i+1 < len(kvs) {
 				i++
-				keyValues = append(keyValues, otelapilogger.KeyValue{
-					Key:   x,
+				keyValues = append(keyValues, attribute.KeyValue{
+					Key:   attribute.Key(x),
 					Value: exporter.LogAnyValue(kvs[i]),
 				})
 			}
@@ -90,10 +82,10 @@ func GetSource(skip int) Source {
 
 type Source slog.Source
 
-func (s Source) AsKeyValues() []otelapilogger.KeyValue {
-	return []otelapilogger.KeyValue{
-		otelapilogger.String(consts.KEY_SOURCE_FUNC, s.Function),
-		otelapilogger.String(consts.KEY_SOURCE_FILE, fmt.Sprintf("%s:%d", path.Base(s.File), s.Line)),
+func (s Source) AsKeyValues() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String(consts.KEY_SOURCE_FUNC, s.Function),
+		attribute.String(consts.KEY_SOURCE_FILE, fmt.Sprintf("%s:%d", path.Base(s.File), s.Line)),
 	}
 }
 

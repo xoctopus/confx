@@ -5,32 +5,32 @@ import (
 	"log/slog"
 	"time"
 
-	"go.opentelemetry.io/otel/log"
+	"go.opentelemetry.io/otel/attribute"
 )
 
-func LogValue(v log.Value) any {
-	switch v.Kind() {
-	case log.KindBool:
+func LogValue(v attribute.Value) any {
+	switch v.Type() {
+	case attribute.BOOL:
 		return v.AsBool()
-	case log.KindFloat64:
+	case attribute.FLOAT64:
 		return v.AsFloat64()
-	case log.KindInt64:
+	case attribute.INT64:
 		return v.AsInt64()
-	case log.KindString:
+	case attribute.STRING:
 		return v.AsString()
-	case log.KindBytes:
-		return v.AsBytes()
-	case log.KindSlice:
+	case attribute.BYTESLICE:
+		return v.AsByteSlice()
+	case attribute.SLICE:
 		list := v.AsSlice()
 		values := make([]any, len(list))
 		for i := range list {
 			values[i] = LogValue(list[i])
 		}
 		return values
-	case log.KindMap:
+	case attribute.MAP:
 		values := map[string]any{}
 		for _, k := range v.AsMap() {
-			values[k.Key] = LogValue(k.Value)
+			values[string(k.Key)] = LogValue(k.Value)
 		}
 		return values
 	default:
@@ -38,61 +38,61 @@ func LogValue(v log.Value) any {
 	}
 }
 
-func LogAnyValue(value any) log.Value {
+func LogAnyValue(value any) attribute.Value {
 	switch x := value.(type) {
 	case time.Time:
-		return log.StringValue(slog.TimeValue(x).String())
+		return attribute.StringValue(slog.TimeValue(x).String())
 	case time.Duration:
-		return log.StringValue(slog.DurationValue(x).String())
+		return attribute.StringValue(slog.DurationValue(x).String())
 	case fmt.Stringer:
-		return log.StringValue(x.String())
+		return attribute.StringValue(x.String())
 	case []byte:
-		return log.BytesValue(x)
+		return attribute.ByteSliceValue(x)
 	case string:
-		return log.StringValue(x)
+		return attribute.StringValue(x)
 	case uint:
-		return log.Int64Value(int64(x))
+		return attribute.Int64Value(int64(x))
 	case uint8:
-		return log.Int64Value(int64(x))
+		return attribute.Int64Value(int64(x))
 	case uint16:
-		return log.Int64Value(int64(x))
+		return attribute.Int64Value(int64(x))
 	case uint32:
-		return log.Int64Value(int64(x))
+		return attribute.Int64Value(int64(x))
 	case int:
-		return log.Int64Value(int64(x))
+		return attribute.Int64Value(int64(x))
 	case int8:
-		return log.Int64Value(int64(x))
+		return attribute.Int64Value(int64(x))
 	case int16:
-		return log.Int64Value(int64(x))
+		return attribute.Int64Value(int64(x))
 	case int32:
-		return log.Int64Value(int64(x))
+		return attribute.Int64Value(int64(x))
 	case int64:
-		return log.Int64Value(x)
+		return attribute.Int64Value(x)
 	case float32:
-		return log.Float64Value(float64(x))
+		return attribute.Float64Value(float64(x))
 	case float64:
-		return log.Float64Value(x)
+		return attribute.Float64Value(x)
 	case bool:
-		return log.BoolValue(x)
+		return attribute.BoolValue(x)
 	case []any:
-		values := make([]log.Value, len(x))
+		values := make([]attribute.Value, len(x))
 		for i, item := range x {
 			values[i] = LogAnyValue(item)
 		}
-		return log.SliceValue(values...)
+		return attribute.SliceValue(values...)
 	case map[string]any:
-		kvs := make([]log.KeyValue, 0, len(x))
+		kvs := make([]attribute.KeyValue, 0, len(x))
 		for k, v := range x {
-			kvs = append(kvs, log.KeyValue{
-				Key:   k,
+			kvs = append(kvs, attribute.KeyValue{
+				Key:   attribute.Key(k),
 				Value: LogAnyValue(v),
 			})
 		}
-		return log.MapValue(kvs...)
+		return attribute.MapValue(kvs...)
 	default:
 		if u, ok := x.(interface{ Unwrap() any }); ok {
 			return LogAnyValue(u.Unwrap())
 		}
-		return log.StringValue(slog.AnyValue(x).String())
+		return attribute.StringValue(slog.AnyValue(x).String())
 	}
 }

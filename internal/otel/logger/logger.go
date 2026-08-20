@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/xoctopus/logx"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/log"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/xoctopus/confx/internal/otel/providers"
@@ -29,7 +29,7 @@ type logger struct {
 	spanner
 	loggerc
 
-	kvs []log.KeyValue
+	kvs []attribute.KeyValue
 }
 
 func (l *logger) With(kvs ...any) logx.Logger {

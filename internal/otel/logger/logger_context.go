@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/xoctopus/logx"
+	"go.opentelemetry.io/otel/attribute"
 	otelapilogger "go.opentelemetry.io/otel/log"
 	otelapitracer "go.opentelemetry.io/otel/trace"
 
@@ -46,7 +47,7 @@ func (lc *loggerc) get() otelapilogger.Logger {
 	return lc.logger
 }
 
-func (lc *loggerc) emit(lv logx.LogLevel, msg fmt.Stringer, kvs []otelapilogger.KeyValue) {
+func (lc *loggerc) emit(lv logx.LogLevel, msg fmt.Stringer, kvs []attribute.KeyValue) {
 	var rec otelapilogger.Record
 
 	switch lv {
@@ -63,7 +64,7 @@ func (lc *loggerc) emit(lv logx.LogLevel, msg fmt.Stringer, kvs []otelapilogger.
 	}
 
 	if !lc.timestamp.IsZero() {
-		rec.AddAttributes(otelapilogger.String(consts.KEY_COST, cost(time.Since(lc.timestamp))))
+		rec.AddAttributes(attribute.String(consts.KEY_COST, cost(time.Since(lc.timestamp))))
 	}
 
 	if len(kvs) > 0 {
@@ -71,22 +72,22 @@ func (lc *loggerc) emit(lv logx.LogLevel, msg fmt.Stringer, kvs []otelapilogger.
 	}
 
 	if lc.parent.IsValid() {
-		rec.AddAttributes(otelapilogger.String(consts.KEY_TRACE_PARENT_SPAN_ID, lc.parent.String()))
+		rec.AddAttributes(attribute.String(consts.KEY_TRACE_PARENT_SPAN_ID, lc.parent.String()))
 	}
 
 	rec.SetTimestamp(time.Now())
-	rec.SetBody(otelapilogger.StringValue(msg.String()))
+	rec.SetBody(attribute.StringValue(msg.String()))
 
 	lc.get().Emit(lc.ctx, rec)
 }
 
-func (lc *loggerc) info(lv logx.LogLevel, msg fmt.Stringer, kvs []otelapilogger.KeyValue) {
+func (lc *loggerc) info(lv logx.LogLevel, msg fmt.Stringer, kvs []attribute.KeyValue) {
 	if lv > lc.enabled {
 		lc.emit(lv, msg, kvs)
 	}
 }
 
-func (lc *loggerc) error(lv logx.LogLevel, err error, kvs []otelapilogger.KeyValue, post func(err error)) {
+func (lc *loggerc) error(lv logx.LogLevel, err error, kvs []attribute.KeyValue, post func(err error)) {
 	if lv > lc.enabled {
 		if err == nil {
 			return
