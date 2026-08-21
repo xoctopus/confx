@@ -16,7 +16,8 @@ func TestMeta(t *testing.T) {
 		Feature:  "test/abc",
 		Version:  "v1.1.1",
 		CommitID: "abcdef0",
-		Date:     time.Now().Format("200601021504"),
+		CommitAt: time.Now().Format("20060102150405"),
+		BuildAt:  time.Now().Format("20060102150405"),
 		Runtime:  "DEV",
 	}
 

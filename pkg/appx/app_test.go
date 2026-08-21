@@ -35,7 +35,8 @@ func ExampleNewAppContext() {
 			Feature:  "main",
 			Version:  "v0.0.1",
 			CommitID: "efbecda",
-			Date:     "200601021504",
+			CommitAt: "20060102150405",
+			BuildAt:  "20060102150505",
 			Runtime:  RUNTIME_DEV,
 		}),
 		WithServe(
@@ -97,17 +98,18 @@ APP__CONFIG2__ServerPort: "8080"
 
 	// Output:
 	// exec `app version`
-	// app:main@v0.0.1#efbecda_200601021504(DEV)
+	// app:main@v0.0.1#efbecda(DEV)[commit=20060102150405|build=20060102150505]
 	//
 	// exec `app run`
-	// app:main@v0.0.1#efbecda_200601021504(DEV)
+	// app:main@v0.0.1#efbecda(DEV)[commit=20060102150405|build=20060102150505]
 	//
-	// name:     app
-	// feature:  main
-	// version:  v0.0.1
-	// commit:   efbecda
-	// date:     200601021504
-	// runtime:  DEV
+	// name:      app
+	// feature:   main
+	// version:   v0.0.1
+	// commit:    efbecda
+	// commit_at: 20060102150405
+	// build_at:  20060102150505
+	// runtime:   DEV
 	//
 	// APP__CONFIG1__Endpoint_Address=postgres://hostname:5432/base
 	// APP__CONFIG1__Endpoint_Auth_DecryptKey=

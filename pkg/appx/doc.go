@@ -17,7 +17,7 @@
 //
 // # Meta and context
 //
-// [Meta] holds Name / Feature / Version / CommitID / Date / Runtime.
+// [Meta] holds Name / Feature / Version / CommitID / CommitAt / BuildAt / Runtime.
 // [NewAppContext] starts from [DefaultMeta]; [WithMeta] replaces it.
 // [AppCtx.Conf] injects Meta via [WithAppMeta] so nested Initializers
 // (e.g. confotel) can read it with [AppMetaFrom] / [MustAppMeta].

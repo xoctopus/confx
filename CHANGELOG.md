@@ -1,11 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.5...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.6...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.5.6"></a>
+## [v0.5.6](https://github.com/xoctopus/confx/compare/v0.5.5...v0.5.6)
 
 > 2026-08-20
 
 ### Chore
 
+* use ulid
 * update ci.yml template
 * update ci.yml template
 

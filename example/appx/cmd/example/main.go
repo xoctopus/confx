@@ -21,7 +21,8 @@ var (
 	Feature  string
 	Version  string
 	CommitID string
-	Date     string
+	CommitAt string
+	BuildAt  string
 
 	meta appx.Meta
 
@@ -55,7 +56,9 @@ func init() {
 		Feature:  Feature,
 		Version:  Version,
 		CommitID: CommitID,
-		Date:     Date,
+		CommitAt: CommitAt,
+		BuildAt:  BuildAt,
+		Runtime:  appx.GetRuntime(),
 	}
 }
 

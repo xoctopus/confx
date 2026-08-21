@@ -14,7 +14,7 @@
 
 `appx` 是可执行应用的运行时骨架, 把构建身份、配置组件、命令行和生命周期收口到一个 `AppCtx` 上:
 
-- 构建身份: 持有 `Meta` (Name / Feature / Version / CommitID / Date / Runtime), 提供 `version` 输出
+- 构建身份: 持有 `Meta` (Name / Feature / Version / CommitID / CommitAt / BuildAt / Runtime), 提供 `version` 输出
 - 配置加载: 合并 `config/local.yml` 与环境变量到配置结构, 并写出 `config/default.yml` 与 `config/.env`
 - 组件编排: `Conf` 先跑 `PreInit`, 再按契约对配置树做 `Init`, 并把 `Injectable` 叠进返回的 `ctx`
 - 命令行: cobra 根命令, 默认 `run` / `version`, 可用 `AddCommand` 扩展
@@ -25,10 +25,11 @@
 - 构建信息
   + `example/appx/cmd/example.Name` 服务或应用的名称
   + `example/appx/cmd/example.Feature` 特性 构建时对应 `git branch`
-  + `example/appx/cmd/example.Version` 版本 构建时对应 `git tag`
-  + `example/appx/cmd/example.CommitID` 提交hash
-  + `example/appx/cmd/example.Date` 构建时间戳
-  + `example/appx/cmd/example.meta` `Meta`
+  + `example/appx/cmd/example.Version` 版本 构建时对应 `git tag` (无 tag 时 `v0.0.0`)
+  + `example/appx/cmd/example.CommitID` 提交 hash (工作区脏时带 `-dirty` 后缀)
+  + `example/appx/cmd/example.CommitAt` 提交时间戳 (`20060102150405`)
+  + `example/appx/cmd/example.BuildAt` 构建时间戳 (`20060102150405`)
+  + `example/appx/cmd/example.meta` `Meta` (`Runtime` 来自环境变量, 与构建无关)
 
 - 组件配置
   + `example/appx/cmd/example.config`: 通常匿名(不可导出)结构体去组合需要的组件

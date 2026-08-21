@@ -12,14 +12,22 @@ import (
 )
 
 // Meta is the build and runtime identity of an application.
+//
+// Build-time fields (typically via -ldflags): Name, Feature, Version,
+// CommitID, CommitAt, BuildAt. CommitID may carry a "-dirty" suffix when the
+// working tree was dirty at build time. Runtime is filled from [RUNTIME_ENV]
+// at process start and is not a build input.
 type Meta struct {
 	Name     string  `json:"name"`
 	Feature  string  `json:"feature"`
 	Version  string  `json:"version"`
 	CommitID string  `json:"commit"`
-	Date     string  `json:"date"`
+	CommitAt string  `json:"commit_at"`
+	BuildAt  string  `json:"build_at"`
 	Runtime  Runtime `json:"runtime"`
 }
+
+const metaTimeLayout = "20060102150405"
 
 // DefaultMeta is the baseline [Meta] used when [WithMeta] is omitted.
 // Runtime is taken from [GetRuntime] at package init.
@@ -28,13 +36,17 @@ var DefaultMeta = Meta{
 	Feature:  "branch",
 	Version:  "version",
 	CommitID: "commit",
-	Date:     time.Now().Format("200601021504"),
+	CommitAt: time.Now().Format(metaTimeLayout),
+	BuildAt:  time.Now().Format(metaTimeLayout),
 	Runtime:  GetRuntime(),
 }
 
-// String formats Meta as name:feature@version#commit_date(runtime).
+// String formats Meta as:
+//
+//	name:feature@version#commit(runtime)[commit=commitAt|build=buildAt]
 func (m *Meta) String() string {
-	return fmt.Sprintf("%s:%s@%s#%s_%s(%s)", m.Name, m.Feature, m.Version, m.CommitID, m.Date, m.Runtime)
+	return fmt.Sprintf("%s:%s@%s#%s(%s)[commit=%s|build=%s]",
+		m.Name, m.Feature, m.Version, m.CommitID, m.Runtime, m.CommitAt, m.BuildAt)
 }
 
 // VersionString joins Name, Version, CommitID, and lowercase Runtime with "-".
@@ -47,12 +59,13 @@ func (m *Meta) VersionString() string {
 
 // Print writes a colored multi-line Meta summary to stdout.
 func (m *Meta) Print() {
-	fmt.Printf("%s%s\n", color.HiRedString("name:     "), color.HiYellowString("%s", m.Name))
-	fmt.Printf("%s%s\n", color.HiRedString("feature:  "), color.HiYellowString("%s", m.Feature))
-	fmt.Printf("%s%s\n", color.HiRedString("version:  "), color.HiYellowString("%s", m.Version))
-	fmt.Printf("%s%s\n", color.HiRedString("commit:   "), color.HiYellowString("%s", m.CommitID))
-	fmt.Printf("%s%s\n", color.HiRedString("date:     "), color.HiYellowString("%s", m.Date))
-	fmt.Printf("%s%s\n", color.HiRedString("runtime:  "), color.HiYellowString("%s", m.Runtime))
+	fmt.Printf("%s%s\n", color.HiRedString("name:      "), color.HiYellowString("%s", m.Name))
+	fmt.Printf("%s%s\n", color.HiRedString("feature:   "), color.HiYellowString("%s", m.Feature))
+	fmt.Printf("%s%s\n", color.HiRedString("version:   "), color.HiYellowString("%s", m.Version))
+	fmt.Printf("%s%s\n", color.HiRedString("commit:    "), color.HiYellowString("%s", m.CommitID))
+	fmt.Printf("%s%s\n", color.HiRedString("commit_at: "), color.HiYellowString("%s", m.CommitAt))
+	fmt.Printf("%s%s\n", color.HiRedString("build_at:  "), color.HiYellowString("%s", m.BuildAt))
+	fmt.Printf("%s%s\n", color.HiRedString("runtime:   "), color.HiYellowString("%s", m.Runtime))
 	fmt.Printf("\n")
 }
 
@@ -70,8 +83,11 @@ func (m *Meta) Overwrite(meta Meta) {
 	if meta.CommitID != "" {
 		m.CommitID = meta.CommitID
 	}
-	if meta.Date != "" {
-		m.Date = meta.Date
+	if meta.CommitAt != "" {
+		m.CommitAt = meta.CommitAt
+	}
+	if meta.BuildAt != "" {
+		m.BuildAt = meta.BuildAt
 	}
 	if meta.Runtime != "" {
 		m.Runtime = meta.Runtime
