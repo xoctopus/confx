@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/xoctopus/concx/pkg/nest"
 	"github.com/xoctopus/logx"
-	"github.com/xoctopus/schex/pkg/synapse"
 	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/urlx"
 
@@ -29,7 +29,7 @@ type Endpoint struct {
 	// executors management. readonly after initialized
 	executors map[string]Executor
 	// syn controls Endpoint lifetime
-	syn synapse.Synapse
+	syn nest.Nest
 }
 
 func (e *Endpoint) SetDefault() {
@@ -59,9 +59,9 @@ func (e *Endpoint) Init(ctx context.Context) (err error) {
 
 	e.client = &http.Client{Timeout: time.Duration(e.Option.ClientTimeout)}
 	e.executors = make(map[string]Executor)
-	e.syn = synapse.NewSynapse(
+	e.syn = nest.New(
 		ctx,
-		synapse.WithBeforeCloseFunc(func(ctx context.Context) {
+		nest.WithBeforeCloseFunc(func(ctx context.Context) {
 			log := logx.From(ctx)
 			if e.server != nil {
 				log.With("result", e.server.Close()).Info("http server closed")

@@ -10,8 +10,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/xoctopus/concx/pkg/nest"
 	"github.com/xoctopus/logx"
-	"github.com/xoctopus/schex/pkg/synapse"
 	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/syncx"
 
@@ -30,9 +30,9 @@ func NewExecutor(ctx context.Context, executorName, remoteAddr, listenAddr strin
 	e.lastActivity.Store(time.Now().Add(-10 * e.keepalive))
 	e.lastReport.Store(time.Now().Add(-10 * e.keepalive))
 	e.jobIDs = syncx.NewXmap[int64, string]()
-	e.syn = synapse.NewSynapse(
+	e.syn = nest.New(
 		ctx,
-		synapse.WithBeforeCloseFunc(func(ctx context.Context) {
+		nest.WithBeforeCloseFunc(func(ctx context.Context) {
 			l := logx.From(ctx).With("executor", e.name)
 			_ = e.remove()
 			l.Info("executor: unregistered")
@@ -71,7 +71,7 @@ type executor struct {
 	// jobs maintains jobs under executor
 	jobs JobManager
 	// syn controls executor lifetime
-	syn synapse.Synapse
+	syn nest.Nest
 	// lastActivity records the last heartbeat request time from xxl-job
 	lastActivity atomic.Value
 	// lastReport records the last report request time to xxl-job

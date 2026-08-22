@@ -3,8 +3,8 @@ package confxxl
 import (
 	"context"
 
+	"github.com/xoctopus/concx/pkg/nest"
 	"github.com/xoctopus/logx"
-	"github.com/xoctopus/schex/pkg/synapse"
 	"github.com/xoctopus/x/codex"
 	"github.com/xoctopus/x/syncx"
 
@@ -30,9 +30,9 @@ func newJobManager(ctx context.Context) JobManager {
 	m := &jobManager{
 		m: syncx.NewXmap[string, Task](),
 	}
-	m.syn = synapse.NewSynapse(
+	m.syn = nest.New(
 		ctx,
-		synapse.WithBeforeCloseFunc(func(ctx context.Context) {
+		nest.WithBeforeCloseFunc(func(ctx context.Context) {
 			m.m.Range(func(name string, task Task) bool {
 				_ = task.Close()
 				logx.From(ctx).With("task", name).Info("job manager: task closed")
@@ -46,7 +46,7 @@ func newJobManager(ctx context.Context) JobManager {
 
 type jobManager struct {
 	m   syncx.Map[string, Task]
-	syn synapse.Synapse
+	syn nest.Nest
 }
 
 func (x *jobManager) Register(name string, fn JobHandler, appliers ...JobOptionApplier) error {

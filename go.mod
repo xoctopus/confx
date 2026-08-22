@@ -8,12 +8,14 @@ tool (
 )
 
 require (
+	// +skill:concx
+	github.com/xoctopus/concx v0.2.0
 	// +skill:genx
 	github.com/xoctopus/genx v0.3.4
 	// +skill:sqlx
 	github.com/xoctopus/sqlx v0.3.8
 	// +skill:testx
-	github.com/xoctopus/x v0.5.5
+	github.com/xoctopus/x v0.5.6
 )
 
 require (
@@ -21,7 +23,6 @@ require (
 	github.com/oklog/ulid/v2 v2.1.2
 	github.com/xoctopus/httpx v0.0.1
 	github.com/xoctopus/logx v0.3.5
-	github.com/xoctopus/schex v0.1.0
 	github.com/xoctopus/sfid v0.1.0
 )
 

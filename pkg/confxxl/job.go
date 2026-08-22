@@ -5,8 +5,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/xoctopus/schex/pkg/schex"
-	"github.com/xoctopus/schex/pkg/synapse"
+	"github.com/xoctopus/concx/pkg/nest"
+	"github.com/xoctopus/concx/pkg/schedx"
 	"github.com/xoctopus/x/codex"
 )
 
@@ -37,14 +37,14 @@ func newScheduler(ctx context.Context, name string, fn JobHandler, appliers ...J
 		name:     name,
 		backlogs: o.backlogs,
 	}
-	j.fn = schex.JobFunc[*TriggerRequest](func(ctx context.Context, r *TriggerRequest) error {
+	j.fn = schedx.JobFunc[*TriggerRequest](func(ctx context.Context, r *TriggerRequest) error {
 		j.scheduling.Add(1)
 		defer j.scheduling.Add(-1)
 		return fn(ctx, r)
 	})
 
 	if o.cb != nil {
-		j.cb = schex.HandlerCallback[*TriggerRequest](o.cb)
+		j.cb = schedx.HandlerCallback[*TriggerRequest](o.cb)
 	}
 	if j.backlogs == 0 {
 		j.backlogs = 1
@@ -57,15 +57,15 @@ func newScheduler(ctx context.Context, name string, fn JobHandler, appliers ...J
 
 type task struct {
 	name       string
-	fn         schex.Job[*TriggerRequest]
-	cb         schex.HandlerCallback[*TriggerRequest]
+	fn         schedx.Job[*TriggerRequest]
+	cb         schedx.HandlerCallback[*TriggerRequest]
 	backlogs   int
 	scheduling atomic.Int32
 
 	// mtx keep syn(switch when skipping) and sche in critical zone
 	mtx  sync.Mutex
-	syn  synapse.Synapse
-	sche schex.Scheduler[*TriggerRequest]
+	syn  nest.Nest
+	sche schedx.Scheduler[*TriggerRequest]
 }
 
 func (j *task) skip(ctx context.Context) error {
@@ -77,20 +77,20 @@ func (j *task) skip(ctx context.Context) error {
 		<-j.syn.Done()
 	}
 
-	j.syn = synapse.NewSynapse(
+	j.syn = nest.New(
 		ctx,
-		synapse.WithBeforeCloseFunc(func(ctx context.Context) {
+		nest.WithBeforeCloseFunc(func(ctx context.Context) {
 			if j.sche != nil {
 				_ = j.sche.Close()
 			}
 		}),
 	)
-	j.sche = schex.NewScheduler(
+	j.sche = schedx.NewScheduler(
 		j.fn,
-		schex.WithParallel[*TriggerRequest](1),
-		schex.WithMaxPending[*TriggerRequest](j.backlogs),
-		schex.WithCallback[*TriggerRequest](j.cb),
-		schex.WithExitCallback[*TriggerRequest](func(pending []*TriggerRequest, err error) {
+		schedx.WithParallel[*TriggerRequest](1),
+		schedx.WithMaxPending[*TriggerRequest](j.backlogs),
+		schedx.WithCallback[*TriggerRequest](j.cb),
+		schedx.WithExitCallback[*TriggerRequest](func(pending []*TriggerRequest, err error) {
 			for _, r := range pending {
 				if j.cb != nil {
 					j.cb(r, err)
