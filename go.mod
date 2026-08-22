@@ -61,7 +61,7 @@ require (
 
 // otel @unstable @easy-breaking pin this section
 require (
-	go.opentelemetry.io/otel/exporters/prometheus v0.66.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.67.0
 	go.opentelemetry.io/otel/log v0.21.0
 	go.opentelemetry.io/otel/sdk/log v0.21.0
 )
