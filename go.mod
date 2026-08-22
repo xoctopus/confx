@@ -13,7 +13,7 @@ require (
 	// +skill:genx
 	github.com/xoctopus/genx v0.3.4
 	// +skill:sqlx
-	github.com/xoctopus/sqlx v0.3.8
+	github.com/xoctopus/sqlx v0.4.1
 	// +skill:testx
 	github.com/xoctopus/x v0.5.6
 )
