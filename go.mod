@@ -11,7 +11,7 @@ require (
 	// +skill:concx
 	github.com/xoctopus/concx v0.2.0
 	// +skill:genx
-	github.com/xoctopus/genx v0.3.4
+	github.com/xoctopus/genx v0.3.6
 	// +skill:sqlx
 	github.com/xoctopus/sqlx v0.3.8
 	// +skill:testx
