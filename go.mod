@@ -44,7 +44,7 @@ require (
 	github.com/xoctopus/logx v0.3.8
 	github.com/xoctopus/sfid v0.1.0
 	// +skill:sqlx
-	github.com/xoctopus/sqlx v0.3.8
+	github.com/xoctopus/sqlx v0.4.2
 	// +skill:testx
 	github.com/xoctopus/x v0.5.8
 	// otel
