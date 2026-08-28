@@ -56,7 +56,7 @@ require (
 	// otel
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.44.0
 	// otel @unstable @easy-breaking pin this section
-	go.opentelemetry.io/otel/exporters/prometheus v0.66.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.67.0
 	// otel @unstable @easy-breaking pin this section
 	go.opentelemetry.io/otel/log v0.21.0
 	// otel
