@@ -74,7 +74,7 @@ require (
 	golang.org/x/sync v0.22.0
 	gopkg.in/yaml.v3 v3.0.1
 	// rdb:sqlite
-	modernc.org/sqlite v1.55.0
+	modernc.org/sqlite v1.57.0
 )
 
 // indirect
@@ -152,7 +152,7 @@ require (
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // indirect
 	k8s.io/utils v0.0.0-20260626114624-be93311217bd // indirect
-	modernc.org/libc v1.74.1 // indirect
+	modernc.org/libc v1.74.4 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 // indirect
