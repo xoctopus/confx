@@ -1,8 +1,28 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.6...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.8...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.5.8"></a>
+## [v0.5.8](https://github.com/xoctopus/confx/compare/v0.5.7...v0.5.8)
+
+> 2026-08-23
+
+### Chore
+
+* **deps:** migrate confxxl from schex to concx
+
+
+<a name="v0.5.7"></a>
+## [v0.5.7](https://github.com/xoctopus/confx/compare/v0.5.6...v0.5.7)
+
+> 2026-08-21
+
+### Refactor
+
+* **appx:** split Meta Date into CommitAt and BuildAt
 
 
 <a name="v0.5.6"></a>

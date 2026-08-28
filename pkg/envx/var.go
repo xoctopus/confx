@@ -2,13 +2,14 @@ package envx
 
 import (
 	"bytes"
+	"maps"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/xoctopus/x/stringsx"
-	"golang.org/x/exp/maps"
 )
 
 func NewVar(key, val string) *Var {
@@ -93,7 +94,7 @@ func (g *Group) MapEntries(k string) []string {
 			keys[entry] = struct{}{}
 		}
 	}
-	return maps.Keys(keys)
+	return slices.Collect(maps.Keys(keys))
 }
 
 func (g *Group) SliceLength(k string) int {
@@ -161,7 +162,7 @@ func (g *Group) dotenv(valuer func(*Var) string) []byte {
 func DotEnv(values map[string]string) []byte {
 	buf := bytes.NewBuffer(nil)
 
-	keys := maps.Keys(values)
+	keys := slices.Collect(maps.Keys(values))
 	sort.Strings(keys)
 
 	for _, key := range keys {

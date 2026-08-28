@@ -3,7 +3,7 @@ package exporter
 import (
 	"encoding/base64"
 
-	"github.com/go-json-experiment/json/jsontext"
+	"encoding/json/jsontext"
 )
 
 func TokenFor(v any) []jsontext.Token {

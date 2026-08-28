@@ -31,6 +31,12 @@ type LoggerConfig struct {
 
 func (c *LoggerConfig) SetDefault() {
 	c.Rolling = true
+	if len(c.OutputDIR) == 0 {
+		c.OutputDIR = "./log"
+	}
+	if c.FlushInterval == 0 {
+		c.FlushInterval = types.Duration(time.Second * 30)
+	}
 }
 
 func (c *LoggerConfig) Close() error {

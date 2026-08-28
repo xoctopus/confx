@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
+	"encoding/json/jsontext"
 	"github.com/fatih/color"
-	"github.com/go-json-experiment/json/jsontext"
 	"go.opentelemetry.io/otel/log"
 	otelsdkloggerp "go.opentelemetry.io/otel/sdk/log"
 	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"

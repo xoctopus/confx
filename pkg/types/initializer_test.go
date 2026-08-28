@@ -51,11 +51,11 @@ func TestInit(t *testing.T) {
 		{&InitializerByContext{}, nil},                                                        // 2
 		{&InitializerByContextWithError{}, errInitializerByContextWithError},                  // 3
 		{reflect.ValueOf(&InitializerByContextWithError{}), errInitializerByContextWithError}, // 4
-		{&struct{}{}, nil},                                                                    // 5
-		{reflect.ValueOf((*Initializer)(nil)), types.ErrSkipInitializing},                     // 6
-		{reflect.ValueOf(&struct{ Initializer }{}), nil},                                      // 7
-		{reflect.ValueOf(&struct{ v Initializer }{}), nil},                                    // 8
-		{reflect.ValueOf(&InitializerV{}), nil},                                               // 9
+		{&struct{}{}, nil}, // 5
+		{reflect.ValueOf((*Initializer)(nil)), types.ErrSkipInitializing}, // 6
+		{reflect.ValueOf(&struct{ Initializer }{}), nil},                  // 7
+		{reflect.ValueOf(&struct{ v Initializer }{}), nil},                // 8
+		{reflect.ValueOf(&InitializerV{}), nil},                           // 9
 	} {
 		_ = i
 		if v.err == nil {
