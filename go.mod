@@ -19,7 +19,7 @@ require (
 	github.com/go-think/openssl v1.22.0
 	// authorization
 	github.com/golang-jwt/jwt/v5 v5.3.1
-	github.com/gorilla/websocket v1.5.0
+	github.com/gorilla/websocket v1.5.3
 	// rdb:postgres
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/oklog/ulid/v2 v2.1.2
