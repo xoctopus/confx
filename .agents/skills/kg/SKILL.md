@@ -1,9 +1,9 @@
 ---
 name: kg
-description:
-  - 如何使用 `github.com/xoctopus/confx/pkg/types/kg` 生成结构化 key
-  - creator/audience/domain/biz 四段约定与 prefix 注入策略
-  - 当需要统一缓存 key 命名、跨服务共享 key、或迁移旧 key 约定时使用
+description: >-
+  如何使用 `confx/pkg/types/kg` 生成结构化 key.
+  覆盖 creator/audience/domain/biz 四段约定与 prefix 注入策略.
+  当需要统一缓存 key 命名, 跨服务共享 key, 或迁移旧 key 约定时使用.
 ---
 
 # KG
