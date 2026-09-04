@@ -2,7 +2,6 @@ package exporter
 
 import (
 	"encoding/base64"
-
 	"encoding/json/jsontext"
 )
 

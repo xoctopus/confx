@@ -2,6 +2,7 @@ package exporter
 
 import (
 	"bytes"
+	"encoding/json/jsontext"
 	"fmt"
 	"io"
 	"maps"
@@ -10,7 +11,6 @@ import (
 	"sort"
 	"strings"
 
-	"encoding/json/jsontext"
 	"github.com/fatih/color"
 	"go.opentelemetry.io/otel/log"
 	otelsdkloggerp "go.opentelemetry.io/otel/sdk/log"
