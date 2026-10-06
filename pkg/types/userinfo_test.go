@@ -19,6 +19,7 @@ func TestUserinfo(t *testing.T) {
 
 	Expect(t, u.IsZero(), BeFalse())
 	Expect(t, u.Init(), Succeed())
+	Expect(t, u.DecryptKey, Equal(""))
 	Expect(t, u.Password.String(), Equal("rhdsicyjzbwbtdwnxcei"))
 	Expect(t, u.String(), Equal("username:rhdsicyjzbwbtdwnxcei"))
 	Expect(t, u.SecurityString(), Equal("username:"+types.MaskedPassword))

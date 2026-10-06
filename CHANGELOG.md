@@ -1,12 +1,22 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.0...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.1...HEAD)
 
-> 2026-09-05
+> 0001-01-01
+
+
+<a name="v0.6.1"></a>
+## [v0.6.1](https://github.com/xoctopus/confx/compare/v0.6.0...v0.6.1)
+
+> 2026-10-06
 
 ### Chore
 
 * code formating
+
+### Fix
+
+* **confrabbit:** make async publish outlive caller ctx and honor PubTimeout
 
 
 <a name="v0.6.0"></a>

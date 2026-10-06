@@ -41,6 +41,11 @@ func (u *Userinfo) Init() (err error) {
 			return err
 		}
 		u.Password = Password(plain)
+		// HACK: appx's reflective initializer walks into this embedded field a
+		// second time after the owning Endpoint.Init(ctx) already ran it
+		// once, which would try to re-decrypt the now-plaintext password.
+		// Clearing DecryptKey makes Init idempotent.
+		u.DecryptKey = ""
 	}
 	return nil
 }
