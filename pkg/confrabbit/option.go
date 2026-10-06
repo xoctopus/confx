@@ -127,6 +127,17 @@ func WithPublishCallback(f mq.AsyncPubCallback[ProducerMessage]) mq.OptionApplie
 	})
 }
 
+// WithPubConfirm puts the publisher channel into confirm mode, so a publish is
+// only reported as succeeded once the broker acknowledged it. Without it the
+// publish succeeds as soon as the frame is written to the socket.
+func WithPubConfirm() mq.OptionApplier {
+	return WithRabbitPublisherOptions(rabbitmq.WithPublisherOptionsConfirm)
+}
+
+// WithPubTimeout bounds a single publish: the AMQP write and, in confirm mode,
+// the wait for the broker acknowledgement. It applies to both sync and async
+// publishing; in async mode the timeout error is delivered to the callback.
+// Zero disables the bound.
 func WithPubTimeout(d time.Duration) mq.OptionApplier {
 	return mq.OptionApplyFunc(func(opt mq.Option) {
 		if x, ok := opt.(*PubOption); ok {

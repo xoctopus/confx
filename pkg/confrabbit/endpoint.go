@@ -141,13 +141,13 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v liveness.Result) {
 	}()
 
 	// Wait for echo
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	wctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	for {
 		// Publish test message
 		msg := NewProducerMessage(topic, body)
-		err = p.PublishMessage(ctx, msg)
+		err = p.PublishMessage(wctx, msg)
 		if err != nil {
 			return
 		}
@@ -155,7 +155,7 @@ func (e *Endpoint) LivenessCheck(ctx context.Context) (v liveness.Result) {
 		select {
 		case <-sig:
 			return
-		case <-ctx.Done():
+		case <-wctx.Done():
 			err = fmt.Errorf("echo timeout in 5 seconds")
 			return
 		case <-time.After(500 * time.Millisecond):

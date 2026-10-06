@@ -16,6 +16,7 @@ func main() {
 
 	ctx := genx.NewContext(&genx.Args{
 		Entrypoint: []string{
+			"./...",
 			filepath.Join(cwd, "pkg", "confrdb", "testdata", "models"),
 		},
 	})

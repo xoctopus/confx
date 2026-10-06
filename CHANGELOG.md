@@ -1,8 +1,32 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.5.8...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.0...HEAD)
 
-> 0001-01-01
+> 2026-09-05
+
+### Chore
+
+* code formating
+
+
+<a name="v0.6.0"></a>
+## [v0.6.0](https://github.com/xoctopus/confx/compare/v0.5.9...v0.6.0)
+
+> 2026-09-05
+
+### Docs
+
+* **skills:** fix appx and kg SKILL.md frontmatter
+
+
+<a name="v0.5.9"></a>
+## [v0.5.9](https://github.com/xoctopus/confx/compare/v0.5.8...v0.5.9)
+
+> 2026-08-28
+
+### Chore
+
+* bump Go to 1.27.0
 
 
 <a name="v0.5.8"></a>
