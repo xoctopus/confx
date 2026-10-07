@@ -1,8 +1,26 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.1...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.2...HEAD)
 
-> 0001-01-01
+> 2026-08-29
+
+### Build
+
+* **deps:** bump go.opentelemetry.io/otel/exporters/prometheus
+* **deps:** bump go.opentelemetry.io/otel/exporters/otlp/otlptrace
+* **deps:** bump modernc.org/sqlite from 1.55.0 to 1.57.0
+* **deps:** bump github.com/xoctopus/sqlx from 0.3.8 to 0.4.2
+* **deps:** bump github.com/gorilla/websocket from 1.5.0 to 1.5.3
+
+
+<a name="v0.6.2"></a>
+## [v0.6.2](https://github.com/xoctopus/confx/compare/v0.6.1...v0.6.2)
+
+> 2026-10-06
+
+### Fix
+
+* **types:** make Userinfo.Init idempotent after decrypting password
 
 
 <a name="v0.6.1"></a>

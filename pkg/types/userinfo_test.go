@@ -52,6 +52,6 @@ func TestUserinfo(t *testing.T) {
 
 		u.DecryptKey = "def"
 		u.Password = types.Password(base64.StdEncoding.EncodeToString([]byte("abc")))
-		Expect(t, u.Init(), ErrorContains("aes decrypt panicked"))
+		Expect(t, u.Init(), ErrorEqual("ciphertext length is not a multiple of the block size"))
 	})
 }

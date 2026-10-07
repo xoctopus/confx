@@ -8,6 +8,7 @@ import (
 	"github.com/xoctopus/x/slicex"
 	"github.com/xoctopus/x/textx"
 
+	"github.com/xoctopus/confx/pkg/confredis/internal"
 	"github.com/xoctopus/confx/pkg/types"
 )
 
@@ -28,7 +29,7 @@ type Option struct {
 	// default: 128KiB
 	BufferSizeKB int `url:",default=128"`
 
-	// PoolSize controls redis request concurrency. 10*GOMAXPROCS is recommended.
+	// PoolSize controls Redis request concurrency. 10*GOMAXPROCS is recommended.
 	// this option affects MaxActiveConns, which will be set to 4 times of PoolSize
 	// for balancing connection stability and concurrent performance.
 	PoolSize          int            `url:",default=20"`
@@ -51,10 +52,15 @@ func (o *Option) SetDefault() {
 func (o Option) ClientOption(main string, others ...string) *redis.UniversalOptions {
 	must.BeTrueF(len(main) > 0, "empty main address")
 
-	// main is parsed by redis.ParseURL.
-	// IMPORTANT: go-redis rejects any URL query key they dont know
-	// TODO: raise this with go-redis (ignore unknown query vs hard fail).
-	base := must.NoErrorV(redis.ParseURL(main))
+	u, queries, err := internal.ParseURL(main)
+	must.NoError(err)
+
+	opt := o
+	if len(queries) > 0 {
+		must.NoError(textx.UnmarshalURL(queries, &opt))
+	}
+
+	base := must.NoErrorV(redis.ParseURL(u))
 
 	seeds := []string{base.Addr}
 	for _, s := range others {
@@ -62,17 +68,17 @@ func (o Option) ClientOption(main string, others ...string) *redis.UniversalOpti
 	}
 
 	db := base.DB
-	if o.DB != 0 {
-		db = o.DB
+	if opt.DB != 0 {
+		db = opt.DB
 	}
-	if o.ClusterMode {
+	if opt.ClusterMode {
 		db = 0
 	}
 
 	return &redis.UniversalOptions{
 		Addrs:      slicex.Unique(seeds),
 		DB:         db,
-		ClientName: o.Prefix,
+		ClientName: opt.Prefix,
 		Username:   base.Username,
 		Password:   base.Password,
 		Protocol:   base.Protocol,
@@ -81,29 +87,29 @@ func (o Option) ClientOption(main string, others ...string) *redis.UniversalOpti
 		MinRetryBackoff: base.MinRetryBackoff,
 		MaxRetryBackoff: base.MaxRetryBackoff,
 
-		DialTimeout:           time.Duration(o.ConnectionTimeout),
-		ReadTimeout:           time.Duration(o.OperationTimeout),
-		WriteTimeout:          time.Duration(o.OperationTimeout),
+		DialTimeout:           time.Duration(opt.ConnectionTimeout),
+		ReadTimeout:           time.Duration(opt.OperationTimeout),
+		WriteTimeout:          time.Duration(opt.OperationTimeout),
 		ContextTimeoutEnabled: true,
-		PoolTimeout:           time.Duration(o.ConnectionTimeout),
+		PoolTimeout:           time.Duration(opt.ConnectionTimeout),
 
-		ReadBufferSize:  o.BufferSizeKB * 1024,
-		WriteBufferSize: o.BufferSizeKB * 1024,
+		ReadBufferSize:  opt.BufferSizeKB * 1024,
+		WriteBufferSize: opt.BufferSizeKB * 1024,
 
 		PoolFIFO:              base.PoolFIFO,
-		PoolSize:              o.PoolSize,
-		MinIdleConns:          max(3, o.MaxIdleConnection/2),
-		MaxIdleConns:          o.MaxIdleConnection,
-		MaxActiveConns:        4 * o.PoolSize,
-		ConnMaxIdleTime:       time.Duration(o.MaxIdleTime),
+		PoolSize:              opt.PoolSize,
+		MinIdleConns:          max(3, opt.MaxIdleConnection/2),
+		MaxIdleConns:          opt.MaxIdleConnection,
+		MaxActiveConns:        4 * opt.PoolSize,
+		ConnMaxIdleTime:       time.Duration(opt.MaxIdleTime),
 		ConnMaxLifetime:       base.ConnMaxLifetime,
 		ConnMaxLifetimeJitter: base.ConnMaxLifetimeJitter,
 
-		IdentitySuffix: o.Prefix + "_v9",
+		IdentitySuffix: opt.Prefix + "_v9",
 
-		MasterName:       o.MasterName,
-		SentinelUsername: o.SentinelAuth.Username,
-		SentinelPassword: o.SentinelAuth.Password.String(),
-		IsClusterMode:    o.ClusterMode,
+		MasterName:       opt.MasterName,
+		SentinelUsername: opt.SentinelAuth.Username,
+		SentinelPassword: opt.SentinelAuth.Password.String(),
+		IsClusterMode:    opt.ClusterMode,
 	}
 }

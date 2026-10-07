@@ -75,11 +75,22 @@ func TestClientOption(t *testing.T) {
 		Expect(t, opt.DialTimeout, Equal(200*time.Millisecond))
 	})
 
-	t.Run("unknown redis query panics", func(t *testing.T) {
-		defer func() {
-			Expect(t, recover(), NotBeNil[any]())
-		}()
-		_ = Option{}.ClientOption("redis://127.0.0.1:6379?prefix=hack_test")
+	t.Run("confx query in url", func(t *testing.T) {
+		opt := Option{}.ClientOption("redis://127.0.0.1:6379?prefix=hack_test")
+		Expect(t, opt.ClientName, Equal("hack_test"))
+	})
+
+	t.Run("confx and redis query together", func(t *testing.T) {
+		opt := Option{}.ClientOption("redis://127.0.0.1:6379/1?prefix=hack_test&max_retries=4")
+		Expect(t, opt.ClientName, Equal("hack_test"))
+		Expect(t, opt.MaxRetries, Equal(4))
+		Expect(t, opt.DB, Equal(1))
+	})
+
+	t.Run("unknown query is ignored", func(t *testing.T) {
+		opt := Option{}.ClientOption("redis://127.0.0.1:6379/0?not_a_param=1&max_retries=2")
+		Expect(t, opt.MaxRetries, Equal(2))
+		Expect(t, opt.DB, Equal(0))
 	})
 }
 
