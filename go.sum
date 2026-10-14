@@ -260,8 +260,8 @@ github.com/xoctopus/pkgx/testdata v1.0.4 h1:lbybNEnGMbnS43BuowOy4PoDD/c+5qfw1gb5
 github.com/xoctopus/pkgx/testdata v1.0.4/go.mod h1:hM3Pd+eByHRAG1plTMLXVBFzEdYqG3h7B5sHvOu2+iU=
 github.com/xoctopus/sfid v0.1.0 h1:J1Ox4B+s5UDdZqVvU7chOmNsSGL8cIoE7AcAoy18G3Q=
 github.com/xoctopus/sfid v0.1.0/go.mod h1:vLVFFKFJSjOL7Hwyks28KkUDaBplb3zSTH7J75wo0uQ=
-github.com/xoctopus/sqlx v0.4.4 h1:Mvmlnf55/QsOdSf2tSFdS4EAvCmXFYtjuCHbOKGZKgo=
-github.com/xoctopus/sqlx v0.4.4/go.mod h1:xk1/oJPhnqkhMokpXVei86mu6JMZSRKZQ0d3Hl1t0fE=
+github.com/xoctopus/sqlx v0.4.5 h1:1cxDvfkswoSvPEmwIqzzEGCooZVDVpoiHguKY39GtvY=
+github.com/xoctopus/sqlx v0.4.5/go.mod h1:icIon3A3qflsT4edCSDwm6iJKEczk38szamoWZqsasg=
 github.com/xoctopus/typx v0.4.7 h1:88m2rpcAseN39j+7ET/LDcQtyZeOfecyy/4HhcxGm4A=
 github.com/xoctopus/typx v0.4.7/go.mod h1:I2yIR7C3gr8qv3QvnYznL4+8RQYEhLVpxqXGrOpkMXw=
 github.com/xoctopus/x v0.5.9 h1:quXfFKjO6GCp4/AUvh1d93To0YuSH3EUPyXJyyMlxCY=
