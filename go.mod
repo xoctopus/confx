@@ -23,7 +23,7 @@ require (
 	// otel
 	github.com/prometheus/client_golang v1.24.1
 	// mq:rabbit
-	github.com/rabbitmq/amqp091-go v1.15.0
+	github.com/rabbitmq/amqp091-go v1.16.0
 	// kv-storage:redis
 	github.com/redis/go-redis/v9 v9.23.0
 	// mq:kafka
