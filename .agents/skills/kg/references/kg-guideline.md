@@ -2,45 +2,58 @@
 
 ## 目标
 
-`kg` 用于统一 key 命名约定，提供稳定、可读、可共享的 key 结构。
+统一 **cache key** 命名: 可读, 可共享, 可按租户隔离.
 
-## Key 结构
+## 结构
 
-- 基础结构: `{creator}:{audience}:{domain}:{biz}`
-- 带前缀结构: `{prefix}:{creator}:{audience}:{domain}:{biz}`
+| 段       | 来源            | 含义                    |
+|----------|-----------------|-------------------------|
+| prefix   | `WithPrefix`    | site/tenant (可选)      |
+| creator  | `KeyGen.Init`   | 创建 key 的服务         |
+| audience | 方法或 instance | 可读范围                |
+| domain   | 调用方          | 业务域                  |
+| biz      | 调用方          | 域内资源 id (`KeyType`) |
 
-字段语义:
+**biz** 为域内资源 id, 类型 `KeyType`: **uint64 或 string**. 数值 id 用无符号整型, 不用有符号整型.
 
-- `creator`: key 创建方身份，来自 `KeyGen.Init(creator)`
-- `audience`: 受众，通常为实例、`PEER`、指定 identity 或 `ANY`
-- `domain`: 业务域（由调用方定义）
-- `biz`: 业务标识（如 ID、code、组合 key）
-- `prefix`: 可选命名空间（如 tenant/site/env），由调用方决定
+wire 示例 (无 prefix):
 
-## 初始化建议
+```text
+SVC_ALPHA:PEER:SESSION:42
+```
 
-- 每个服务进程持有一个 `KeyGen` 实例
-- 启动时尽早 `Init(...)`
-- 如需租户隔离，启动时固定 `WithPrefix(...)`
+带 prefix:
 
-## 生成策略建议
+```text
+1050:SVC_ALPHA:PEER:SESSION:42
+```
 
-- 进程独占状态: `Key(domain, biz)`
-- 同服务共享: `SharedKey(domain, biz)`
-- 指定受众共享: `ShareTo(audience, domain, biz)`
-- 跨服务契约: `GlobalKey(domain, biz)`
+## 规范化
 
-## 规范化与保留字
+1. `SanitizeSegment` 处理 domain, biz, instance id
+2. `NormalizeSegment` 处理 creator, 具名 audience, prefix
+3. sanitize 后必填段为空 → panic
 
-- 推荐对 identity 使用 `NormalizeCreator` / `NormalizeAudience`
-- 保留字:
-  - `PEER`
-  - `ANY`
+段内 `:` 与 `-` 会变为 `_`, 设计 string biz 时需知晓.
 
-## 迁移建议
+## 初始化
 
-从旧的业务化 key 迁移到 `kg` 时:
+- 每进程一个 `KeyGen`, 启动 `KeyGen.Init(creator, opts...)`
+- 多租户: `WithPrefix(site_id)`, **不要**把 site 写进 creator, 除非团队明确放弃跨站同一 creator 语义
 
-1. 先确定 creator 与 prefix 策略
-2. 保持 domain/biz 稳定，避免批量失效
-3. 若需兼容旧 key，短期双写双读，逐步切换
+## 生成策略
+
+| 场景            | API                                             |
+|-----------------|-------------------------------------------------|
+| 进程独占        | `Key`                                           |
+| 同 creator 共享 | `SharedKey`                                     |
+| 定向共享        | `ShareTo`                                       |
+| 跨服务          | `GlobalKey`                                     |
+| 读他方          | `SharedKeyFrom` / `ShareFrom` / `GlobalKeyFrom` |
+
+## 迁移
+
+1. 定 creator 与 prefix 策略
+2. 段内冲突字符交给 `SanitizeSegment`; biz 使用 uint64/string 资源 id
+3. domain/biz 尽量保持不变
+4. 必要时双写双读
