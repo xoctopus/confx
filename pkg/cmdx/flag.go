@@ -59,7 +59,7 @@ func parseFlags(rv reflect.Value, pw *envx.PathWalker, walked map[string]map[str
 	flags := make([]*Flag, 0)
 	doc := func(...string) ([]string, bool) { return []string{}, false }
 
-	if d, ok := rv.Addr().Interface().(docx.Doc); ok {
+	if d, ok := reflect.TypeAssert[docx.Doc](rv.Addr()); ok {
 		doc = d.DocOf
 	}
 

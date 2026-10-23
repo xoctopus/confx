@@ -16,12 +16,10 @@ func NewLogger(ctx context.Context, lv logx.LogLevel) logx.Logger {
 	tp, _ := providers.TracerProviderFrom(ctx)
 	lp, _ := providers.LoggerProviderFrom(ctx)
 	return &logger{
-		spanner: spanner{tp: tp},
-		loggerc: loggerc{
-			ctx:      ctx,
-			provider: lp,
-			enabled:  lv,
-		},
+		tp:       tp,
+		ctx:      ctx,
+		provider: lp,
+		enabled:  lv,
 	}
 }
 

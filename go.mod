@@ -1,6 +1,6 @@
 module github.com/xoctopus/confx
 
-go 1.27.0
+go 1.27.3
 
 tool (
 	github.com/xoctopus/confx/internal/cmd/gen

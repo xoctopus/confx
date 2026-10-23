@@ -50,7 +50,7 @@ func (d *Decoder) decode(pw *PathWalker, rv reflect.Value) error {
 		return codex.Errorf(CODE__DEC_INVALID_VALUE_CANNOT_SET, "at %s", pw.String())
 	}
 
-	if dft, ok := rv.Addr().Interface().(types.Defaulter); ok {
+	if dft, ok := reflect.TypeAssert[types.Defaulter](rv.Addr()); ok {
 		dft.SetDefault()
 	}
 

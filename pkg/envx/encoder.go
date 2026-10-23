@@ -46,7 +46,7 @@ func (d *Encoder) set(pw *PathWalker, rv reflect.Value) error {
 	v.val = string(text)
 	v.mask = v.val
 
-	if masker, ok := rv.Interface().(interface{ SecurityString() string }); ok {
+	if masker, ok := reflect.TypeAssert[interface{ SecurityString() string }](rv); ok {
 		v.mask = masker.SecurityString()
 	}
 

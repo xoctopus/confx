@@ -27,11 +27,9 @@ type ProducerMessage interface {
 
 func NewProducerMessage(topic string, payload []byte) ProducerMessage {
 	m := &producerMessage{
-		topic: topic,
-		Publishing: amqp.Publishing{
-			Body:    payload,
-			Headers: make(amqp.Table),
-		},
+		topic:   topic,
+		Body:    payload,
+		Headers: make(amqp.Table),
 	}
 	m.RefreshPublishedAt()
 	return m

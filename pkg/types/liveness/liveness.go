@@ -10,11 +10,9 @@ import (
 // NewLivenessData creates liveness Data
 func NewLivenessData() Result {
 	r := &proxy{
-		underlying: underlying{
-			_once: sync.OnceValue(func() time.Time {
-				return time.Now()
-			}),
-		},
+		_once: sync.OnceValue(func() time.Time {
+			return time.Now()
+		}),
 	}
 	r.Start()
 	return r
