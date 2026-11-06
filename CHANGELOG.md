@@ -2,7 +2,7 @@
 <a name="HEAD"></a>
 ## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.2...HEAD)
 
-> 2026-08-29
+> 2026-11-11
 
 ### Build
 
@@ -11,6 +11,23 @@
 * **deps:** bump modernc.org/sqlite from 1.55.0 to 1.57.0
 * **deps:** bump github.com/xoctopus/sqlx from 0.3.8 to 0.4.2
 * **deps:** bump github.com/gorilla/websocket from 1.5.0 to 1.5.3
+
+### Chore
+
+* **deps:** upgrade go 1.27 -> 1.27.3
+
+### Docs
+
+* add project overview and quick start
+
+### Feat
+
+* **confredis:** partition Address query before go-redis ParseURL
+* **kg:** cache keys with segment sanitize and Identity-shaped biz
+
+### Wip
+
+* **confotel:** fix child span name and add Int64UpDownCounter
 
 
 <a name="v0.6.2"></a>

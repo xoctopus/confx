@@ -1,8 +1,8 @@
 #!/bin/bash
 
-FE_HOST="172.20.80.2"
+FE_HOST="172.30.80.2"
 FE_QUERY_PORT="9030"
-BE_HOST="172.20.80.3"
+BE_HOST="172.30.80.3"
 BE_HEARTBEAT_PORT="9050"
 
 echo "Checking Doris FE ($FE_HOST:$FE_QUERY_PORT) status..."

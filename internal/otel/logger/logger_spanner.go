@@ -20,7 +20,7 @@ func (c spanner) Start(ctx context.Context, name string) (spanner, context.Conte
 	if !ok {
 		tp = c.tp
 	}
-	cctx, span := tp.Tracer("").Start(ctx, c.name, otelapitracer.WithTimestamp(time.Now()))
+	cctx, span := tp.Tracer("").Start(ctx, name, otelapitracer.WithTimestamp(time.Now()))
 	c.span = span
 	c.name = name
 	return c, cctx

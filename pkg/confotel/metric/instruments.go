@@ -35,6 +35,17 @@ func NewInt64Counter(name string, appliers ...OptionFunc) Int64Counter {
 	}
 }
 
+func NewInt64UpDownCounter(name string, appliers ...OptionFunc) Int64Counter {
+	o := NewOption(name, appliers...)
+
+	return &int64Instrument{
+		option: o,
+		counter: func(meter otelapimetric.Meter) (Int64Counter, error) {
+			return meter.Int64UpDownCounter(o.Name, otelapimetric.WithUnit(o.Unit), otelapimetric.WithDescription(o.Description))
+		},
+	}
+}
+
 func NewInt64Histogram(name string, appliers ...OptionFunc) Int64Recorder {
 	o := NewOption(name, appliers...)
 
