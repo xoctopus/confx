@@ -21,7 +21,7 @@ require (
 	github.com/jackc/pgx/v5 v5.11.0
 	github.com/oklog/ulid/v2 v2.1.2
 	// otel
-	github.com/prometheus/client_golang v1.24.1
+	github.com/prometheus/client_golang v1.25.0
 	// mq:rabbit
 	github.com/rabbitmq/amqp091-go v1.15.0
 	// kv-storage:redis
