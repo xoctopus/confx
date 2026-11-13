@@ -55,3 +55,28 @@ func TestUserinfo(t *testing.T) {
 		Expect(t, u.Init(), ErrorEqual("ciphertext length is not a multiple of the block size"))
 	})
 }
+
+// KEEP this test for quick validation
+// func TestX(t *testing.T) {
+// 	testdata := []*types.Userinfo{
+// 		{Password: "any", DecryptKey: ""},
+// 		// plain: B2xDtuViqz8l7yBWUxABso3CXcgxSanW
+// 		{
+// 			Password:   "GCK6LbCUCM+5cFqdni1aDTfB648LP4rXRhantgBjbs9XCpvYZTPpaMpfpCXh3w/A",
+// 			DecryptKey: "1071",
+// 		},
+// 	}
+//
+// 	for i := range testdata {
+// 		d := testdata[i]
+// 		original := d.Password
+// 		if len(d.DecryptKey) == 0 {
+// 			Expect(t, d.Init(), Succeed())
+// 			Expect(t, d.Password, Equal(original))
+// 		} else {
+// 			Expect(t, d.Init(), Succeed())
+// 			Expect(t, d.Password, Not(Equal(original)))
+// 			t.Log(d.Password)
+// 		}
+// 	}
+// }
