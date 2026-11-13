@@ -7,8 +7,8 @@ import (
 
 	promclient "github.com/prometheus/client_golang/prometheus"
 	promcollectors "github.com/prometheus/client_golang/prometheus/collectors"
-	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/contextx"
+	"github.com/xoctopus/x/logx"
 	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"

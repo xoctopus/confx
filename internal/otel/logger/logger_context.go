@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 	"go.opentelemetry.io/otel/attribute"
 	otelapilogger "go.opentelemetry.io/otel/log"
 	otelapitracer "go.opentelemetry.io/otel/trace"

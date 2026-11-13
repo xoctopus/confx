@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 
 	"github.com/xoctopus/confx/pkg/conflogx/internal"
 	"github.com/xoctopus/confx/pkg/types"

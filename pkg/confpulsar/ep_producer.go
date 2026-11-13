@@ -6,8 +6,8 @@ import (
 	"sync/atomic"
 
 	"github.com/apache/pulsar-client-go/pulsar"
-	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/logx"
 
 	"github.com/xoctopus/confx/pkg/types/mq"
 )

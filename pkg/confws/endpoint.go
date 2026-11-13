@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/logx"
 )
 
 // Endpoint WebSocket 服务入口:配置、监听、连接生命周期.

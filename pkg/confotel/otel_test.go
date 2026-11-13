@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 	"github.com/xoctopus/x/testx"
 
 	"github.com/xoctopus/confx/pkg/appx"

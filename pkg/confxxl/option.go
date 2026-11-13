@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/textx"
 

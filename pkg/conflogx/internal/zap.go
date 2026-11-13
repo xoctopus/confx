@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 	"go.uber.org/zap/zapcore"
 )
 

@@ -8,8 +8,8 @@ import (
 
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/wagslane/go-rabbitmq"
-	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/logx"
 
 	"github.com/xoctopus/confx/pkg/types/mq"
 )

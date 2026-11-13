@@ -10,7 +10,7 @@ import (
 	"github.com/apache/pulsar-client-go/pulsar"
 	"github.com/apache/pulsar-client-go/pulsar/backoff"
 	"github.com/apache/pulsar-client-go/pulsar/log"
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 	"github.com/xoctopus/x/misc/must"
 	"github.com/xoctopus/x/textx"
 

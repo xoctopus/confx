@@ -1,7 +1,7 @@
 package consts
 
 import (
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 )
 
 const (

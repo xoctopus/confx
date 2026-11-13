@@ -8,8 +8,8 @@ import (
 
 	"github.com/oklog/ulid/v2"
 	"github.com/wagslane/go-rabbitmq"
-	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/logx"
 
 	"github.com/xoctopus/confx/pkg/types"
 	"github.com/xoctopus/confx/pkg/types/liveness"

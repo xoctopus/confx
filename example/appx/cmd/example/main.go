@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 
 	"github.com/xoctopus/confx/example/appx/pkg/modules/module1"
 	"github.com/xoctopus/confx/example/appx/pkg/modules/module2"

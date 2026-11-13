@@ -1,8 +1,18 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.3-rc1...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.3-rc2...HEAD)
 
 > 0001-01-01
+
+
+<a name="v0.6.3-rc2"></a>
+## [v0.6.3-rc2](https://github.com/xoctopus/confx/compare/v0.6.3-rc1...v0.6.3-rc2)
+
+> 2026-11-13
+
+### Refactor
+
+* **confjwt:** use codex errors and drop auth hooks
 
 
 <a name="v0.6.3-rc1"></a>

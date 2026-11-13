@@ -36,13 +36,12 @@ require (
 	github.com/xoctopus/concx v0.2.3
 	// +skill:genx
 	github.com/xoctopus/genx v0.3.9
-	// +skill:logx
-	github.com/xoctopus/logx v0.3.9
 	github.com/xoctopus/sfid v0.1.0
 	// +skill:sqlx
 	github.com/xoctopus/sqlx v0.4.4
+	// +skill:logx
 	// +skill:testx
-	github.com/xoctopus/x v0.5.9
+	github.com/xoctopus/x v0.6.2
 	// otel
 	go.opentelemetry.io/otel v1.47.0
 	// otel
@@ -122,6 +121,7 @@ require (
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
+	github.com/xoctopus/logx v0.3.8 // indirect
 	github.com/xoctopus/pkgx v0.4.4 // indirect
 	github.com/xoctopus/typx v0.4.7 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect

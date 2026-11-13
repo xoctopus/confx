@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/xoctopus/logx"
 	"github.com/xoctopus/sfid/pkg/sfid"
 	"github.com/xoctopus/x/contextx"
+	"github.com/xoctopus/x/logx"
 	"github.com/xoctopus/x/misc/retry"
 
 	"github.com/xoctopus/confx/pkg/types"

@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/xoctopus/concx/pkg/nest"
-	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/logx"
 	"github.com/xoctopus/x/urlx"
 
 	"github.com/xoctopus/confx/pkg/helper"

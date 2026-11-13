@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/xoctopus/logx"
+	"github.com/xoctopus/x/logx"
 	"github.com/xoctopus/x/slicex"
 	"go.opentelemetry.io/otel/attribute"
 	otelapilogger "go.opentelemetry.io/otel/log"

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/xoctopus/concx/pkg/nest"
-	"github.com/xoctopus/logx"
 	"github.com/xoctopus/x/codex"
+	"github.com/xoctopus/x/logx"
 	"github.com/xoctopus/x/syncx"
 
 	"github.com/xoctopus/confx/pkg/confxxl/enums"
