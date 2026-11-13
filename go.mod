@@ -35,7 +35,7 @@ require (
 	// +skill:concx
 	github.com/xoctopus/concx v0.2.3
 	// +skill:genx
-	github.com/xoctopus/genx v0.3.9
+	github.com/xoctopus/genx v0.4.1
 	github.com/xoctopus/sfid v0.1.0
 	// +skill:sqlx
 	github.com/xoctopus/sqlx v0.4.4
@@ -134,7 +134,7 @@ require (
 	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.42.0 // indirect
-	golang.org/x/tools v0.50.0 // indirect
+	golang.org/x/tools v0.51.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20261005182115-fad411399dd8 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261005182115-fad411399dd8 // indirect
 	google.golang.org/grpc v1.84.0 // indirect
