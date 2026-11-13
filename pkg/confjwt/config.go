@@ -3,10 +3,10 @@ package confjwt
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/xoctopus/x/codex"
 
 	"github.com/xoctopus/confx/pkg/types"
 )
@@ -42,23 +42,28 @@ func (c *JWT) ExpiresAt() *jwt.NumericDate {
 }
 
 func (c *JWT) Generate(payload any) (string, error) {
-	claim := &Claims{
+	return c.generate(&Claims{
 		Payload: payload,
 		Expired: c.ExpiresAt(),
 		Issuer:  c.Issuer,
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	return token.SignedString([]byte(c.SignKey))
+	})
 }
 
 func (c *JWT) GenerateNoExpiration(payload any) (string, error) {
-	claim := &Claims{
+	return c.generate(&Claims{
 		Payload: payload,
 		Expired: nil,
 		Issuer:  c.Issuer,
+	})
+}
+
+func (c *JWT) generate(claims *Claims) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	t, err := token.SignedString([]byte(c.SignKey))
+	if err != nil {
+		return "", codex.Wrap(ERROR__TOKEN_GENERATING, err)
 	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
-	return token.SignedString([]byte(c.SignKey))
+	return t, nil
 }
 
 func (c *JWT) Parse(v string) (*Claims, error) {
@@ -68,14 +73,14 @@ func (c *JWT) Parse(v string) (*Claims, error) {
 		})
 
 	if err != nil {
-		return nil, fmt.Errorf("invalid token, failed to parse: %w", err)
+		return nil, codex.Wrapf(ERROR__TOKEN_VALIDATION, err, "failed parsing")
 	}
 	if t == nil {
-		return nil, fmt.Errorf("invalid token, empty token")
+		return nil, codex.Errorf(ERROR__TOKEN_VALIDATION, "got empty token")
 	}
 	claim, ok := t.Claims.(*Claims)
 	if !ok || !t.Valid {
-		return nil, fmt.Errorf("invalid token, invalid claim")
+		return nil, codex.Errorf(ERROR__TOKEN_VALIDATION, "invalid claim")
 	}
 	return claim, nil
 }

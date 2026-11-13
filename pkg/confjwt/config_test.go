@@ -57,12 +57,12 @@ func TestJwtConfig(t *testing.T) {
 				t.Run("#TokenExpired", func(t *testing.T) {
 					time.Sleep(2 * time.Second)
 					_, err = conf.Parse(tok)
-					Expect(t, err, Failed())
+					Expect(t, err, IsCodeError(confjwt.ERROR__TOKEN_VALIDATION))
 				})
 
 				t.Run("#ParseWithClaimFailed", func(t *testing.T) {
 					_, err = conf.Parse("not equal token gen before")
-					Expect(t, err, Failed())
+					Expect(t, err, IsCodeError(confjwt.ERROR__TOKEN_VALIDATION))
 				})
 			})
 		})

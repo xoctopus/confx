@@ -36,7 +36,6 @@ require (
 	github.com/xoctopus/concx v0.2.3
 	// +skill:genx
 	github.com/xoctopus/genx v0.3.9
-	github.com/xoctopus/httpx v0.0.2
 	// +skill:logx
 	github.com/xoctopus/logx v0.3.9
 	github.com/xoctopus/sfid v0.1.0

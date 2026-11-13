@@ -4,8 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/xoctopus/httpx/pkg/httpx"
-	"github.com/xoctopus/x/contextx"
+	"github.com/xoctopus/x/codex"
 )
 
 type tCtxAuthorization struct{}
@@ -28,58 +27,23 @@ func (r Auth) Output(ctx context.Context) (any, error) {
 	}
 
 	tok := strings.TrimSpace(strings.Replace(a, "Bearer", " ", 1))
-
-	var (
-		payload any
-		err     error
-		valid   bool
-		claims  *Claims
-	)
-
-	if parser, ok := BuiltinTokenParserFrom(ctx); ok {
-		payload, err, valid = parser(ctx, tok)
+	if len(tok) == 0 {
+		return nil, codex.Errorf(ERROR__TOKEN_VALIDATION, "got empty token")
 	}
 
-	if !valid {
-		claims, err = c.Parse(tok)
-		if err == nil && claims != nil {
-			payload = claims.Payload
-		}
-	}
-
+	claims, err := c.Parse(tok)
 	if err != nil {
-		return nil, httpx.STATUS__UNAUTHORIZED.Wrap(err)
+		return nil, err
 	}
 
-	if va, ok := PermissionValidatorFrom(ctx); ok && va != nil {
-		if err = va(ctx, payload); err != nil {
-			return nil, httpx.STATUS__FORBIDDEN.Wrap(err)
-		}
-	}
-
-	return payload, nil
+	return claims.Payload, nil
 }
 
 func AuthorizationFrom(ctx context.Context) string {
 	return ctx.Value(tCtxAuthorization{}).(string)
 }
 
-type (
-	BuiltinTokenParser  func(ctx context.Context, tok string) (payload any, err error, valid bool)
-	PermissionValidator func(context.Context, any) error
-
-	tCtxPermissionValidator struct{}
-	tCtxBuiltinTokenParser  struct{}
-)
-
-var (
-	PermissionValidatorFrom  = contextx.From[tCtxPermissionValidator, PermissionValidator]
-	MustPermissionValidator  = contextx.Must[tCtxPermissionValidator, PermissionValidator]
-	WithPermissionValidator  = contextx.With[tCtxPermissionValidator, PermissionValidator]
-	CarryPermissionValidator = contextx.Carry[tCtxPermissionValidator, PermissionValidator]
-
-	BuiltinTokenParserFrom  = contextx.From[tCtxBuiltinTokenParser, BuiltinTokenParser]
-	MustBuiltinTokenParser  = contextx.Must[tCtxBuiltinTokenParser, BuiltinTokenParser]
-	WithBuiltinTokenParser  = contextx.With[tCtxBuiltinTokenParser, BuiltinTokenParser]
-	CarryBuiltinTokenParser = contextx.Carry[tCtxBuiltinTokenParser, BuiltinTokenParser]
-)
+func MayAuthorizationFrom(ctx context.Context) (string, bool) {
+	payload, ok := ctx.Value(tCtxAuthorization{}).(string)
+	return payload, ok
+}

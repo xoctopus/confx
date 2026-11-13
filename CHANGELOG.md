@@ -1,6 +1,12 @@
 
 <a name="HEAD"></a>
-## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.2...HEAD)
+## [HEAD](https://github.com/xoctopus/confx/compare/v0.6.3-rc1...HEAD)
+
+> 0001-01-01
+
+
+<a name="v0.6.3-rc1"></a>
+## [v0.6.3-rc1](https://github.com/xoctopus/confx/compare/v0.6.2...v0.6.3-rc1)
 
 > 2026-11-11
 
@@ -25,9 +31,9 @@
 * **confredis:** partition Address query before go-redis ParseURL
 * **kg:** cache keys with segment sanitize and Identity-shaped biz
 
-### Wip
+### Fix
 
-* **confotel:** fix child span name and add Int64UpDownCounter
+* **confotel:** correct child span name and add Int64UpDownCounter
 
 
 <a name="v0.6.2"></a>
